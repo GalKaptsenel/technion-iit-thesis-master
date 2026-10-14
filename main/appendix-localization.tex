@@ -1,0 +1,23 @@
+\chapter{Localization Analysis}
+\label{appendix:localization}
+
+\scaffold{Full technical treatment behind \autoref{chap:priming}: the complete
+definitions, proofs and the worked binary-search figure, moved here to keep the main
+chapter readable. Draw from the priming-extension note and the uasc2027 appendix.}
+
+\section{Linear scan}
+\label{app:loc-scan}
+\scaffold{Cost of the scan (returns the largest leaking class, at most $k$ batches)
+and the matching lower bound (finding the largest boundary needs $k$ runs), with
+proofs.}
+
+\section{Binary search}
+\label{app:loc-bsearch}
+\scaffold{The algorithm, the worked example on 12 inputs with the leak at class~4,
+the proof that it returns a genuine violation in $\lceil\log_2(k+1)\rceil$ runs, and
+the matching lower bound.}
+
+\section{Comparison}
+\label{app:loc-compare}
+\scaffold{Side-by-side of the two localizers (runs, lower bound, what each returns,
+soundness, completeness).}

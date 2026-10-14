@@ -1,0 +1,55 @@
+\chapter{Generalized Priming}
+\label{chap:priming}
+
+\scaffold{Chapter intro: the second contribution. \revizor{}'s priming step cannot
+report a whole class of genuine leaks---those whose only effect on the run that
+causes them lies outside the L1D cache. We give a formal model, prove the limitation,
+show the generalization keeps the violation definition and detects strictly more, and
+give two optimal localizers. Draw from the priming-extension note and uasc2027
+``Generalized priming''.}
+
+\section{The detection gap}
+\label{sec:priming-gap}
+\scaffold{Intuition: an input can write a microarchitectural resource (a BTB way, a
+TLB entry, the prefetcher, a predictor) that its own run never reads back into the
+cache. The write leaves no mark on the run's own L1D trace and survives only in the
+carried-over state, surfacing in a later run. Priming was built to cancel
+carried-over state, so it cancels the evidence together with the noise. Cross-run
+Spectre-v2 and the canonicality leak are members of this class.}
+
+\section{A formal model of priming}
+\label{sec:priming-model}
+\scaffold{Definitions: run and batch, the initialization sequence, the contract
+trace and the two hardware traces $\HL$ (L1D) and $\HF$ (full state), determinism, the
+violation of a contract, the current priming decision rule, input classes, and
+boosting.}
+
+\section{Lanes and splices}
+\label{sec:priming-lanes}
+\scaffold{The lane / lane-boosting matrix (rows are lanes/batches, columns are
+classes), the prefix/suffix splice, and the splice measurement $r(t)$.}
+
+\section{Current priming misses noncache violations}
+\label{sec:priming-limitation}
+\scaffold{State and prove the theorem that the current rule never reports a noncache
+violation---using only the shape of the rule, not any particular channel. Then show
+the canonicality leak and cross-run Spectre-v2 are noncache violations.}
+
+\section{Noncache differences reach the cache}
+\label{sec:priming-observe}
+\scaffold{Every observable state difference is exposed in the L1D by some generated
+test case (register-dependent load), so the generalization loses no observable
+difference---it reads the leaked residue through a later run's $\HL$, never $\HF$.}
+
+\section{Localizing the leak}
+\label{sec:priming-localize}
+\scaffold{A boundary exists when the end readings differ; every boundary is a genuine
+violation (two inputs of one class separated by one identical probe); self-dependent
+versus cross-input leaks; running both directions.}
+
+\section{Two localizers}
+\label{sec:priming-localizers}
+\scaffold{Linear scan (returns the largest leaking class, worst case $k$ runs) and
+binary search (returns one leaking class, $\lceil\log_2(k+1)\rceil$ runs); state
+optimality, defer full proofs and the worked binary-search figure to
+\autoref{appendix:localization}.}

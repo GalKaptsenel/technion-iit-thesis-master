@@ -1,0 +1,55 @@
+\chapter{The Canonicality and Alignment Leak}
+\label{chap:canon}
+
+\scaffold{Chapter intro: the main new vulnerability found with the methods of the
+previous chapters. On the N3 a speculative access to a non-canonical (or misaligned)
+address is fast-rejected before it allocates any microarchitectural state, while a
+legal target allocates an observable footprint---a one-bit oracle on the canonicality
+(and alignment) of a pointer. Draw from uasc2027 ``Dissecting the canonicality leak''
+and the arm-disclosure README.}
+
+\section{The oracle}
+\label{sec:canon-oracle}
+\scaffold{Canonical versus out-of-range addresses on AArch64; in-range speculative
+accesses allocate (L1D, dTLB, iTLB, BTB), out-of-range leave nothing; weaponization by
+making the legality of \reg{secret+constant} depend on one secret bit, swept to peel a
+field out bit by bit, crash-free.}
+
+\section{Alignment gates}
+\label{sec:canon-alignment}
+\scaffold{The same fast-reject fires on misalignment (16-byte for SP-relative, 4-byte
+for PC-relative/indirect-branch targets), so the oracle also reports a target's low
+alignment bits.}
+
+\section{Transmitters}
+\label{sec:canon-transmitters}
+\scaffold{The gate is a property of the address, so it fires on every speculative
+operation that consumes one: verified on loads, stores and indirect branches; a
+software prefetch (\reg{PRFM}) does not leak.}
+
+\section{Speculation windows}
+\label{sec:canon-windows}
+\scaffold{Three independent ways to drive the transient access: a mistrained bounds
+check (Spectre-v1), a store-bypassed bound (Spectre-v4), and a return shadow
+(Spectre-RSB).}
+
+\section{Why the L1D alone is not enough}
+\label{sec:canon-l1d}
+\scaffold{In-context the canonical footprint lands in the same L1D sets as the
+access's architectural twin, so single-union priming conflates the two phases; across
+a boundary the L1D fill is same-thread-bound and discarded on the context switch---only
+the per-core BTB and dTLB survive. Ties back to \autoref{chap:priming} and
+\autoref{sec:port-htrace}.}
+
+\section{Channels and portability}
+\label{sec:canon-portability}
+\scaffold{The cache/TLB channels follow from the generic squash-before-allocate rule
+and reproduce on the N3, the Tensor~G3 (Cortex-A715 core, not the Cortex-X3 prime
+core) and Intel Alder Lake; the BTB-mediated channel is Arm-specific (N3 and A715,
+not Alder Lake).}
+
+\section{Reach across isolation boundaries}
+\label{sec:canon-reach}
+\scaffold{Cross-process (EL0$\to$EL0, BTB), guest-to-host (BTB) and EL2$\to$EL0 (dTLB,
+because the BTB is split across the exception-level boundary). Full measured numbers in
+\autoref{chap:eval}.}

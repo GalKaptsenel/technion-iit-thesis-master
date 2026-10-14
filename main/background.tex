@@ -1,0 +1,44 @@
+\chapter{Background}
+\label{chap:background}
+
+\scaffold{A per-chapter mini-intro: this chapter fixes the microarchitectural and
+architectural background the thesis relies on, and the model-based relational-testing
+framework it extends. Draw from the uasc2027 Background section.}
+
+\section{Out-of-order and speculative execution}
+\label{sec:bg-speculation}
+\scaffold{OoO pipelines, speculation past unresolved branches and faults, squashing
+of architectural results, and the key asymmetry: microarchitectural traces left on
+the speculative path are not rolled back.}
+
+\section{Microarchitectural side channels}
+\label{sec:bg-sidechannels}
+\scaffold{Cache channels (Flush+Reload, Prime+Probe, Flush+Flush), the TLB, and the
+branch-target buffer. Explain persistence and what survives a context switch
+(per-core structures) versus what does not (the transient L1D fill).}
+
+\section{Transient-execution attacks}
+\label{sec:bg-spectre}
+\scaffold{Spectre-v1 (conditional-branch misprediction), Spectre-v2 (indirect-branch
+target injection), Spectre-v4 (speculative store bypass), Spectre-RSB (return
+shadow), and Meltdown-type fault-driven leaks.}
+
+\section{The AArch64 security architecture}
+\label{sec:bg-aarch64}
+\scaffold{Exception levels EL0--EL3 and VHE; virtual-address translation, TTBR0\_EL1
+/TTBR1\_EL1 and canonicality; Top Byte Ignore (TBI); Pointer Authentication
+(PAuth/PAC, QARMA, FEAT\_PAuth2/FPAC, the sign bit and PAC field); the Memory
+Tagging Extension (MTE). Use exact Arm manual terminology.}
+
+\section{Arm-specific speculative attacks}
+\label{sec:bg-arm-attacks}
+\scaffold{PACMAN (speculative PAC-verification oracle) and TikTag (speculative MTE
+tag-check leak) as the hand-crafted analogues of the precondition gates this thesis
+fuzzes automatically.}
+
+\section{Speculation contracts and model-based relational testing}
+\label{sec:bg-mrt}
+\scaffold{Hardware--software leakage contracts and CT-SEQ; the model-based
+relational-testing (MRT) methodology; \revizor{}'s architecture---generator,
+contract model / executor (CE), hardware executor, analyser---and its priming step,
+which the next chapters extend.}

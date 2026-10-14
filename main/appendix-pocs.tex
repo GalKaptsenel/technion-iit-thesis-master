@@ -1,0 +1,27 @@
+\chapter{Proof-of-Concept Artifacts}
+\label{appendix:pocs}
+
+\scaffold{Per Technion guidelines, software developed for the research is described in
+an appendix. Summarize the four self-scoring proof-of-concept programs from the
+arm-disclosure artifact, their build/run model, and the attacker model, without
+pasting full source. Draw from the arm-disclosure README.}
+
+\section{Cross-boundary secret leak}
+\label{app:poc-xboundary}
+\scaffold{\texttt{canon\_leak --mode \{xproc|xvm|xel\}}: one binary, three boundaries;
+PMU and rootless \reg{cntvct\_el0} read-outs.}
+
+\section{Blind stack-canary recovery}
+\label{app:poc-canary}
+\scaffold{\texttt{canary\_leak\_blind}: the two-dimensional-array gadget and the three
+speculation windows (v1/v4/rsb), read via Flush+Reload.}
+
+\section{RSA-2048 key recovery through OpenSSL}
+\label{app:poc-openssl}
+\scaffold{\texttt{rsa\_leak}: a ROP chain from OpenSSL's own gadgets opening a
+Spectre-v4 window over the BTB channel; near-complete private-key recovery.}
+
+\section{EL3 round trip and the BTB}
+\label{app:poc-smc}
+\scaffold{\texttt{smc\_bench}: evidence that an EL3 world switch does not flush the
+normal-world BTB---the precondition for a possible secure/non-secure crossing.}

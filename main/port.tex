@@ -1,0 +1,44 @@
+\chapter{Porting Revizor to AArch64}
+\label{chap:port}
+
+\scaffold{Chapter intro: the first contribution---bringing MRT fuzzing to AArch64,
+adding remote/headless operation, and modeling Arm-specific security features. Draw
+from uasc2027 ``Porting Revizor to AArch64'', the framing section, and the system
+design section.}
+
+\section{Overview}
+\label{sec:port-overview}
+\scaffold{The end-to-end loop on Arm and what had to change relative to the x86
+tool: code generation, the contract executor, the hardware executor, and the
+analyser.}
+
+\section{Code generation and sandboxing on AArch64}
+\label{sec:port-codegen}
+\scaffold{AArch64 instruction selection, the sandbox memory layout (main and faulty
+areas, the sandbox mask, page selection), and how generated test cases are kept
+architecturally safe.}
+
+\section{The contract executor}
+\label{sec:port-ce}
+\scaffold{The native-execution contract executor; how speculative out-of-bounds
+accesses are redirected to a scratch page to model faults without crashing; the
+emulation of the contract trace.}
+
+\section{Modeling Arm security features}
+\label{sec:port-features}
+\scaffold{MTE support; the PAuth software model (QARMA) decoded from TCR\_EL1 and the
+ID\_AA64ISAR registers; per-input PAC keys; what the model must reproduce for the
+precondition primitives of \autoref{chap:precond}.}
+
+\section{Headless and remote fuzzing}
+\label{sec:port-remote}
+\scaffold{The controller/agent split that lets one controller drive several remote
+devices---including hardware (the Pixel~8) that cannot host the full toolchain---by
+shipping object test cases and returning only hardware traces.}
+
+\section{HTrace on Arm}
+\label{sec:port-htrace}
+\scaffold{Redefining \reg{HTrace} for persistent Prime+Probe measurement on Arm:
+separating the architectural and speculative L1D footprints into two phases so that
+phase-different inputs are not grouped into one equivalence class. Motivates the
+generalized detection of \autoref{chap:priming}.}

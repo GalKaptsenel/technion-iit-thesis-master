@@ -1,0 +1,46 @@
+\chapter{Evaluation}
+\label{chap:eval}
+
+\scaffold{Chapter intro: four questions---fuzzing throughput, which violations are
+found and how fast, which are Arm-specific, and whether they reproduce on commodity
+hardware---plus end-to-end exploitation. Draw from uasc2027 ``Evaluation'' and the
+arm-disclosure measurements.}
+
+\section{Experimental setup}
+\label{sec:eval-setup}
+\scaffold{Neoverse~N3 (Armv9.2-A, QARMA3, 48-bit VAs, FEAT\_PAuth2/FPAC; GCP
+c4a bare-metal; confirm TBI0/TBI1 and CONSTPACFIELD); Google Tensor~G3 (Pixel~8),
+leak pinned to a Cortex-A715 core; Intel Alder Lake as a non-Arm baseline. Metric
+definitions: throughput and time-to-detection (TTD, on the N3).}
+
+\section{Fuzzing throughput}
+\label{sec:eval-throughput}
+\scaffold{Local versus remote orchestration throughput table (test cases/hour, inputs
+/test case, executions/second). Numbers to be filled.}
+
+\section{Contract violations}
+\label{sec:eval-violations}
+\scaffold{The violations table: Spectre-v1, Spectre-v2 (L1D, standard; and BTB, the
+case current priming misses), Spectre-v4, the canonicality leak (cache/TLB and BTB),
+the AUT* sign-bit leak, and the unexplained L1D IP-prefetcher effect (Alder Lake
+only). TTD on the N3; reproduction on N3 / Pixel~8 (A715) / Alder Lake.}
+
+\section{Localization cost}
+\label{sec:eval-localize}
+\scaffold{Hardware executions to localize a boundary: linear scan ($k$) versus binary
+search ($\lceil\log_2(k+1)\rceil$), tying back to \autoref{chap:priming} and the
+proofs in \autoref{appendix:localization}.}
+
+\section{End-to-end exploitation}
+\label{sec:eval-exploit}
+\scaffold{Cross-boundary recovery (cross-process BTB: 100\% over the PMU, $\approx$65
+bit/s; guest-to-host BTB: 100\%, $\approx$130 bit/s; EL2$\to$EL0 dTLB: 100\%,
+$\approx$1230 bit/s). A ROP chain built entirely from OpenSSL's own gadgets recovers
+2044/2048 bits ($99.8\%$) of an RSA-2048 private key. Blind stack-canary recovery via
+three windows (v1 20/20, v4 18/20, rsb 19/20). Reconcile the ``musl'' ROP chain from
+the abstract against the current artifacts (open item).}
+
+\section{Covert-channel analysis}
+\label{sec:eval-covert}
+\scaffold{Capacity and error of the channel; the context-switch wall that forces the
+cross-domain variant onto the BTB, trading bandwidth for persistence.}

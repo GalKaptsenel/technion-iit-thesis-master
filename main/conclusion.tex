@@ -1,23 +1,31 @@
-\chapter{Conclusion and open questions}
+\chapter{Conclusion and Open Questions}
 \label{chap:conclusion}
 
-This kind of chapter can include may different things (or only some of them):
-\begin{itemize}
-\item Discussion of results
-\item Conclusions from the results or from the process in general
-\item Open questions for future research, resulting from the research performed or from the results obtained
-\end{itemize}
+\section{Summary}
+\label{sec:concl-summary}
+\scaffold{Recap the contributions and the thesis's central claim: bringing MRT to
+AArch64, strengthening leak detection provably (generalized priming), systematizing
+precondition fuzzing, and using both to discover and weaponize the canonicality- and
+alignment-based leak across server- and mobile-class Arm CPUs and across isolation
+boundaries.}
 
-But not things like the bibliography or other back matter which is generated outside of this chapter.
+\section{Open questions}
+\label{sec:concl-open}
 
+\paragraph{Active page-steering instead of refusal.}
+\scaffold{Replace the refusal-based spec-only safety in the port with a page-steering
+sealing primitive (main-only clamp + self-inverse page-bit flip on speculative-only
+decoys) so no test case is discarded for page reachability; wire the spill size clamp.}
 
-\section{Some conclusion}
+\paragraph{The unexplained prefetcher effect.}
+\scaffold{Root-cause the L1D IP-prefetcher violation observed on Alder Lake, which is
+deterministic in the prefetcher-enable bit.}
 
-Here is what I conclude.
+\paragraph{The secure / non-secure boundary.}
+\scaffold{An EL3 round trip does not flush the normal-world BTB; whether the BTB
+eviction channel crosses the secure boundary for a real S-EL0 victim is open.}
 
-\section{Some open questions}
-
-\paragraph{A question in brief.} In \autoref{chap:firstchap} we explored a certain subject, but what about this-or-that idea? Perhaps it is worth exploring. Can one produce interesting results?
-
-\paragraph{A second question in brief.} A broader exposition of the question and indications of directions or ideas regarding its resolution.
-
+\paragraph{Broader precondition classes and mitigations.}
+\scaffold{Further instruction preconditions to fuzz, the exact sign-bit / TBI regime
+for the sign-extension primitive, and the suggested mitigation (make the speculative
+treatment of legal and illegal targets indistinguishable).}

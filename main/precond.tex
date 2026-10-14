@@ -1,0 +1,52 @@
+\chapter{Precondition Fuzzing}
+\label{chap:precond}
+
+\scaffold{Chapter intro: the third contribution. Preconditions must hold on the
+architectural flow, but nothing constrains the speculative paths, where a violation
+can leak without faulting. Random generation cannot target this directly, so we
+\emph{seal} test cases and fill the seals per input to enforce or violate each
+precondition. Draw from uasc2027 ``Precondition fuzzing''.}
+
+\section{The generation gap}
+\label{sec:precond-gap}
+\scaffold{Why instrumenting every potentially-faulting instruction and excluding the
+violation everywhere (as the generator does) misses transiently-reachable precondition
+violations---an input-reachability question that is intractable in general.}
+
+\section{Sealing a test case}
+\label{sec:precond-sealing}
+\scaffold{The static pass that reserves a short, fixed-width sealing (initialized to
+\reg{UDF}) at every precondition site, producing the sealed test case; assembly once
+into an object test case shared by all inputs.}
+
+\section{The emulation table}
+\label{sec:precond-emul}
+\scaffold{Binding each sealing to an op-emulator so the genuine variant can be filled
+with values not known statically (a PAC signature, an MTE allocation tag); how the CE
+materializes genuine instructions on reach and restores the idle \reg{UDF} filler.}
+
+\section{Resolving a test case}
+\label{sec:precond-resolve}
+\scaffold{Per-input resolution from a single CE trace: the minimal speculation depth
+each sealing is reached at (retiring versus speculative-only) and the value it must
+carry; how this sidesteps the static reachability problem.}
+
+\section{The contract}
+\label{sec:precond-contract}
+\scaffold{Genuine and decoy run the exact same input and the same code outside the
+sealings; we check against CT-SEQ; every sealing acts behind a speculative-only flow,
+so CT-SEQ requires it to leave the hardware trace unchanged.}
+
+\section{Sealing primitives}
+\label{sec:precond-primitives}
+\scaffold{The primitives, each perturbing one precondition on a speculative-only site
+while the architectural path keeps the genuine fill: PAC signature, MTE tag,
+canonicality, sign-extension, branch target, and page-table (system-configuration)
+preconditions. Note the sign-bit / TBI subtlety (open item in the handout).}
+
+\section{Discussion}
+\label{sec:precond-discussion}
+\scaffold{Every retiring sealing satisfies its precondition by construction, so a
+violation only falls on a speculative-only path and never crashes the test case; each
+primitive restores architectural state right after the sealed access so genuine and
+decoy re-converge and any trace divergence is localized to the sealed instruction.}

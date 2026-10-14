@@ -16,7 +16,7 @@
 % Additionally, you must specify the degree for which you're writing
 % your thesis (MSc/PhD/MArch etc.)
 %
-\documentclass[PhD,with-ethics-statement]{misc/iitthesis}
+\documentclass[MSc,with-ethics-statement]{misc/iitthesis}
 
 
 % Definitions of info fields for the thesis - subject, advisor,
@@ -74,20 +74,16 @@
 \include{main/intro}
 
 %
-% and then cover:
-% - The methods used in the research
-% - The research results
-% - Discussion and conclusions from the results
+% Background, then the research chapters (methods + results), then the
+% discussion/conclusions.
 %
-% but not necessarily with a specific chapter for each of them.
-%
-% Then you have your main chapters (although these might still
-% include an initial chapter on technical preliminaries, experimental
-% system setup, and/or a final chapter with summary, discussion and further
-% research direction or questions)
-
-\include{main/prelims}
-\include{main/mainchap1}
+\include{main/background}
+\include{main/port}
+\include{main/priming}
+\include{main/precond}
+\include{main/canonicality}
+\include{main/evaluation}
+\include{main/related}
 \include{main/conclusion}
 %
 % Add any appendices here; they must come _before_ the bibliography
@@ -95,7 +91,8 @@
 \appendix
 %\noappendicestocpagenum
 %\addappheadtotoc
-\include{main/appendix1}
+\include{main/appendix-localization}
+\include{main/appendix-pocs}
 
 % Back Matter
 % ------------
