@@ -210,15 +210,15 @@ tight; the matching lower bounds and a worked example are in \autoref{appendix:l
 \caption{Linear scan ($a\!\to\!b$); returns $\tmax$}
 \label{alg:prime-scan}
 \begin{algorithmic}[1]
-\State $\mathit{prev} \gets r(k{+}1)$ \Comment{lane $a$, known}
-\For{$t \gets k$ \textbf{down to} $1$}
-  \State $\mathit{cur} \gets \textsc{Measure}(t)$
-  \If{$\mathit{cur} \neq \mathit{prev}$}
-     \State \Return $t,\ (\inp{t}{a}, \inp{t}{b})$ \Comment{boundary}
-  \EndIf
-  \State $\mathit{prev} \gets \mathit{cur}$
-\EndFor
-\State \Return $0,\ (\inp{0}{a}, \inp{0}{b})$
+\STATE $\mathit{prev} \gets r(k{+}1)$ \COMMENT{lane $a$, known}
+\FOR{$t \gets k$ \textbf{down to} $1$}
+  \STATE $\mathit{cur} \gets \textsc{Measure}(t)$
+  \IF{$\mathit{cur} \neq \mathit{prev}$}
+     \RETURN $t,\ (\inp{t}{a}, \inp{t}{b})$ \COMMENT{boundary}
+  \ENDIF
+  \STATE $\mathit{prev} \gets \mathit{cur}$
+\ENDFOR
+\RETURN $0,\ (\inp{0}{a}, \inp{0}{b})$
 \end{algorithmic}
 \end{algorithm}
 
@@ -226,16 +226,16 @@ tight; the matching lower bounds and a worked example are in \autoref{appendix:l
 \caption{Binary search ($a\!\to\!b$)}
 \label{alg:prime-bsearch}
 \begin{algorithmic}[1]
-\State $\ell \gets 0;\quad h \gets k{+}1$ \Comment{$r(\ell)\neq r(h)$, known}
-\While{$h > \ell + 1$}
-  \State $m \gets \lfloor (\ell+h)/2 \rfloor$
-  \If{$\textsc{Measure}(m) \neq r(\ell)$}
-     \State $h \gets m$ \Comment{boundary below $m$}
-  \Else
-     \State $\ell \gets m$ \Comment{boundary above $m$}
-  \EndIf
-\EndWhile
-\State \Return $\ell,\ (\inp{\ell}{a}, \inp{\ell}{b})$
+\STATE $\ell \gets 0;\quad h \gets k{+}1$ \COMMENT{$r(\ell)\neq r(h)$, known}
+\WHILE{$h > \ell + 1$}
+  \STATE $m \gets \lfloor (\ell+h)/2 \rfloor$
+  \IF{$\textsc{Measure}(m) \neq r(\ell)$}
+     \STATE $h \gets m$ \COMMENT{boundary below $m$}
+  \ELSE
+     \STATE $\ell \gets m$ \COMMENT{boundary above $m$}
+  \ENDIF
+\ENDWHILE
+\RETURN $\ell,\ (\inp{\ell}{a}, \inp{\ell}{b})$
 \end{algorithmic}
 \end{algorithm}
 

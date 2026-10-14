@@ -8,6 +8,22 @@
 \usepackage{xspace}
 \usepackage{xcolor}
 \usepackage{pifont}
+
+% ---- figures: TikZ, coloured table cells, and the shared figure palette ----
+% (If the Overleaf build complains that bidi must be loaded last, these are the
+%  packages to watch; TikZ normally loads fine after polyglossia/bidi here.)
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,calc,positioning,decorations.pathreplacing,matrix,fit,backgrounds}
+\usepackage{colortbl}
+\definecolor{laneA}{RGB}{130,90,170}
+\definecolor{laneB}{RGB}{230,126,34}
+\definecolor{iscol}{RGB}{120,120,120}
+\definecolor{probe}{RGB}{39,174,96}
+\definecolor{culprit}{RGB}{170,30,30}
+\definecolor{softA}{RGB}{226,216,240}
+\definecolor{softB}{RGB}{253,224,196}
+\definecolor{softP}{RGB}{212,239,223}
+
 \newcommand{\revizor}{\textsc{Revizor}\xspace}
 \newcommand{\reg}[1]{\texttt{#1}}
 \newcommand{\cmark}{\ding{51}}
