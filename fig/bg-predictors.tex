@@ -1,0 +1,26 @@
+\begin{tikzpicture}[
+  font=\footnotesize,
+  box/.style={draw=black!65, fill=black!4, rounded corners=2.5pt, thick,
+              align=center, minimum width=26mm, minimum height=8mm, inner sep=2pt},
+  fe/.style={draw=black!70, fill=laneA!14, rounded corners=2.5pt, thick,
+             align=center, minimum width=24mm, minimum height=13mm, inner sep=2pt},
+  ar/.style={-{Stealth[length=1.8mm]}, thick, draw=black!70},
+  lbl/.style={font=\scriptsize, text=black!65, align=center},
+]
+  % predictor structures (left)
+  \node[box] (phr)  at (0, 2.1) {PHR\\[-1pt]{\scriptsize global branch history}};
+  \node[box] (tage) at (0, 0.7) {TAGE\\[-1pt]{\scriptsize direction: taken?}};
+  \node[box] (btb)  at (0,-0.7) {BTB / ITTAGE\\[-1pt]{\scriptsize branch target}};
+  \node[box] (rsb)  at (0,-2.1) {RSB\\[-1pt]{\scriptsize return target}};
+  % fetch / next-PC (right)
+  \node[fe] (fe) at (4.6, 0) {Fetch\\ \textbf{predicted}\\ \textbf{next PC}};
+  \draw[ar] (phr) -- (tage);
+  \draw[ar] (tage.east) -- (fe.west);
+  \draw[ar] (btb.east)  -- (fe.west);
+  \draw[ar] (rsb.east)  -- (fe.west);
+  \node[fe, draw=probe!60!black, fill=probe!12, minimum height=8mm] (spec) at (9.0,0)
+     {speculative\\ execution};
+  \draw[ar] (fe) -- node[lbl, above]{fetch past} (spec);
+  \node[lbl, align=center, text=black!60] at (4.6,-2.2)
+     {each table is per-core, finite,\\ and trainable across domains};
+\end{tikzpicture}

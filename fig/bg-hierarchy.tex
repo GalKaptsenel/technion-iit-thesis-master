@@ -1,0 +1,45 @@
+\begin{tikzpicture}[
+  font=\footnotesize,
+  core/.style={draw=black!70, fill=laneA!14, rounded corners=2.5pt, thick,
+               align=center, minimum width=20mm, minimum height=10mm, inner sep=2pt},
+  cache/.style={draw=black!65, fill=black!5, rounded corners=2.5pt, thick,
+                align=center, minimum width=17mm, minimum height=9mm, inner sep=2pt},
+  tlb/.style={draw=black!55, fill=laneB!16, rounded corners=2pt, thick,
+              align=center, minimum width=15mm, minimum height=7mm, inner sep=2pt},
+  shared/.style={draw=black!65, fill=probe!12, rounded corners=2.5pt, thick,
+                 align=center, minimum width=20mm, minimum height=9mm, inner sep=2pt},
+  dram/.style={draw=black!60, fill=black!8, rounded corners=2.5pt, thick,
+               align=center, minimum width=20mm, minimum height=9mm, inner sep=2pt},
+  pf/.style={draw=culprit!60, fill=culprit!8, rounded corners=2pt, thick,
+             align=center, minimum width=17mm, minimum height=7mm, inner sep=2pt},
+  ar/.style={{Stealth[length=1.6mm]}-{Stealth[length=1.6mm]}, thick, draw=black!70},
+  lbl/.style={font=\scriptsize, text=black!60, align=center},
+]
+  \node[core] (core) at (0,0) {Core};
+  \node[cache] (l1i) at (2.6, 0.95) {L1I};
+  \node[cache] (l1d) at (2.6,-0.95) {L1D};
+  \node[cache] (l2)  at (5.0, 0)    {L2};
+  \node[shared](llc) at (7.6, 0)    {LLC\\{\scriptsize shared}};
+  \node[dram]  (dram)at (10.2,0)    {DRAM};
+  \draw[ar] (core.east) -- (l1i.west);
+  \draw[ar] (core.east) -- (l1d.west);
+  \draw[ar] (l1i.east) -- (l2.north west);
+  \draw[ar] (l1d.east) -- (l2.south west);
+  \draw[ar] (l2) -- (llc);
+  \draw[ar] (llc) -- (dram);
+  % TLBs alongside the core
+  \node[tlb] (itlb) at (0,1.9) {iTLB};
+  \node[tlb] (dtlb) at (0,-1.9) {dTLB};
+  \draw[ar] (core.north) -- (itlb.south);
+  \draw[ar] (core.south) -- (dtlb.north);
+  % prefetcher
+  \node[pf] (pf) at (5.0,-2.1) {prefetcher};
+  \draw[-{Stealth[length=1.6mm]}, thick, draw=culprit!70] (pf.north) -- (l2.south);
+  \node[lbl, anchor=west] at (5.9,-2.1) {pulls in lines ahead of use};
+  % latency scale (raised to clear the iTLB box)
+  \node[lbl] at (2.6,3.05) {few cycles};
+  \node[lbl] at (7.6,3.05) {tens};
+  \node[lbl] at (10.2,3.05) {hundreds of cycles};
+  \draw[-{Stealth[length=1.8mm]}, draw=black!45] (1.6,2.7) -- (11.0,2.7);
+  \node[lbl, anchor=east, text=black!50] at (1.5,2.7) {latency:};
+\end{tikzpicture}

@@ -8,7 +8,9 @@ nor the AArch64 security extensions should be able to follow the contributions f
 \autoref{sec:bg-speculation} and \autoref{sec:bg-sidechannels} recall out-of-order and
 speculative execution and the side channels that make its transient effects observable.
 \autoref{sec:bg-spectre} works through the transient-execution attacks, with a detailed
-Spectre-v1 example. \autoref{sec:bg-aarch64} describes the AArch64 isolation boundaries, the
+Spectre-v1 example, and \autoref{sec:bg-exploitation} the stack-canary and
+return-oriented-programming primitives the end-to-end attacks build on.
+\autoref{sec:bg-aarch64} describes the AArch64 isolation boundaries, the
 layout of a 64-bit pointer, and the security extensions---Pointer Authentication and Memory
 Tagging---whose preconditions this thesis fuzzes, and \autoref{sec:bg-arm-attacks} the
 hand-crafted attacks against them. \autoref{sec:bg-mrt} introduces speculation contracts,
@@ -62,6 +64,48 @@ squashed and \reg{t} is never written. Architecturally nothing happened. But the
 line \reg{a[i]} was brought into the cache and remains there, and the rest of this chapter is
 about turning that residue into a readable signal.
 
+\subsection{Branch predictors and indirect branches}
+\label{sec:bg-predictors}
+
+Speculation past a branch needs two guesses: whether a conditional branch is \emph{taken}, and, for
+an \emph{indirect} branch, where it goes. An indirect branch takes its target from a register or
+from memory, as a function pointer, a C++ virtual call, a jump table, or a return, so the target is
+not encoded in the instruction and must be predicted. Separate structures supply these guesses
+(\autoref{fig:bg-predictors}), and each is a shared, finite table an attacker can train or probe.
+
+\begin{figure}[t]
+\centering
+\fitwidth{\input{fig/bg-predictors}}
+\caption{The branch-prediction structures. A pattern history register (PHR) feeds TAGE for the
+taken or not-taken direction, the branch-target buffer (BTB) and ITTAGE supply indirect-branch
+targets, and the return stack buffer (RSB) supplies return targets. Each is a per-core, finite,
+trainable table.}
+\label{fig:bg-predictors}
+\end{figure}
+
+\paragraph{Direction.} The simplest direction predictor is a table of \emph{saturating counters}:
+each branch indexes a small (typically two-bit) counter, incremented when the branch is taken and
+decremented when it is not, whose top bit gives the prediction, so a stable branch must mispredict
+twice to flip. Accuracy improves by conditioning on \emph{history}. A \emph{pattern history
+register} (PHR) shifts in the outcomes of the most recent branches, and the predictor indexes its
+tables with a hash of the branch address and the PHR. Modern cores use \emph{TAGE}, which keeps
+several tagged tables indexed with \emph{geometrically} increasing history lengths and predicts from
+the longest-history table that matches, capturing both short and very long correlations.
+
+\paragraph{Target.} The \emph{branch-target buffer} (BTB) caches, per branch address, the target a
+branch last took, which predicts direct and stable indirect branches. For indirect branches that
+switch targets, \emph{ITTAGE} is the target-prediction analogue of TAGE, selecting the target from
+tagged, geometric-history-indexed tables. Function returns use a dedicated \emph{return stack
+buffer} (RSB), a small hardware stack pushed on a call and popped on a return. All three are
+per-core and are not, in general, partitioned by security domain, so they can be trained across the
+boundaries of \autoref{sec:bg-aarch64}.
+
+\paragraph{Memory order.} A load whose address is not yet resolved may alias an older, in-flight
+store. Rather than stall, the core predicts independence and lets the load execute, a
+\emph{store-load reordering} governed by a memory-dependence predictor. When the guess is wrong, the
+load did alias the store, and the resulting memory-ordering misspeculation is the window
+Spectre-v4 abuses.
+
 \section{Microarchitectural side channels}
 \label{sec:bg-sidechannels}
 
@@ -71,6 +115,29 @@ structure with the victim and infers the victim's effect on that structure from 
 its own accesses to it. Because the shared structure is finite and its state is visible through
 timing, one party's activity is measurable by the other even when the architecture forbids them
 from reading each other's data.
+
+\subsection{The cache and TLB hierarchy}
+\label{sec:bg-hierarchy}
+
+The structures these channels ride sit in a hierarchy between the core and main memory
+(\autoref{fig:bg-hierarchy}). Each core has two first-level caches, an \emph{L1 instruction cache}
+(L1I) and an \emph{L1 data cache} (L1D), backed by a unified \emph{level-2} cache (L2) and a larger
+\emph{last-level cache} (LLC) shared across cores. A line held near the core returns in a few
+cycles, one fetched from the LLC or DRAM in tens to hundreds, and that latency gap is what a cache
+side channel reads. Address translation is cached the same way, in a \emph{data} and an
+\emph{instruction} translation lookaside buffer (dTLB, iTLB), so an access whose page translation is
+cached avoids a slow page-table walk. A \emph{hardware prefetcher} also watches the access stream and
+pulls in lines it expects next, for example at a fixed stride. Because it brings in lines the program
+never asked for, the prefetcher is itself a secret-dependent carrier (\autoref{chap:priming}).
+
+\begin{figure}[t]
+\centering
+\fitwidth{\input{fig/bg-hierarchy}}
+\caption{The per-core cache and TLB hierarchy. L1I and L1D are backed by L2, a shared LLC, and DRAM,
+with access latency growing from a few cycles to hundreds. The dTLB and iTLB cache address
+translations, and the hardware prefetcher fills lines ahead of use.}
+\label{fig:bg-hierarchy}
+\end{figure}
 
 The best-known carriers are the data caches. Two complementary techniques dominate.
 \begin{description}
@@ -117,6 +184,36 @@ reach the attacker-monitored L1 data cache only later, possibly in a subsequent 
 distinction---between where a leak is first written and where it is finally read---is central to
 \autoref{chap:priming} and \autoref{chap:canon}, where the carrier is a structure other than the
 monitored cache and the signal surfaces only on a later run.
+
+\subsection{Reading the channel: timers and the PMU}
+\label{sec:bg-pmu}
+
+Every channel above is read as a latency, so an attacker needs a clock, and AArch64 offers a few
+that trade resolution against the privilege they need (\autoref{tab:bg-counters}). The \emph{generic
+timer} is a virtual counter any unprivileged program can read (\reg{CNTVCT\_EL0}), but its tick is
+coarse, so a single cache hit often has to be amplified over many repetitions before it stands out.
+The \emph{performance monitoring unit} (PMU) is much finer. It provides a cycle counter and a set of
+event counters that can be told to count events such as L1D refills, TLB refills, or mispredicted
+branches, all per core and at cycle granularity. That precision makes the PMU the sharpest
+instrument, but user-space access is disabled by default and must be enabled by the kernel, so an
+unprivileged attacker usually falls back to the generic timer. The attacks of \autoref{chap:eval}
+are shown both ways, with the PMU where it is available and with the rootless generic timer
+otherwise, to confirm the leak does not depend on special privilege.
+
+\begin{table}[t]
+\centering\small
+\caption{AArch64 measurement sources used in this thesis.}
+\label{tab:bg-counters}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Source & Register & Access at EL0 & Resolution \\
+\midrule
+Generic timer & \reg{CNTVCT\_EL0}  & always readable    & coarse \\
+Cycle counter & \reg{PMCCNTR\_EL0} & kernel must enable & one cycle \\
+Event counter & \reg{PMEVCNTR\_EL0} & kernel must enable & one event \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \section{Transient-execution attacks}
 \label{sec:bg-spectre}
@@ -180,6 +277,36 @@ The family is distinguished by the speculation primitive it abuses.
 \autoref{chap:canon} uses Spectre-v1, Spectre-v4, and Spectre-RSB interchangeably as windows that
 reach the same precondition check transiently, which is what makes the leak it studies robust to
 the particular primitive a target exposes.
+
+\section{Stack canaries and return-oriented programming}
+\label{sec:bg-exploitation}
+
+The end-to-end attacks of \autoref{chap:eval} turn a speculative read into control-flow hijacking,
+which brings in two classical exploitation ideas (\autoref{fig:bg-ropstack}).
+
+A \emph{stack canary} is a per-process random value the compiler places between a function's local
+buffers and its saved return address. The function re-checks the canary just before returning and
+aborts if it changed, so a linear buffer overflow that reaches the return address is caught, because
+it has to overwrite the canary on the way. Defeating the protection therefore means first learning
+the canary value, after which the overflow can be written with the canary left intact.
+
+\emph{Return-oriented programming} (ROP) then turns the overflow into computation without injecting
+any code, which is what gets past a non-executable stack. The attacker overwrites the saved return
+address, and the words above it, with a chain of addresses of \emph{gadgets}: short instruction
+sequences that already exist in the victim's own code and end in a return. Each gadget does one small
+step and returns into the next, so the chain carries out arbitrary work built entirely from the
+target's existing bytes. \autoref{chap:eval} drives such a chain, assembled from gadgets in OpenSSL,
+to read a victim's memory and recover an RSA-2048 key.
+
+\begin{figure}[t]
+\centering
+\fitwidth{\input{fig/bg-ropstack}}
+\caption{Stack-canary and ROP layout. A linear overflow from a local buffer must preserve the stack
+canary to avoid detection, then overwrites the saved return address and the words above it with a
+chain of gadget addresses. Each gadget is a short sequence ending in a return, found in the victim's
+own code, and returns into the next.}
+\label{fig:bg-ropstack}
+\end{figure}
 
 \section{The AArch64 security architecture}
 \label{sec:bg-aarch64}
