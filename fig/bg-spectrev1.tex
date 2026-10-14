@@ -1,0 +1,37 @@
+\begin{tikzpicture}[
+  font=\footnotesize,
+  code/.style={draw=black!45, fill=black!3, rounded corners=2pt, align=left,
+               inner sep=4pt, font=\ttfamily\footnotesize},
+  ev/.style={draw=black!60, thick, rounded corners=2pt, align=center,
+             minimum height=9mm, inner sep=2.5pt, fill=black!4, text width=24mm},
+  spec/.style={ev, draw=culprit!70, fill=culprit!8},
+  cell/.style={draw=black!45, minimum width=5mm, minimum height=5mm, inner sep=0pt, font=\tiny},
+  hot/.style={cell, fill=culprit!22, draw=culprit!65},
+  cold/.style={cell, fill=black!3},
+  ar/.style={-{Stealth[length=1.8mm]}, semithick, draw=black!70},
+  sar/.style={-{Stealth[length=1.8mm]}, semithick, draw=culprit!70},
+  lbl/.style={font=\scriptsize, text=black!65, align=center},
+]
+  % gadget code
+  \node[code, anchor=north west] (gad) at (0,3.0)
+     {if (x < len)\ \ \ \ \ \ // bound check\\ \ \ \ y = arr2[\,arr1[x]\,*\,64\,];};
+  \node[lbl, anchor=west, text=culprit] at (0.1,1.95)
+     {branch \emph{mistrained} taken; call it with out-of-bounds \texttt{x}};
+  % transient timeline
+  \node[spec] (e1) at (1.4,0.7)  {predict\\ \texttt{x<len} taken};
+  \node[spec] (e2) at (4.4,0.7)  {load \texttt{arr1[x]}\\ $\to$ secret $s$};
+  \node[spec] (e3) at (7.4,0.7)  {load \texttt{arr2[$s{\cdot}64$]}\\ brings in line $s$};
+  \node[ev]   (e4) at (10.4,0.7) {resolve: \texttt{x$\ge$len}\\ \emph{squash}};
+  \draw[sar] (e1) -- (e2);
+  \draw[sar] (e2) -- (e3);
+  \draw[ar]  (e3) -- (e4);
+  \node[lbl, anchor=north, text=culprit] at (4.4,0.05) {transient path (rolled back architecturally)};
+  % cache footprint
+  \node[lbl, anchor=east] at (-0.15,-1.75) {\texttt{arr2} lines:};
+  \foreach \i in {0,...,11}{
+     \ifnum\i=7 \node[hot] (c\i) at ({0.3+\i*0.56},-1.75) {$s$};
+     \else \node[cold] (c\i) at ({0.3+\i*0.56},-1.75) {\i};\fi}
+  \draw[sar] (e3.south) to[out=-90,in=90] (c7.north);
+  \node[lbl, anchor=west, text=culprit] at ({0.3+12*0.56},-1.75)
+     {attacker Flush+Reloads \texttt{arr2}: the hot line reveals $s$};
+\end{tikzpicture}

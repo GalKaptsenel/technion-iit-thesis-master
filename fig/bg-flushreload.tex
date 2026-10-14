@@ -1,0 +1,28 @@
+\begin{tikzpicture}[
+  font=\footnotesize,
+  ph/.style={draw=black!60, thick, rounded corners=2.5pt, fill=black!3,
+             align=center, minimum width=36mm, minimum height=15mm, inner sep=3pt},
+  line/.style={draw=black!55, minimum width=7mm, minimum height=5mm, inner sep=0pt, font=\scriptsize},
+  cached/.style={line, fill=probe!25, draw=probe!60!black},
+  flushed/.style={line, fill=black!5},
+  ar/.style={-{Stealth[length=2mm]}, thick, draw=black!70},
+  lbl/.style={font=\scriptsize, text=black!65, align=center},
+]
+  % three phases, left to right
+  \node[ph] (p1) at (0,0)
+     {\textbf{1. Flush}\\ {\scriptsize evict the shared line}};
+  \node[ph] (p2) at (4.4,0)
+     {\textbf{2. Victim runs}\\ {\scriptsize accesses line if secret\,$=1$}};
+  \node[ph] (p3) at (8.8,0)
+     {\textbf{3. Reload + time}\\ {\scriptsize measure access latency}};
+  \draw[ar] (p1) -- (p2);
+  \draw[ar] (p2) -- (p3);
+  % timing comparison
+  \def\ty{-2.75}
+  \draw[ar] (0.0,\ty) -- (10.8,\ty) node[lbl, anchor=west, text=black!70]{access latency};
+  \draw[black!45, dashed] (3.1,{\ty-0.15}) -- (3.1,{\ty+1.55}) node[lbl, above, text=black!60]{threshold};
+  \fill[probe!35, draw=probe!60!black] (0.1,{\ty+0.15}) rectangle (2.3,{\ty+0.65});
+  \node[lbl, anchor=west, text=probe!45!black] at (2.4,{\ty+0.4}) {\textbf{fast} $\Rightarrow$ cache \emph{hit}: victim accessed it (bit $=1$)};
+  \fill[culprit!22, draw=culprit!60] (0.1,{\ty+0.95}) rectangle (6.6,{\ty+1.45});
+  \node[lbl, anchor=west, text=culprit] at (6.7,{\ty+1.2}) {\textbf{slow} $\Rightarrow$ cache \emph{miss}: untouched (bit $=0$)};
+\end{tikzpicture}

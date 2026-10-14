@@ -26,7 +26,19 @@ allocates microarchitectural state as usual---a line in the L1 data cache, an en
 data or instruction TLB, a way in the branch-target buffer, and more---whereas a speculative
 access to an \emph{out-of-range} target is fast-rejected before it allocates anything and
 leaves no footprint, even when it would have faulted only after retirement. The presence or
-absence of that footprint is thus a one-bit oracle on the canonicality of the accessed pointer.
+absence of that footprint is thus a one-bit oracle on the canonicality of the accessed pointer
+(\autoref{fig:canon-oracle}).
+
+\begin{figure}[t]
+\centering
+\fitwidth{\input{fig/canonoracle}}
+\caption{The canonicality oracle. A speculative access to an in-range pointer allocates
+microarchitectural state (a line, a TLB entry, a BTB way); an out-of-range access is fast-rejected
+before it allocates anything. Making a target's legality depend on a secret bit turns the presence
+or absence of that footprint into a one-bit read of the secret, and the illegal access only ever
+happens on a squashed path, so the procedure never faults.}
+\label{fig:canon-oracle}
+\end{figure}
 
 We weaponize the oracle by making the legality of a speculative target depend on a secret the
 victim holds, so that one footprint measurement answers one yes/no question about the secret.

@@ -1,0 +1,26 @@
+\begin{tikzpicture}[
+  font=\footnotesize,
+  st/.style={draw=black!70, fill=black!4, rounded corners=2.5pt, thick,
+             align=center, minimum width=24mm, minimum height=9mm, inner sep=2pt},
+  fin/.style={st, fill=black!12},
+  ed/.style={-{Stealth[length=1.6mm,width=1.4mm]}, semithick, draw=black!75},
+  lbl/.style={font=\scriptsize, text=black!70, inner sep=1.5pt},
+]
+  \node[st]  (cfg) at (0,0)      {\textsc{Config}\\{\scriptsize no test, no inputs}};
+  \node[st]  (lt)  at (4.0,1.7)  {\textsc{Loaded Test}\\{\scriptsize test only}};
+  \node[st]  (li)  at (4.0,-1.7) {\textsc{Loaded Inputs}\\{\scriptsize inputs only}};
+  \node[st]  (rdy) at (8.0,0)    {\textsc{Ready}\\{\scriptsize test + inputs}};
+  \node[fin] (tr)  at (11.2,0)   {\textsc{Traced}\\{\scriptsize measured}};
+  \draw[ed] (cfg) to[bend left=12]  node[lbl,above left=-3pt]{write test}   (lt);
+  \draw[ed] (lt)  to[bend left=12]  node[lbl,below right=-3pt]{unload test} (cfg);
+  \draw[ed] (cfg) to[bend right=12] node[lbl,below left=-3pt]{write input}  (li);
+  \draw[ed] (li)  to[bend right=12] node[lbl,above right=-3pt]{clear inputs} (cfg);
+  \draw[ed] (lt)  to[bend left=12]  node[lbl,above right=-3pt]{write input} (rdy);
+  \draw[ed] (rdy) to[bend left=12]  node[lbl,below left=-3pt]{clear inputs} (lt);
+  \draw[ed] (li)  to[bend right=12] node[lbl,below right=-3pt]{write test}  (rdy);
+  \draw[ed] (rdy) to[bend right=12] node[lbl,above left=-3pt]{unload test}  (li);
+  \draw[ed] (rdy) -- node[lbl,above]{\textsc{trace}} (tr);
+  \draw[ed] (tr) to[out=-60,in=-120,looseness=6] node[lbl,below]{re-run} (tr);
+  \draw[ed] (tr) to[bend right=26] node[lbl,above]{clear inputs} (lt);
+  \draw[ed] (tr) to[bend left=26]  node[lbl,below]{unload test}  (li);
+\end{tikzpicture}

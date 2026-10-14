@@ -28,6 +28,9 @@
 \newcommand{\reg}[1]{\texttt{#1}}
 \newcommand{\cmark}{\ding{51}}
 \newcommand{\xmark}{\ding{55}}
+% Shrink a figure to the text width only when it is wider; never enlarge.
+% (\width is the natural size of the box inside \resizebox; graphicx comes in via TikZ.)
+\newcommand{\fitwidth}[1]{\resizebox{\ifdim\width>\linewidth \linewidth\else \width\fi}{!}{#1}}
 % A draft numeric value still to be measured/confirmed, rendered red.
 \newcommand{\rv}[1]{\textcolor{red}{\textbf{#1}}}
 
@@ -50,3 +53,8 @@
 \newcommand{\spl}[1]{\sigma_{a\to b}(#1)}
 \newcommand{\Al}{\mathit{Attack}_{\mathrm{L1D}}}
 \newcommand{\AQ}[1]{\mathit{Attack}^{Q}_{#1}}
+
+% algcompatible (loaded by iitthesis-extra) provides \STATE/\IF/\FOR/\WHILE/\COMMENT
+% but not \RETURN; add it in the same uppercase style, as algpseudocode's \Return.
+\algnewcommand\algorithmicreturn{\textbf{return}}
+\algnewcommand\RETURN{\STATE \algorithmicreturn{} }

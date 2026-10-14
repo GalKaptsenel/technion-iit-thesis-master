@@ -71,6 +71,20 @@ the window $h-\ell$ from $n$ to at most $\lceil n/2\rceil$, so from $k+1$ it rea
 most $\lceil\log_2(k+1)\rceil$ runs, at which point $h=\ell+1$ and $r(\ell)\neq r(\ell+1)$.
 \end{proof}
 
+\autoref{fig:binsearch} works the search end to end on $12$ inputs with the leak at class~$4$,
+locating the boundary in four runs.
+
+\begin{figure}[p]
+\centering
+\fitwidth{\input{fig/binsearch}}
+\caption{Binary search on $12$ inputs with the leak at class~$4$. Each iteration runs one midpoint
+splice $\batch{\spl{m}}$ and compares its probe reading against a known end; the red frame marks the
+window $[\ell,h]$, i.e.\ columns $\ell,\dots,h-1$. The search converges to $h=\ell+1$, where the two
+remaining splices differ in column~$4$ alone, certifying class~$4$ as the leaking class after four
+runs.}
+\label{fig:binsearch}
+\end{figure}
+
 \begin{theorem}[Finding a boundary needs $\lceil\log_2(k+1)\rceil$ runs]
 \label{thm:lb-bsearch}
 Every localizer that always returns a boundary runs at least $\lceil\log_2(k+1)\rceil$ batches on

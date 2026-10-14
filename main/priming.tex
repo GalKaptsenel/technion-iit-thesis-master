@@ -20,12 +20,25 @@ in \autoref{appendix:localization}.
 
 Priming assumes that an input's leakage appears in its own L1D trace. It fails when the leakage is
 written to a carrier structure other than the L1D and is not reset between inputs. Two examples
-make this concrete, and both are observable in the L1D---they lie within \revizor{}'s own threat
-model---yet priming discards them.
+make this concrete (\autoref{fig:priming-miss}), and both are observable in the L1D---they lie
+within \revizor{}'s own threat model---yet priming discards them.
+
+\begin{figure}[t]
+\centering
+\fitwidth{\input{fig/miss}}
+\caption{Two L1D-observable leaks current priming drops. \textbf{(a)} An indirect call trains the
+BTB; the probe mispredicts, speculatively runs \reg{ldr[0]}, and leaves line~$0$ (the
+architectural \reg{ldr[128]} is the grey arrow). \textbf{(b)} A strided burst confirms stride $S$;
+the probe's own read touches line~$0$, while the carried-over stream prefetches lines at stride
+$S$ it never loads, revealing $S$. In both cases the leak surfaces in the probe's L1D, yet the
+difference tracks the carried-over context, which is what makes priming discard it.}
+\label{fig:priming-miss}
+\end{figure}
 
 \paragraph{A branch-target-buffer leak.}
 Consider a gadget that makes an indirect call \reg{blr x0} and then loads through the returned
-value, where the two possible targets return $0$ and $128$. The input's target trains the call
+value, where the two possible targets return $0$ and $128$ (\autoref{fig:priming-miss}(a)). The
+input's target trains the call
 site's BTB, and because the test case is loop-free the call runs once. The trained entry surfaces
 on the next run: after one run trains the first target, the next run---of a contract-equivalent
 input that calls the second target---mispredicts to the first, speculatively loads line~$0$, and
@@ -35,13 +48,66 @@ secret. Priming nonetheless discards the pair: the two contract-equivalent input
 architecturally identical, so in a common slot they behave alike, and the footprint tracks the
 slot rather than the input---exactly the false-positive condition.
 
+\paragraph{Why priming drops it.}
+Take the batch $\batch{I_A,I_B,I_C}$ with $I_A$ calling the first target and $I_B,I_C$ the second;
+the two second-target inputs share a contract class. Input $I_B$ runs after $I_A$, follows a
+first-target slot, mispredicts, and leaves $\{0,128\}$; input $I_C$ runs after $I_B$, follows a
+second-target slot, and leaves $\{128\}$---a candidate, since two contract-equivalent inputs differ
+in their L1D trace. But $I_B$ and $I_C$ are architecturally identical, so compared \emph{within the
+same slot} they agree (\autoref{tab:priming-drop-btb}): each column is constant, the footprint
+tracks the slot and not the input, and priming records a false positive even though the first run's
+secret does reach the probe's L1D.
+
+\begin{table}[t]
+\centering\footnotesize
+\setlength{\tabcolsep}{7pt}
+\caption{Priming the candidate $(I_B,I_C)$ of \autoref{fig:priming-miss}(a). \revizor{} flags the
+two starred cells on the diagonal, which differ; but priming compares the inputs within each slot
+(each column), and both columns agree, so the difference tracks the slot, not the input: a false
+positive.}
+\label{tab:priming-drop-btb}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+ & slot after first target & slot after second target \\
+\midrule
+$I_B$ (second target) & \cellcolor{blue!8}$\{0,128\}^\star$ & \cellcolor{green!9}$\{128\}$ \\
+$I_C$ (second target) & \cellcolor{blue!8}$\{0,128\}$ & \cellcolor{green!9}$\{128\}^\star$ \\
+\midrule
+\textit{priming compares} & \cellcolor{blue!8}equal & \cellcolor{green!9}equal \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \paragraph{A hardware-prefetcher leak.}
 Consider a gadget that issues three reads at an input-chosen stride, confirming that stride to a
-stride prefetcher that then runs ahead. After one run confirms stride $S$, a later
+stride prefetcher that then runs ahead (\autoref{fig:priming-miss}(b)). After one run confirms
+stride $S$, a later
 contract-equivalent run at a fixed stride still has the carried-over stream prefetch lines at
 stride $S$ that it never issues, so its L1D carries stride-$S$ lines that reveal the earlier run's
 secret. Again the two inputs are architecturally identical, so priming records a false positive,
-though the secret does reach the probe's L1D.
+though the secret does reach the probe's L1D. The batch $\batch{I_A,I_B,I_C}$ plays out exactly as
+before (\autoref{tab:priming-drop-pf}): $I_A$ confirms stride $S$, $I_B$ then carries the stale
+stride-$S$ prefetches $\{S,2S\}$ on top of its own $\{0,F,2F\}$, and $I_C$ leaves only $\{0,F,2F\}$;
+within each slot $I_B$ and $I_C$ agree.
+
+\begin{table}[t]
+\centering\footnotesize
+\setlength{\tabcolsep}{7pt}
+\caption{Priming the candidate $(I_B,I_C)$ of \autoref{fig:priming-miss}(b). The probe's own lines
+$\{0,F,2F\}$ and the stale stride-$S$ prefetches $\{S,2S\}$ carried from an $I_A$ predecessor; both
+columns agree, so priming records a false positive.}
+\label{tab:priming-drop-pf}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+ & slot after stride $S$ & slot after stride $F$ \\
+\midrule
+$I_B$ (stride $F$) & \cellcolor{blue!8}$\{0,F,2F,S,2S\}^\star$ & \cellcolor{green!9}$\{0,F,2F\}$ \\
+$I_C$ (stride $F$) & \cellcolor{blue!8}$\{0,F,2F,S,2S\}$ & \cellcolor{green!9}$\{0,F,2F\}^\star$ \\
+\midrule
+\textit{priming compares} & \cellcolor{blue!8}equal & \cellcolor{green!9}equal \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \section{Revizor's gap, formally}
 \label{sec:priming-model}
@@ -136,20 +202,41 @@ and we write $\batch{I_0,\dots,I_n}$ for the batch that runs $\IS$ and then thos
 \emph{lane} is a sequence of $k+1$ inputs run as its own batch. \emph{Lane boosting} derives each
 further lane from the first by boosting every entry, so position $m$ of two lanes holds distinct
 inputs of the same class, which we call class $m$. Stacking the lanes gives a matrix whose rows are
-lanes (and batches) and whose columns are classes. \revizor{} flags a candidate when two lanes
+lanes (and batches) and whose columns are classes (\autoref{fig:priming-lanes}). \revizor{} flags
+a candidate when two lanes
 differ in their L1D trace at the same column. Without loss of generality the flag sits at the last
 class $k$, the \emph{probe}.
+
+\begin{figure}[t]
+\centering
+\fitwidth{\input{fig/lanes}}
+\caption{Lanes and classes. Lane $a$ is the batch that flagged the candidate; each further lane
+($b$, $c$, \dots) boosts it class by class. A column is one contract class, a row is one batch, and
+the probe (class $k$) is where the suspected leak is read.}
+\label{fig:priming-lanes}
+\end{figure}
 
 \begin{definition}[Splice and splice measurement]
 \label{def:splice}
 For two lanes $a,b$ and a split $t\in\{0,\dots,k+1\}$, the \emph{splice} $\spl{t}$ takes columns
 before $t$ from lane $a$ and columns from $t$ on from lane $b$, run as its own batch. The endpoints
 recover the lanes, $\spl{0}=\lane{b}$ and $\spl{k+1}=\lane{a}$, and neighbouring splices $\spl{t}$
-and $\spl{t+1}$ differ in column $t$ alone. The \emph{splice measurement} $r(t)=\Al(P,c_t,\mu_t)$
+and $\spl{t+1}$ differ in column $t$ alone (\autoref{fig:priming-splice}). The \emph{splice
+measurement} $r(t)=\Al(P,c_t,\mu_t)$
 is the L1D trace of the probe run of $\batch{\spl{t}}$, where $c_t$ is the probe input and $\mu_t$
 the context the preceding inputs leave. Since $r(0)$ and $r(k+1)$ are the readings of the two
 flagged lanes, $r(0)\neq r(k+1)$.
 \end{definition}
+
+\begin{figure}[t]
+\centering
+\fitwidth{\input{fig/splice}}
+\caption{Two neighbouring splices. They agree on $\IS$, on the prefix taken from lane $a$, and on
+the suffix taken from lane $b$ (the probe among it), and disagree only at column $t$. The probe
+reading $r(t)$ is taken after the whole batch has run, so neighbouring splices isolate the effect
+of a single column.}
+\label{fig:priming-splice}
+\end{figure}
 
 \section{A boundary certifies a violation}
 \label{sec:priming-boundary}

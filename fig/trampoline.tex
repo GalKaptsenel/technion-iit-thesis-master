@@ -1,0 +1,23 @@
+\begin{tikzpicture}[
+  font=\footnotesize,
+  stp/.style={draw=black!70, fill=black!4, rounded corners=2.5pt, thick,
+              align=center, text width=44mm, minimum height=7mm, inner sep=3pt},
+  ar/.style={-{Stealth[length=1.8mm,width=1.6mm]}, thick, draw=black!75},
+  lbl/.style={font=\scriptsize, text=black!65, inner sep=1.5pt},
+]
+  \node[stp] (rs) at (0,0)    {restore instruction $i$ at the PC};
+  \node[stp] (ex) at (0,-1.55){execute instruction $i$ natively on the CUT};
+  \node[stp] (tr) at (0,-3.1) {\texttt{BL} trampoline: save register context};
+  \node[stp] (hk) at (0,-4.95){hook: record architectural state;\\ drive speculation\\ {\scriptsize (checkpoint $\cdot$ redirect $\cdot$ roll back)}};
+  \draw[ar] (rs) -- (ex);
+  \draw[ar] (ex) -- (tr) node[lbl,midway,right=1pt]{next executed word is \texttt{BL hook}};
+  \draw[ar] (tr) -- (hk);
+  \draw[ar] (hk.west) -- ++(-0.75,0) |- (rs.west);
+  \node[lbl, rotate=90, fill=white, inner sep=1pt] at (-2.95,-2.475) {next instruction};
+  \path let \p1 = (current bounding box.north east),
+            \p2 = (current bounding box.south west),
+            \n1 = {max(\x1, -\x2)} in
+        coordinate (bbne) at (\n1, \y1) coordinate (bbsw) at (-\n1, \y2);
+  \pgfresetboundingbox
+  \useasboundingbox (bbsw) rectangle (bbne);
+\end{tikzpicture}

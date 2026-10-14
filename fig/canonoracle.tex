@@ -1,0 +1,31 @@
+\begin{tikzpicture}[
+  font=\footnotesize,
+  ptr/.style={draw=black!55, rounded corners=2pt, align=center, inner sep=3pt,
+              minimum width=30mm, minimum height=8mm, font=\ttfamily\footnotesize},
+  acc/.style={draw=black!60, thick, rounded corners=2pt, fill=black!4,
+              align=center, minimum width=24mm, minimum height=9mm, inner sep=2pt},
+  foot/.style={draw=probe!60!black, thick, rounded corners=2pt, fill=probe!16,
+               align=center, minimum width=26mm, minimum height=9mm, inner sep=2pt},
+  nofoot/.style={draw=black!45, thick, rounded corners=2pt, fill=black!3, dashed,
+               align=center, minimum width=26mm, minimum height=9mm, inner sep=2pt},
+  ar/.style={-{Stealth[length=2mm]}, thick, draw=black!70},
+  lbl/.style={font=\scriptsize, text=black!65, align=center},
+]
+  % in-range path (top)
+  \node[ptr, fill=probe!12] (pin) at (0,1.1) {in-range\\ pointer};
+  \node[acc] (ain) at (3.3,1.1) {speculative\\ access};
+  \node[foot] (fin) at (7.0,1.1) {allocates a line\\ (L1D / TLB / BTB)};
+  \node[lbl, anchor=west, text=probe!45!black] at (9.1,1.1) {footprint \textbf{present} $\Rightarrow$ oracle $=1$};
+  \draw[ar] (pin) -- (ain);
+  \draw[ar] (ain) -- node[lbl, above]{translates} (fin);
+  % out-of-range path (bottom)
+  \node[ptr, fill=culprit!10] (pout) at (0,-1.1) {out-of-range\\ pointer};
+  \node[acc] (aout) at (3.3,-1.1) {speculative\\ access};
+  \node[nofoot] (fout) at (7.0,-1.1) {fast-rejected\\ \emph{nothing allocated}};
+  \node[lbl, anchor=west, text=culprit] at (9.1,-1.1) {footprint \textbf{absent} $\Rightarrow$ oracle $=0$};
+  \draw[ar] (pout) -- (aout);
+  \draw[ar] (aout) -- node[lbl, above, text=culprit]{\ding{55}\ reject} (fout);
+  % tie-in
+  \node[lbl, align=center, text=black!70] at (4.5,-2.5)
+     {make a target's legality depend on a secret bit $\Rightarrow$ one footprint measurement answers one yes/no};
+\end{tikzpicture}

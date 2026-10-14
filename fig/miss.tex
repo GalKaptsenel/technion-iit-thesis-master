@@ -1,0 +1,57 @@
+\begin{tikzpicture}[
+  font=\small,
+  box/.style={draw=black!65, fill=black!5, rounded corners=2pt, thick, align=center,
+              inner sep=2.5pt, minimum width=34mm, minimum height=6mm},
+  carr/.style={draw=orange!60!black, fill=orange!10, rounded corners=2pt, thick,
+               align=center, inner sep=2.5pt, minimum width=34mm, minimum height=6mm},
+  code/.style={draw=black!40, fill=black!3, rounded corners=2pt, align=left,
+               inner sep=3pt, font=\ttfamily\footnotesize},
+  cell/.style={draw=black!45, rounded corners=1pt, minimum width=5.6mm,
+               minimum height=5.6mm, inner sep=0pt, font=\footnotesize},
+  hot/.style={cell, draw=red!70!black, fill=red!12},
+  cold/.style={cell, fill=blue!7},
+  none/.style={cell, fill=black!2},
+  arr/.style={-{Stealth[length=1.6mm,width=1.4mm]}, semithick, draw=black!70},
+  rarr/.style={-{Stealth[length=1.6mm,width=1.4mm]}, semithick, draw=red!65!black},
+  darr/.style={-{Stealth[length=1.6mm,width=1.4mm]}, semithick, draw=orange!60!black, dashed},
+  ttl/.style={font=\small\bfseries, align=center},
+  lbl/.style={font=\footnotesize, text=black!70, align=center},
+  rlbl/.style={font=\footnotesize, text=red!60!black, align=center},
+  drop/.style={font=\footnotesize, text=red!60!black, align=center},
+]
+% ===== Panel (a): BTB =====
+\def\ax{0}
+\node[ttl]  at (\ax,4.5) {(a) Indirect call --- BTB};
+\node[code] at (\ax,3.0) {func0: mov x0,\#0\ \ ; ret\\func1: mov x0,\#128 ; ret\\victim:\\\ \ blr\ x0\ \ \ \ // call target (x0)\\\ \ ldr\ x1,[x0] // load result};
+\node[box]  (a1) at (\ax,1.55) {Run 1:\ $\texttt{tgt}=\texttt{func0}$};
+\node[carr] (ac) at (\ax,0.6)  {BTB$[\texttt{blr}]\!\to\!\texttt{func0}$};
+\node[box]  (a2) at (\ax,-0.4) {Run 2 (probe):\ $\texttt{tgt}=\texttt{func1}$};
+\draw[arr]  (a1) -- node[lbl,right]{trains} (ac);
+\draw[darr] (ac) -- node[lbl,right,text=orange!55!black]{carried} (a2);
+\node[hot]  (as0) at ({\ax-0.45},-1.95) {$0$};
+\node[cold] (as1) at ({\ax+0.5},-1.95) {$128$};
+\draw[rarr] (a2.south) to[out=-150,in=90] node[rlbl,left,pos=0.9]{spec.\ \texttt{ldr[0]}} (as0.north);
+\draw[arr]  (a2.south) to[out=-30,in=90]  node[lbl,right,pos=0.9]{\texttt{ldr[128]}} (as1.north);
+\node[drop] at (\ax,-2.75) {line $0$ $\Rightarrow$ Run 1's secret\\\emph{dropped:} difference follows the context};
+% ===== Panel (b): prefetcher =====
+\def\bx{9.0}
+\node[ttl]  at (\bx,4.5) {(b) Strided reads --- prefetcher};
+\node[code] at (\bx,3.0) {victim:\ \ \ \ \ \ \ \ \ \ \ \ // x1 = stride\\\ \ ldrb w3,[x0]\\\ \ ldrb w3,[x0,x1]\ \ \ \ \ // +s\\\ \ ldrb w3,[x0,x1,lsl \#1] // +2s};
+\node[box]  (b1) at (\bx,1.55) {Run 1:\ stride $s=S$};
+\node[carr] (bc) at (\bx,0.6)  {stream $\to$ stride $S$};
+\node[box]  (b2) at (\bx,-0.4) {Run 2 (probe):\ fixed stride};
+\draw[arr]  (b1) -- node[lbl,right]{confirms} (bc);
+\draw[darr] (bc) -- node[lbl,right,text=orange!55!black]{carried} (b2);
+\foreach \i in {0,...,4}{
+  \ifnum\i=0 \node[cold] (bs\i) at ({\bx-1.2+\i*0.6},-1.95) {\i};\else
+  \ifnum\i=2 \node[hot]  (bs\i) at ({\bx-1.2+\i*0.6},-1.95) {\i};\else
+  \ifnum\i=4 \node[hot]  (bs\i) at ({\bx-1.2+\i*0.6},-1.95) {\i};\else
+  \node[none] (bs\i) at ({\bx-1.2+\i*0.6},-1.95) {\i};\fi\fi\fi}
+\draw[arr]  (b2.south) to[out=-150,in=90] node[lbl,left,pos=0.9]{own read} (bs0.north);
+\draw[rarr] (b2.south) to[out=-90,in=90]  (bs2.north);
+\draw[rarr] (b2.south) to[out=-35,in=90]  (bs4.north);
+\node[rlbl, anchor=west] at ({\bx+1.55},-1.95) {prefetch @ stride $S$};
+\node[drop] at (\bx,-2.75) {lines at stride $S$ $\Rightarrow$ Run 1's secret\\\emph{dropped:} difference follows the context};
+% divider
+\draw[black!18] (4.5,4.8) -- (4.5,-3.1);
+\end{tikzpicture}

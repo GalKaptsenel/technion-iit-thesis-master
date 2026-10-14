@@ -1,0 +1,38 @@
+\begin{tikzpicture}[
+  font=\footnotesize,
+  comp/.style={draw=black!70, fill=black!4, rounded corners=2.5pt, thick,
+               align=center, minimum width=20mm, minimum height=7mm, inner sep=1.5pt},
+  stage/.style={draw=black!70, dashed, fill=white, rounded corners=2.5pt, thick,
+                align=center, minimum width=20mm, minimum height=7mm, inner sep=1.5pt},
+  out/.style={text=#1, font=\footnotesize\itshape, inner sep=1.5pt},
+  lbl/.style={font=\scriptsize, text=black!80, inner sep=1.5pt},
+  arr/.style={-{Stealth[length=1.8mm,width=1.5mm]}, thick, draw=black!75},
+]
+  \node[comp] (gen)   at (0, 0)       {Generator};
+  \node[comp] (model) at (-1.7,-1.45) {Model\\[-2pt]{\scriptsize emulator of $\mathcal{C}$}};
+  \node[comp] (exec)  at ( 1.7,-1.45) {Executor\\[-2pt]{\scriptsize CUT, $O_{\mathrm{L1D}}$}};
+  \node[comp]  (an)    at (0,-2.95) {Analyzer};
+  \node[stage] (prime) at (0,-4.2)  {Priming\\[-2pt]{\scriptsize validation step}};
+  \node[out=red!75!black] (viol) at (-1.3,-5.5) {violation};
+  \node[out=black!65]    (fp)   at ( 1.3,-5.5) {false positive};
+  \coordinate (split) at (0,-0.8);
+  \draw[thick, draw=black!75] (gen.south) -- (split);
+  \draw[arr] (split) -| (model.north);
+  \draw[arr] (split) -| (exec.north);
+  \node[lbl, right] at ($(gen.south)!0.5!(split)$) {$P,\, I_1,\dots,I_N$};
+  \draw[arr] (model.south) |- (an.west);
+  \draw[arr] (exec.south)  |- (an.east);
+  \node[lbl, left, align=right] at ($(model.south)!0.4!(model.south |- an.west)$) {contract\\traces};
+  \node[lbl, right, align=left] at ($(exec.south)!0.4!(exec.south |- an.east)$)   {hardware\\traces};
+  \draw[arr] (an) -- node[lbl, right] {candidates} (prime);
+  \coordinate (split2) at (0,-4.95);
+  \draw[thick, draw=black!75] (prime.south) -- (split2);
+  \draw[arr] (split2) -| (viol.north);
+  \draw[arr] (split2) -| (fp.north);
+  \path let \p1 = (current bounding box.north east),
+            \p2 = (current bounding box.south west),
+            \n1 = {max(\x1, -\x2)} in
+        coordinate (bbne) at (\n1, \y1) coordinate (bbsw) at (-\n1, \y2);
+  \pgfresetboundingbox
+  \useasboundingbox (bbsw) rectangle (bbne);
+\end{tikzpicture}

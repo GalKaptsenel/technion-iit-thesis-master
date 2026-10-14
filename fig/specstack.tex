@@ -1,0 +1,31 @@
+\begin{tikzpicture}[
+  font=\footnotesize,
+  w/.style={draw=black!70, fill=black!4, rounded corners=2.5pt, thick,
+            align=center, minimum width=15mm, minimum height=6.5mm, inner sep=2pt},
+  spec/.style={w, dashed, fill=white},
+  e/.style={-{Stealth[length=1.7mm,width=1.4mm]}, thick, draw=black!75},
+  lbl/.style={font=\scriptsize, text=black!65, inner sep=1.5pt},
+  axis/.style={-{Stealth[length=1.9mm]}, draw=black!45},
+]
+  \draw[axis] (-1.5,0.35) -- (-1.5,-2.85);
+  \node[font=\scriptsize, text=black!55, rotate=90, anchor=south] at (-1.78,-1.25) {nesting depth};
+  \node[lbl, anchor=east] at (-1.22, 0)     {0};
+  \node[lbl, anchor=east] at (-1.22,-1.25)  {1};
+  \node[lbl, anchor=east] at (-1.22,-2.5)   {2};
+  \node[w]    (w0) at (0,0)        {architectural};
+  \node[w]    (a0) at (2.3,0)      {continue};
+  \node[spec] (w1) at (1.0,-1.25)  {window};
+  \node[spec] (a1) at (3.3,-1.25)  {continue};
+  \node[spec] (w2) at (2.0,-2.5)   {window};
+  \draw[e] (w0) -- (a0);
+  \draw[e] (w0) -- (w1) node[lbl,midway,left=0pt]{spec.};
+  \draw[e] (w1) -- (a1);
+  \draw[e] (w1) -- (w2) node[lbl,midway,left=0pt]{spec.};
+  \path let \p1 = (current bounding box.north east),
+            \p2 = (current bounding box.south west),
+            \n1 = {max(\x1-1.65cm, 1.65cm-\x2)} in
+        coordinate (bbne) at ({1.65cm+\n1}, \y1)
+        coordinate (bbsw) at ({1.65cm-\n1}, \y2);
+  \pgfresetboundingbox
+  \useasboundingbox (bbsw) rectangle (bbne);
+\end{tikzpicture}

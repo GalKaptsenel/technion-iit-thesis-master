@@ -6,7 +6,8 @@ attacks such as PACMAN and TikTag. This chapter closes that gap with a methodolo
 fuzzing instruction preconditions directly. The idea is to \emph{seal} the precondition sites
 of a test case and fill each seal, per input, so that the precondition is deliberately
 satisfied or violated on a speculative-only path, without ever faulting the victim
-architecturally. \autoref{sec:precond-gap} states the gap, \autoref{sec:precond-sealing}
+architecturally (\autoref{fig:precond-flow}). \autoref{sec:precond-gap} states the gap,
+\autoref{sec:precond-sealing}
 through \autoref{sec:precond-resolve} build the mechanism, \autoref{sec:precond-contract} fixes
 the contract it tests against, \autoref{sec:precond-primitives} lists the primitives, and
 \autoref{sec:precond-discussion} argues why the construction is sound.
@@ -26,7 +27,18 @@ violation that is guaranteed to be confined to a speculative-only path.
 \section{Sealing a test case}
 \label{sec:precond-sealing}
 
-We walk a freshly generated test case statically. At each instruction whose operands we want to
+\begin{figure}[t]
+\centering
+\fitwidth{\input{fig/flow}}
+\caption{The precondition-fuzzing pipeline. A test case is sealed and assembled into an object test
+case once; then, per input, the sealings are resolved and filled by relocation into a genuine
+variant and one or more decoys, which are run and compared on hardware. A difference between the
+variants is a leak.}
+\label{fig:precond-flow}
+\end{figure}
+
+We walk a freshly generated test case statically (\autoref{fig:precond-flow}). At each instruction
+whose operands we want to
 fuzz we reserve a \emph{sealing}: a short, fixed-width area immediately preceding the instruction
 of interest, initialized to \reg{UDF}, the permanently undefined A64 encoding. Sealing every site
 yields the \emph{sealed test case}. Assembled once, it becomes an \emph{object test case}, a byte
@@ -34,13 +46,25 @@ template shared by all inputs. The \reg{UDF} filler guarantees that an unfilled 
 it is ever reached, so a sealing only ever executes once it has been deliberately filled.
 
 Per input, we fill each sealing with instructions that enforce or violate its precondition just
-before the guarded instruction---for example, materializing the correct \reg{MTE} tag or \reg{PAC}
+before the guarded instruction (\autoref{fig:precond-seal})---for example, materializing the
+correct \reg{MTE} tag or \reg{PAC}
 signature to enforce the precondition, or an incorrect tag or signature to violate it. The fills
 are carried by a \emph{relocation} section added to the input's \reg{.reif} file
 (\autoref{sec:port-driving}). Just before the input runs, the loader applies the relocations and
 patches the sealings dynamically. An input that satisfies every precondition is the \emph{genuine}
 variant; an input with at least one unsatisfied, speculative-only sealing is a \emph{decoy}
 variant. The two variants are then run and compared on hardware.
+
+\begin{figure}[t]
+\centering
+\fitwidth{\input{fig/precondseal}}
+\caption{A single sealing point, zoomed in. Here a Pointer Authentication site guards a load
+through \reg{x0}. The fixed-width sealing is filled per input: the placeholder is the unfilled
+\reg{UDF} sealing, the genuine fill installs the correct signature so the committed \reg{AUT*}
+succeeds, and a decoy installs an incorrect signature so the \reg{AUT*} fails---but only on a
+squashed speculative path, never architecturally.}
+\label{fig:precond-seal}
+\end{figure}
 
 \section{The emulation table}
 \label{sec:precond-emul}
