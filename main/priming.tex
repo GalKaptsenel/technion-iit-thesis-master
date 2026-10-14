@@ -1,230 +1,245 @@
 \chapter{Generalized Priming}
 \label{chap:priming}
 
-The AArch64 port of \autoref{chap:port} inherits \revizor{}'s validation step, priming, and
-with it a blind spot. This chapter shows that priming cannot report a whole class of genuine
-leaks---those whose only effect on the run that causes them lies outside the L1 data
-cache---and replaces it with a generalization that keeps the contract-violation definition
-unchanged, detects every leak the current rule detects and strictly more, and localizes a
-reported leak to a genuine violation. The development is deliberately independent of any one
-channel or test case: the limitation follows from the shape of the priming rule itself.
-\autoref{sec:priming-gap} gives the intuition, \autoref{sec:priming-model} and
-\autoref{sec:priming-lanes} the formal model, \autoref{sec:priming-limitation} the
-limitation, \autoref{sec:priming-observe} why the generalization loses nothing,
-\autoref{sec:priming-localize} its soundness, and \autoref{sec:priming-localizers} the two
-localizers; the full optimality proofs are in \autoref{appendix:localization}.
+The AArch64 port of \autoref{chap:port} inherits \revizor{}'s validation step, priming, and with
+it a blind spot. A hardware--software contract judges leakage against a hardware trace, what an
+attacker reads from the microarchitectural states a run passes through
+(\autoref{sec:bg-mrt}). \revizor{} relaxes this in two ways: it fixes the observer to the L1 data
+cache, writing $\Al(P,I,\mathit{Ctx})=O_{\mathrm{L1D}}(\runf(P,I,\mathit{Ctx}))$ for the sets a
+run's loads and stores touch, and it reads that observer only once, after the run finishes. This
+chapter shows that these relaxations make priming miss a whole class of genuine, L1D-observable
+leaks, and replaces the rule with one that keeps the contract-violation definition and detects
+strictly more. \autoref{sec:priming-gap} gives two examples, \autoref{sec:priming-model} the
+formal limitation, \autoref{sec:priming-extend} the extended notion of a violation that repairs
+it, \autoref{sec:priming-lanes} and \autoref{sec:priming-boundary} the detection construction and
+its soundness, and \autoref{sec:priming-localizers} the two localizers; the optimality proofs are
+in \autoref{appendix:localization}.
 
-\section{The detection gap}
+\section{Leaks current priming drops}
 \label{sec:priming-gap}
 
-An input can \emph{write} a microarchitectural resource that its own run never \emph{reads
-back} into the cache. A branch-target-buffer entry is indexed by a subset of a branch's
-program-counter bits, and \revizor{}'s test cases are loop-free, so each branch executes at
-most once per run: its BTB entry can be written but not read back in the same run. What the
-input writes into that entry, and nothing else exposes to the cache, changes the full
-microarchitectural state but not the run's own L1D trace. The write survives only in the
-state carried over to the next run, where it may eventually propagate into the L1D. There,
-however, it surfaces as a difference between \emph{contexts}, not between inputs---and priming
-was built precisely to cancel the effect of carried-over context. Priming therefore removes
-the evidence of such a leak together with the noise. The branch history, the prefetcher, the
-TLB, the pattern-history table, and the return-stack buffer are all resources of the same
-kind. Cross-run Spectre-v2 is the canonical example: the essence of the attack, a BTB entry
-written by one run and mispredicted through by a later one, is cross-run, and when two inputs
-differ only in the BTB state they leave behind, priming discards them.
+Priming assumes that an input's leakage appears in its own L1D trace. It fails when the leakage is
+written to a carrier structure other than the L1D and is not reset between inputs. Two examples
+make this concrete, and both are observable in the L1D---they lie within \revizor{}'s own threat
+model---yet priming discards them.
 
-\section{A formal model of priming}
+\paragraph{A branch-target-buffer leak.}
+Consider a gadget that makes an indirect call \reg{blr x0} and then loads through the returned
+value, where the two possible targets return $0$ and $128$. The input's target trains the call
+site's BTB, and because the test case is loop-free the call runs once. The trained entry surfaces
+on the next run: after one run trains the first target, the next run---of a contract-equivalent
+input that calls the second target---mispredicts to the first, speculatively loads line~$0$, and
+brings it into the L1D before the misprediction is rolled back. Had the first run chosen the other
+target, the probe would touch line~$128$ alone, so the probe's L1D reveals the earlier run's
+secret. Priming nonetheless discards the pair: the two contract-equivalent inputs are
+architecturally identical, so in a common slot they behave alike, and the footprint tracks the
+slot rather than the input---exactly the false-positive condition.
+
+\paragraph{A hardware-prefetcher leak.}
+Consider a gadget that issues three reads at an input-chosen stride, confirming that stride to a
+stride prefetcher that then runs ahead. After one run confirms stride $S$, a later
+contract-equivalent run at a fixed stride still has the carried-over stream prefetch lines at
+stride $S$ that it never issues, so its L1D carries stride-$S$ lines that reveal the earlier run's
+secret. Again the two inputs are architecturally identical, so priming records a false positive,
+though the secret does reach the probe's L1D.
+
+\section{Revizor's gap, formally}
 \label{sec:priming-model}
 
-We fix the objects precisely. A \emph{test case} $T$ is a fixed program, and an \emph{input}
-$i$ sets the initial architectural state of the sandbox. A \emph{run} executes $T$ on $i$ from
-a microarchitectural state $\mu$ and ends in a new one, $\runf(T,i,\mu)$. A \emph{batch} runs
-a sequence of inputs in order, resetting the architectural state before every run but
-\emph{carrying over} the microarchitectural state, so each run starts from the state its
-predecessor left. Carry-over is the only channel between runs, and a run is measured as soon
-as it finishes, so within a batch no later run can influence an earlier measurement. An
-\emph{initialization sequence} $\IS$ is a fixed routine that drives the microarchitectural
-state to one reproducible value regardless of what ran before; we write $\batch{i_0,\dots,i_n}$
-for the batch that runs $\IS$ and then $i_0,\dots,i_n$.
+Both leaks share a shape: the secret is written to a structure other than the monitored L1D, and
+it reaches the L1D only through a later run. We make the limitation precise. Write
+$\runf(P,I,\mu)$ for the microarchitectural state left by running $P$ on input $I$ from state
+$\mu$; it is a function of its arguments, since replaying a sequence reproduces its states and
+repeated measurement filters noise. The L1D attacker is then a projection,
+$\Al(P,I,\mathit{Ctx})=O_{\mathrm{L1D}}(\runf(P,I,\mathit{Ctx}))$.
 
-\begin{definition}[Traces]
-The \emph{contract trace} $\ct(T,i)$ is the leakage the reference contract permits, a function
-of $T$ and $i$ alone. A \emph{hardware trace} is what an attacker reads from the
-microarchitectural state a run leaves. Two are used here: $\HL$, the L1D trace read by
-Prime+Probe or Flush+Reload, which is the trace \revizor{} uses today, and $\HF$, the entire
-microarchitectural state the run leaves. $\HL$ is a projection of $\HF$: inputs that $\HL$
-separates, $\HF$ separates too, but not conversely.
+\begin{definition}[Non-L1D-cache violation]
+\label{def:prime-ncv}
+A violation $(P,I_0,I_1,\mu)$ is \emph{non-L1D-cache} when, for every state $\mu'$,
+$\Al(P,I_0,\mu')=\Al(P,I_1,\mu')$: the choice between the two inputs never changes the L1D trace
+of its own run.
 \end{definition}
 
-We assume runs are deterministic---$\runf(T,i,\mu)$ is a function of $(T,i,\mu)$---and handle
-measurement noise by repetition.
-
-\begin{definition}[Violation]
-\label{def:prime-violation}
-A \emph{violation} of the contract is a tuple $(T,i_0,i_1,\mu)$ of a test case, two distinct
-inputs, and a common microarchitectural state for which the contract does not distinguish the
-inputs but the hardware does:
-\[
-  \ct(T,i_0)=\ct(T,i_1) \qquad\text{and}\qquad \Htr(\runf(T,i_0,\mu))\neq \Htr(\runf(T,i_1,\mu)).
-\]
-The faithful choice of hardware trace is $\Htr=\HF$; \revizor{} approximates it by $\Htr=\HL$.
-\end{definition}
-
-\begin{definition}[Priming]
-\label{def:prime-rule}
-In a batch, let $\mu_p$ be the state input $i_p$ starts from. \revizor{} flags an initial
-suspected violation between $i_p$ and $i_q$ when $\ct(T,i_p)=\ct(T,i_q)$ but their L1D traces,
-measured in their respective contexts, differ. Because the two runs start from different
-states, the difference may be due to history rather than to the inputs. Priming removes this
-doubt by swapping each input into the other's slot, so each input is measured from both
-$\mu_p$ and $\mu_q$. It \emph{keeps} the finding when at least one of the two same-context
-comparisons differs, and \emph{discards} it as a false positive when both agree.
-\end{definition}
-
-Two inputs are in the same \emph{class} for $T$ when $\ct(T,i_0)=\ct(T,i_1)$. To \emph{boost}
-an input, \revizor{} generates further inputs of its class---distinct inputs with an identical
-contract trace~\cite{revizor,hide_seek}. Finally, the leaks the current rule cannot see are
-exactly those confined to structures other than the L1D of their own run:
-
-\begin{definition}[Noncache violation]
-\label{def:noncache}
-A violation $(T,i_0,i_1,\mu)$ is \emph{noncache} when (a) $\HL(\runf(T,i_0,\mu'))=\HL(\runf(T,i_1,\mu'))$
-for every state $\mu'$---the choice between $i_0$ and $i_1$ never changes the L1D trace of its
-own run---while (b) $\HF(\runf(T,i_0,\mu''))\neq\HF(\runf(T,i_1,\mu''))$ for some state
-$\mu''$---the two runs do leave different states.
-\end{definition}
-
-\section{Lanes and splices}
-\label{sec:priming-lanes}
-
-To localize a leak without ever reading $\HF$, we arrange boosted inputs into a matrix. A
-\emph{lane} is a sequence of $k+1$ inputs run as its own batch, so each lane starts afresh
-from the initialization state. \emph{Lane boosting} derives each further lane from the first by
-boosting every entry, so position $m$ of two lanes holds distinct inputs of the same class; we
-call position $m$ \emph{class $m$}. Stacking the lanes gives a matrix whose rows are lanes (and
-batches) and whose columns are classes. An L1D difference between two rows at the same column
-is an initial suspected violation. Without loss of generality we assume it is flagged at the
-last class $k$, the \emph{probe}; a flag at an earlier class $d<k$ reduces to this case, since
-the classes after $d$ run later in the batch and cannot influence its measurement.
-
-\begin{definition}[Splice and splice measurement]
-\label{def:splice}
-For two lanes $a,b$ and a split $t\in\{0,\dots,k+1\}$, the \emph{splice} $\spl{t}$ takes the
-columns before $t$ from lane $a$ and the columns from $t$ on from lane $b$, run as its own
-batch. The ends are the lanes themselves, $\spl{0}=\lane{b}$ and $\spl{k+1}=\lane{a}$, and
-neighbouring splices $\spl{t}$ and $\spl{t+1}$ differ in column $t$ alone. To \emph{measure}
-the splice at $t$ we run $\batch{\spl{t}}$ and read the L1D trace of its probe run; call this
-reading $r(t)$.
-\end{definition}
-
-\section{Current priming misses noncache violations}
-\label{sec:priming-limitation}
-
-\begin{theorem}[Priming misses noncache violations]
+\begin{theorem}[Priming misses non-L1D-cache violations]
 \label{thm:prime-miss}
-If $(T,i_p,i_q,\mu)$ is a noncache violation, the rule of \autoref{def:prime-rule} never
-reports the pair $i_p,i_q$.
+If $(P,I_i,I_j,\mathit{Ctx})$ is a non-L1D-cache violation, priming never reports the pair
+$I_i,I_j$.
 \end{theorem}
 
 \begin{proof}
-A pair is reported only if it is flagged and then survives priming, so it suffices that
-priming discards it. Let the pair be flagged in slots $p,q$ with starting states $\mu_p,\mu_q$.
-Condition (a) of \autoref{def:noncache}, at $\mu'=\mu_p$ and at $\mu'=\mu_q$, gives
-$\HL(\runf(T,i_p,\mu_p))=\HL(\runf(T,i_q,\mu_p))$ and
-$\HL(\runf(T,i_p,\mu_q))=\HL(\runf(T,i_q,\mu_q))$. Both same-context comparisons agree, which
-is exactly the discard condition.
+A pair is reported only if it is flagged and then survives priming, so it suffices that priming
+discards it. Let the pair be flagged in slots $i,j$ with starting states $\mu_i,\mu_j$. By
+\autoref{def:prime-ncv} at $\mu'=\mu_i$ and at $\mu'=\mu_j$,
+\[
+  \Al(P,I_i,\mu_i)=\Al(P,I_j,\mu_i) \qquad\text{and}\qquad \Al(P,I_i,\mu_j)=\Al(P,I_j,\mu_j).
+\]
+Both same-context comparisons agree, which is exactly the discard condition.
 \end{proof}
 
 The proof uses nothing about the channel or the test case, only the shape of the rule: priming
-discards differences caused by carried-over state, and a noncache violation is visible only
-through carried-over state. The canonicality leak of \autoref{chap:canon} is such a violation,
-as is cross-run Spectre-v2.
+cancels differences caused by carried-over state, and a non-L1D-cache violation is visible only
+through carried-over state.
 
-\section{Noncache differences reach the cache}
-\label{sec:priming-observe}
+\section{Extending contract violation}
+\label{sec:priming-extend}
 
-A noncache violation leaves no trace in the L1D of its own run, but it is still within
-\revizor{}'s threat model, because the difference it leaves behind reaches the L1D through a
-later run. Say two microarchitectural states differ \emph{observably} if some test case and
-input, run from each, leave different L1D traces. A difference that first surfaces in a
-register of a later run reaches the cache as well:
+A non-L1D-cache violation is still real, because the difference it leaves behind reaches the L1D
+through a later run. We capture this with a follow-up program the attacker runs after the victim.
 
-\begin{proposition}[Register differences reach the cache]
-\label{prop:prime-reach}
-If some test case $P$ and input $i$, run from states $s$ and $s'$, hold different values
-$x\neq x'$ in some register at an instruction $q$---architecturally, or transiently long
-enough for a dependent load to issue---then $s$ and $s'$ differ observably.
+\begin{definition}[Observable leak]
+\label{def:prime-observable}
+Let $I_0,I_1$ be contract-equivalent inputs of $P$ and $\mathit{Ctx}$ a common context, and let
+$\mu_b=\runf(P,I_b,\mathit{Ctx})$ be the state each leaves. The pair is \emph{observable} under
+observer $O$ if there is a program $Q$ with
+\[
+  O\big(\runf(Q,\bot,\mu_0)\big)\;\neq\;O\big(\runf(Q,\bot,\mu_1)\big),
+\]
+where $\bot$ denotes no input. The empty $Q$ gives $\runf(Q,\bot,\mu)=\mu$ and hence the direct
+case $O(\mu_0)\neq O(\mu_1)$; a non-empty $Q$ covers a leak that surfaces only after further
+execution. Either way the leak is real: $Q$ depends on neither input, so the only cause of the
+difference is which input ran.
+\end{definition}
+
+\begin{definition}[$HTrace^Q$]
+\label{def:prime-qtrace}
+For a program $P$, input $I$, context $\mathit{Ctx}$, and follow-up program $Q$, the
+\emph{$Q$-hardware trace} runs the victim, then $Q$, then reads the observer:
+\[
+  \mathit{HTrace}^Q = \AQ{O_{\mathrm{L1D}}}(P,I,\mathit{Ctx})
+    = O_{\mathrm{L1D}}\big(\runf(Q,\bot,\runf(P,I,\mathit{Ctx}))\big).
+\]
+\end{definition}
+
+\begin{definition}[Extended contract violation]
+\label{def:prime-extviolation}
+A tuple $(P,I_1,I_2,\mathit{Ctx},Q)$ violates contract $\mathcal{C}$ with respect to observer $O$
+when
+\[
+  \mathcal{C}(P,I_1)=\mathcal{C}(P,I_2) \;\land\;
+  \AQ{O}(P,I_1,\mathit{Ctx}) \neq \AQ{O}(P,I_2,\mathit{Ctx}).
+\]
+\end{definition}
+
+This models an attacker that runs a fixed program $Q$ after the victim. For $O=O_{\mathrm{L1D}}$
+and an empty $Q$ it recovers the ordinary contract violation of \autoref{sec:bg-mrt}. The
+generalization thus changes only the methodology, not the definition of a violation: it never
+reads anything but the L1D, and lets the state one input leaves propagate into a later run, read
+there through the same L1D observer.
+
+\section{Detecting extended contract violations}
+\label{sec:priming-lanes}
+
+Detecting an extended contract violation requires a follow-up program $Q$ to run after the victim.
+We obtain it by arranging \revizor{}'s inputs into \emph{lanes} rather than one flat sequence. An
+\emph{initialization sequence} $\IS$ drives the microarchitectural state to one reproducible value,
+and we write $\batch{I_0,\dots,I_n}$ for the batch that runs $\IS$ and then those inputs. A
+\emph{lane} is a sequence of $k+1$ inputs run as its own batch. \emph{Lane boosting} derives each
+further lane from the first by boosting every entry, so position $m$ of two lanes holds distinct
+inputs of the same class, which we call class $m$. Stacking the lanes gives a matrix whose rows are
+lanes (and batches) and whose columns are classes. \revizor{} flags a candidate when two lanes
+differ in their L1D trace at the same column. Without loss of generality the flag sits at the last
+class $k$, the \emph{probe}.
+
+\begin{definition}[Splice and splice measurement]
+\label{def:splice}
+For two lanes $a,b$ and a split $t\in\{0,\dots,k+1\}$, the \emph{splice} $\spl{t}$ takes columns
+before $t$ from lane $a$ and columns from $t$ on from lane $b$, run as its own batch. The endpoints
+recover the lanes, $\spl{0}=\lane{b}$ and $\spl{k+1}=\lane{a}$, and neighbouring splices $\spl{t}$
+and $\spl{t+1}$ differ in column $t$ alone. The \emph{splice measurement} $r(t)=\Al(P,c_t,\mu_t)$
+is the L1D trace of the probe run of $\batch{\spl{t}}$, where $c_t$ is the probe input and $\mu_t$
+the context the preceding inputs leave. Since $r(0)$ and $r(k+1)$ are the readings of the two
+flagged lanes, $r(0)\neq r(k+1)$.
+\end{definition}
+
+\section{A boundary certifies a violation}
+\label{sec:priming-boundary}
+
+A \emph{boundary} is a split $t$ with $r(t)\neq r(t+1)$. Because the ends disagree, the chain must
+turn somewhere.
+
+\begin{proposition}[A boundary exists]
+\label{prop:prime-boundary}
+If $r(0)\neq r(k+1)$, some $t\in\{0,\dots,k\}$ is a boundary.
 \end{proposition}
 
 \begin{proof}
-Pick a bit $b$ in which $x$ and $x'$ differ, and let $P'$ be $P$ cut right after $q$, followed
-by a load from $A+64\cdot((x\gg b)\,\&\,1)$, where $A$ and $A+64$ are two lines in different
-cache sets that neither run touches up to $q$. Up to $q$ the two runs behave as under $P$, so
-one loads $A$ and the other $A+64$, leaving different L1D traces.
+If $r(t)=r(t+1)$ for every $t$ then $r(0)=\dots=r(k+1)$, contradicting $r(0)\neq r(k+1)$.
 \end{proof}
 
-Every observable difference is therefore exposed in the L1D by a test case built from ordinary
-instructions and register-dependent loads---exactly the kind \revizor{} generates. The
-generalization never reads $\HF$. It lets the state one input leaves propagate into a later run
-and reads it there, through the L1D, losing no observable difference.
-
-\section{Localizing the leak}
-\label{sec:priming-localize}
-
-Moving the split of a splice from $k+1$ down to $0$ swaps the lanes one class at a time, so the
-probe reading changes from that of lane $a$ to that of lane $b$. A split $t$ with
-$r(t)\neq r(t+1)$ is a \emph{boundary}. Two facts make localization sound: a boundary exists
-whenever the ends disagree (if every neighbour agreed, all readings would be equal), and every
-boundary is a genuine violation.
-
-\begin{lemma}[Every boundary is a genuine violation]
+\begin{lemma}[A boundary is a genuine violation]
 \label{lem:prime-genuine}
-Let $t$ be a boundary and $\nu_t$ the state that $\IS$ and the prefix $\inp{0}{a},\dots,\inp{t-1}{a}$
-leave. Then $(T,\inp{t}{a},\inp{t}{b},\nu_t)$ is a violation under \autoref{def:prime-violation}
-with $\Htr=\HF$, and it is noncache if moreover the two inputs' own L1D traces never differ.
+Let $t$ be a boundary, $\nu_t$ the context the prefix $\inp{0}{a},\dots,\inp{t-1}{a}$ leaves, and
+$Q$ the fixed continuation that runs $P$ on the constant suffix $\inp{t+1}{b},\dots,\inp{k}{b}$
+(empty when $t=k$). Then $(P,\inp{t}{a},\inp{t}{b},\nu_t,Q)$ is an extended contract violation
+(\autoref{def:prime-extviolation}) under $O=O_{\mathrm{L1D}}$.
 \end{lemma}
 
 \begin{proof}
-Write $s_a=\runf(T,\inp{t}{a},\nu_t)$ and $s_b=\runf(T,\inp{t}{b},\nu_t)$. The batches
-$\batch{\spl{t+1}}$ and $\batch{\spl{t}}$ both reach $\nu_t$ (same $\IS$ and prefix), then run
-$\inp{t}{a}$ and $\inp{t}{b}$, reaching $s_a$ and $s_b$. If $t<k$ both continue with the
-identical suffix, so were $s_a=s_b$ determinism would give $r(t+1)=r(t)$, contradicting that
-$t$ is a boundary; hence $s_a\neq s_b$. If $t=k$, column $t$ is the probe itself, and
-$r(k+1)=\HL(s_a)\neq\HL(s_b)=r(k)$ forces $s_a\neq s_b$ because $\HL$ is a projection of the
-state. Either way $\HF(s_a)\neq\HF(s_b)$. The two inputs share column $t$, hence a class, so
-their contract traces agree, and they are distinct, since equal inputs would give $s_a=s_b$.
-This is a violation from the common state $\nu_t$. The noncache claim is immediate from the
-extra hypothesis.
+The two splices around $t$ reach the same context $\nu_t$ (same $\IS$ and prefix), run
+$\inp{t}{a}$ or $\inp{t}{b}$, and then the \emph{same} fixed continuation $Q$ ending at the probe.
+Reading the probe is therefore the $Q$-hardware trace of \autoref{def:prime-qtrace}:
+$r(t+1)=\AQ{O_{\mathrm{L1D}}}(P,\inp{t}{a},\nu_t)$ and $r(t)=\AQ{O_{\mathrm{L1D}}}(P,\inp{t}{b},\nu_t)$.
+Since $\runf$ is a function of its arguments, the two readings can differ only through which input
+ran, and a boundary means they differ. The two inputs share column $t$, hence a class, and are
+distinct, so the tuple meets \autoref{def:prime-extviolation}. When $t=k$ the continuation is
+empty and the reading is the probe's own L1D trace, the direct case.
 \end{proof}
 
-The boundary also tells the kind of leak. At $t=k$ the probe input itself is swapped, which is
-exactly priming's own comparison, so the current rule already keeps it; this is a
-\emph{self-dependent} leak. At $t<k$ an earlier input changes a later reading, a
-\emph{cross-input} leak, and a noncache one when the pair's own L1D traces never differ. Since
-the run that reads the residue back into the cache may live in only one lane, we localize in
-both directions. Each direction is sound by \autoref{lem:prime-genuine}, so reporting a
-boundary from either adds no false positive.
+When the boundary pair additionally leaves the same L1D trace from every state, it is a
+non-L1D-cache violation (\autoref{def:prime-ncv})---the class priming always discards
+(\autoref{thm:prime-miss}). The construction thus detects exactly the leaks priming drops,
+whenever they cascade through the microarchitecture and eventually reach the L1D.
 
-\section{Two localizers}
+\section{Localizing a boundary}
 \label{sec:priming-localizers}
 
-Localization reduces to finding a boundary, and the two localizers differ only in which
-boundary they return. The \emph{cost} of a localizer is the number of interior splices it runs;
-the two end readings are known from the flagged violation.
+Localization reduces to finding a boundary. Both localizers share one primitive,
+$\textsc{Measure}(t)$, which runs $\batch{\spl{t}}$, repeated to average out noise, and returns
+$r(t)$. A leak may be detectable in only one direction of the swap, so each localizer is run both
+as $a\to b$ and as $b\to a$; both are sound by \autoref{lem:prime-genuine}, so a boundary from
+either direction adds no false positive.
 
-The \emph{linear scan} moves the split down one class at a time and stops at the first boundary,
-returning the largest leaking class. It runs at most $k$ splices, and \autoref{appendix:localization}
-proves this optimal for returning the largest boundary. Run without stopping, it reports every
-leaking class.
+The \emph{linear scan} (\autoref{alg:prime-scan}) walks the split back from the probe end and stops
+at the first neighbour that disagrees, returning the largest boundary $\tmax$ in at most $k$
+measurements; run without the early stop it reports every leaking class. The \emph{binary search}
+(\autoref{alg:prime-bsearch}) keeps a window whose end readings differ, so a boundary lies inside,
+and halves it, returning one boundary in $\lceil\log_2(k+1)\rceil$ measurements. Both bounds are
+tight; the matching lower bounds and a worked example are in \autoref{appendix:localization}.
 
-The \emph{binary search} keeps a window whose end readings differ, so a boundary lies inside,
-and halves it at each step. It returns one leaking class in $\lceil\log_2(k+1)\rceil$ runs,
-which \autoref{appendix:localization} also proves optimal for returning any boundary. The
-saving over the linear scan is exponential, and it matters because every run is a full
-prime-and-measure cycle on the device.
+\begin{algorithm}[t]
+\caption{Linear scan ($a\!\to\!b$); returns $\tmax$}
+\label{alg:prime-scan}
+\begin{algorithmic}[1]
+\State $\mathit{prev} \gets r(k{+}1)$ \Comment{lane $a$, known}
+\For{$t \gets k$ \textbf{down to} $1$}
+  \State $\mathit{cur} \gets \textsc{Measure}(t)$
+  \If{$\mathit{cur} \neq \mathit{prev}$}
+     \State \Return $t,\ (\inp{t}{a}, \inp{t}{b})$ \Comment{boundary}
+  \EndIf
+  \State $\mathit{prev} \gets \mathit{cur}$
+\EndFor
+\State \Return $0,\ (\inp{0}{a}, \inp{0}{b})$
+\end{algorithmic}
+\end{algorithm}
 
-Both localizers use the same splices and the same soundness argument
-(\autoref{lem:prime-genuine}), and both keep every self-dependent leak the current rule keeps.
-Where the linear scan reports every leaking class, binary search reports one, much faster. The
-generalization thus changes only the methodology, not \autoref{def:prime-violation}: it
-certifies a noncache violation that current priming cannot report, as a genuine violation
-separated by one identical probe.
+\begin{algorithm}[t]
+\caption{Binary search ($a\!\to\!b$)}
+\label{alg:prime-bsearch}
+\begin{algorithmic}[1]
+\State $\ell \gets 0;\quad h \gets k{+}1$ \Comment{$r(\ell)\neq r(h)$, known}
+\While{$h > \ell + 1$}
+  \State $m \gets \lfloor (\ell+h)/2 \rfloor$
+  \If{$\textsc{Measure}(m) \neq r(\ell)$}
+     \State $h \gets m$ \Comment{boundary below $m$}
+  \Else
+     \State $\ell \gets m$ \Comment{boundary above $m$}
+  \EndIf
+\EndWhile
+\State \Return $\ell,\ (\inp{\ell}{a}, \inp{\ell}{b})$
+\end{algorithmic}
+\end{algorithm}
+
+Both localizers use the same splices and the same soundness argument, and both keep every leak the
+current rule keeps. Where the linear scan reports every leaking class, binary search reports one,
+much faster. The generalization therefore certifies a non-L1D-cache violation that current priming
+cannot report, as a genuine extended contract violation separated by one identical probe.

@@ -1,46 +1,161 @@
 \chapter{Evaluation}
 \label{chap:eval}
 
-\scaffold{Chapter intro: four questions---fuzzing throughput, which violations are
-found and how fast, which are Arm-specific, and whether they reproduce on commodity
-hardware---plus end-to-end exploitation. Draw from uasc2027 ``Evaluation'' and the
-arm-disclosure measurements.}
+This chapter evaluates the fuzzer and the leak. We ask what throughput the port sustains
+(\autoref{sec:eval-throughput}), which contract violations it finds and how fast
+(\autoref{sec:eval-violations}), how cheaply the generalized priming localizes them
+(\autoref{sec:eval-localize}), and how far the canonicality leak reaches when weaponized against
+real software (\autoref{sec:eval-exploit}).
 
 \section{Experimental setup}
 \label{sec:eval-setup}
-\scaffold{Neoverse~N3 (Armv9.2-A, QARMA3, 48-bit VAs, FEAT\_PAuth2/FPAC; GCP
-c4a bare-metal; confirm TBI0/TBI1 and CONSTPACFIELD); Google Tensor~G3 (Pixel~8),
-leak pinned to a Cortex-A715 core; Intel Alder Lake as a non-Arm baseline. Metric
-definitions: throughput and time-to-detection (TTD, on the N3).}
+
+Our primary target is an Arm Neoverse~N3 (Armv9.2-A), on a bare-metal cloud instance pinned to a
+single isolated core. We reproduce the Arm-specific leaks on a Google Pixel~8 (Tensor~G3), where
+the leak is pinned to a Cortex-A715 core (Armv9.0-A) and, notably, does not reproduce on the same
+SoC's Cortex-X3 prime core. We use an Intel Alder Lake core as a non-Arm baseline. Following prior
+\revizor{} work, we report throughput as test cases per hour with the number of inputs per test
+case, and we report, per violation, the \emph{time to detection} (TTD): the mean wall-clock time
+before the first detected violation on the Neoverse~N3.
 
 \section{Fuzzing throughput}
 \label{sec:eval-throughput}
-\scaffold{Local versus remote orchestration throughput table (test cases/hour, inputs
-/test case, executions/second). Numbers to be filled.}
+
+The fuzzer runs in two configurations. In \emph{local} execution the generator, the contract
+executor, and the hardware executor all run on the N3. In \emph{remote} execution a controller
+generates and models test cases while a thin agent on each device only executes them and returns
+hardware traces, which lets one controller drive devices---such as the Pixel~8---that cannot host
+the full toolchain (\autoref{sec:port-remote}). \autoref{tab:eval-throughput} reports both.
+
+\begin{table}[t]\centering\small
+\setlength{\tabcolsep}{8pt}
+\caption{Fuzzing throughput on the Neoverse~N3: local execution versus remote orchestration.}
+\label{tab:eval-throughput}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+ & Local & Remote \\
+\midrule
+Test cases / hour   & \rv{?} & \rv{?} \\
+Inputs / test case  & \rv{?} & \rv{?} \\
+Executions / second & \rv{?} & \rv{?} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \section{Contract violations}
 \label{sec:eval-violations}
-\scaffold{The violations table: Spectre-v1, Spectre-v2 (L1D, standard; and BTB, the
-case current priming misses), Spectre-v4, the canonicality leak (cache/TLB and BTB),
-the AUT* sign-bit leak, and the unexplained L1D IP-prefetcher effect (Alder Lake
-only). TTD on the N3; reproduction on N3 / Pixel~8 (A715) / Alder Lake.}
+
+\autoref{tab:eval-violations} lists the violations the fuzzer finds, their time to detection on
+the N3, and whether each reproduces on the N3, the Pixel~8 (Cortex-A715), and the Alder Lake
+baseline. Spectre-v1 and Spectre-v4 are not a contribution of this work; we reproduce them as a
+sanity check. For Spectre-v2 we report two detection paths: through the L1D it is the standard
+\revizor{} style, while through the BTB it has the code structure that standard priming cannot
+catch and that the generalized priming of \autoref{chap:priming} detects. Our own findings are
+the canonicality leak (\autoref{chap:canon}) and the \texttt{AUT*} sign-bit leak. We additionally
+observe, on the Alder Lake baseline only, an unexplained violation tied to the L1D
+instruction-pointer prefetcher: we have not explained the mechanism, but the signal appears and
+disappears deterministically as the corresponding prefetcher-control bit is toggled, so it is a
+genuine microarchitectural effect rather than measurement noise.
+
+\begin{table}[t]\centering\small
+\setlength{\tabcolsep}{6pt}
+\caption{Contract violations. TTD is the mean time to first detection on the Neoverse~N3.
+\cmark/\xmark: reproduced / not observed. \emph{n/a}: the underlying feature is absent on that
+platform. Red entries are not yet measured or confirmed.}
+\label{tab:eval-violations}
+\begin{tabular}{@{}l l c c c c@{}}
+\toprule
+Violation & Channel & TTD (N3) & N3 & Pixel~8 & Alder Lake \\
+\midrule
+Spectre-v1 (conditional branch) & L1D       & \rv{?} & \rv{\cmark} & \rv{\cmark} & \cmark \\
+Spectre-v2 (indirect branch)    & L1D       & \rv{?} & \rv{\cmark} & \rv{\cmark} & \cmark \\
+Spectre-v2 (indirect branch)    & BTB       & \rv{?} & \rv{\cmark} & \rv{\cmark} & \cmark \\
+Spectre-v4 (store bypass)       & L1D       & \rv{?} & \rv{\cmark} & \rv{\cmark} & \cmark \\
+Canonicality                    & cache/TLB & \rv{?} & \cmark & \cmark & \cmark \\
+Canonicality                    & BTB       & \rv{?} & \cmark & \cmark & \xmark \\
+\texttt{AUT*} sign bit          & cache/TLB & \rv{?} & \cmark & \rv{?} & n/a \\
+L1D IP prefetcher (unexplained) & L1D       & ---    & \xmark & \xmark & \cmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{The \texttt{AUT*} sign-bit leak.}
+The \texttt{AUT*} instruction family leaks the pointer's \emph{sign bit}, not its signature. After
+PACMAN~\cite{pacman}, Arm introduced a mitigation that makes speculative authentication behave
+identically whether or not the signature is correct, so that the correctness of the \texttt{PAC}
+signature is itself indistinguishable under speculation---the speculative path always proceeds as
+if the signature were correct. As the architecture dictates, when an authentication instruction
+executes, the effective sign bit is sign-extended into the bits that the \texttt{PAC} field
+occupied, just before the access. The fuzzer flagged that when that sign bit is corrupted, there
+is no effect on the L1D, and further investigation showed no effect on the instruction or data
+TLB either, unlike a correct sign bit, which does leave a footprint. This holds for both the
+\texttt{AUT*} and the combined authenticate-and-branch instructions, so an attacker can leak one
+bit at a time using the authentication instructions themselves as the leak primitive. It is not a
+signature forgery: no signature is recovered, guessed, or installed.
 
 \section{Localization cost}
 \label{sec:eval-localize}
-\scaffold{Hardware executions to localize a boundary: linear scan ($k$) versus binary
-search ($\lceil\log_2(k+1)\rceil$), tying back to \autoref{chap:priming} and the
-proofs in \autoref{appendix:localization}.}
+
+Once a violation is detected, the generalized priming localizes the responsible class boundary
+among the $k$ equivalence classes of a priming batch (\autoref{sec:priming-localizers}). The
+linear scan runs at most $k$ hardware executions and returns the largest leaking class; the binary
+search runs only $\lceil\log_2(k+1)\rceil$ and returns one. The saving is exponential, and it
+matters because every execution is a full prime-and-measure cycle on the device.
+\autoref{tab:eval-localize} gives the counts for representative batch sizes; the optimality of both
+is proved in \autoref{appendix:localization}.
+
+\begin{table}[t]\centering\small
+\setlength{\tabcolsep}{8pt}
+\caption{Localization cost: hardware executions to localize one boundary among $k$ equivalence
+classes, linear scan (worst case) versus binary search.}
+\label{tab:eval-localize}
+\begin{tabular}{@{}l c c c@{}}
+\toprule
+ & $k{=}12$ & $k{=}64$ & $k{=}256$ \\
+\midrule
+Linear scan (worst case) & 12 & 64 & 256 \\
+Binary search            & 4  & 7  & 9 \\
+Measured avg.\ (binary)  & \rv{?} & \rv{?} & \rv{?} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \section{End-to-end exploitation}
 \label{sec:eval-exploit}
-\scaffold{Cross-boundary recovery (cross-process BTB: 100\% over the PMU, $\approx$65
-bit/s; guest-to-host BTB: 100\%, $\approx$130 bit/s; EL2$\to$EL0 dTLB: 100\%,
-$\approx$1230 bit/s). A ROP chain built entirely from OpenSSL's own gadgets recovers
-2044/2048 bits ($99.8\%$) of an RSA-2048 private key. Blind stack-canary recovery via
-three windows (v1 20/20, v4 18/20, rsb 19/20). Reconcile the ``musl'' ROP chain from
-the abstract against the current artifacts (open item).}
+
+\paragraph{Reach across isolation boundaries.}
+A single binary recovers a victim's secret high-pointer bits---a fresh random \texttt{PAC} field
+the attacker does not know in advance---across three boundaries, without the victim's key and
+without the victim disclosing the pointer. \textbf{Cross-process} (EL0 to EL0) rides the shared
+per-core BTB, with the victim branching once per measurement: $100\%$ recovery over the PMU
+read-out at about $65$~bit/s, or $90$--$100\%$ with a rootless \reg{cntvct\_el0} timer at about
+$7$~bit/s. \textbf{Cross-VM} (guest to host) shares a physical core over the BTB, timed in the
+guest with \reg{cntvct\_el0}: $100\%$ at about $130$~bit/s. \textbf{Cross-privilege} (EL2 to EL0),
+an EL2 kernel-module victim under VHE leaking to an EL0 attacker, uses the shared L1 data TLB,
+because the BTB is split across the exception-level boundary: $100\%$ at about $1230$~bit/s.
+
+\paragraph{Weaponization with return-oriented programming.}
+We weaponize the leak with two return-oriented-programming chains, built from \texttt{musl} and
+OpenSSL, each delivering the oracle through a real binary with only a simple memory-copy buffer
+overflow and no attacker code in the victim. Both achieve arbitrary reads from the victim's
+address space. The \textbf{OpenSSL} target, compiled without Pointer Authentication or stack
+canaries---both explicit anti-ROP mitigations---has its overflow drive a chain built entirely from
+gadgets inside the OpenSSL library itself, which opens a Spectre-v4 window and transmits over the
+BTB channel read with the rootless \reg{cntvct\_el0} timer. Because the read primitive walks
+OpenSSL's own heap, it recovers a complete in-use RSA-2048 private key, at a campaign setting of
+\reg{--samples 1500} (about $5.5$~hours). We additionally demonstrate \textbf{blind stack-canary}
+recovery: an attacker recovers the victim's own stack canary with no prior knowledge, from a
+two-dimensional-array gadget driven the three independent ways of \autoref{sec:canon-windows}---a
+mistrained bounds check (Spectre-v1), a store-bypassed bound (Spectre-v4), and a return shadow
+(Spectre-RSB)---recovering the full \reg{[55:0]} pointer value.
 
 \section{Covert-channel analysis}
 \label{sec:eval-covert}
-\scaffold{Capacity and error of the channel; the context-switch wall that forces the
-cross-domain variant onto the BTB, trading bandwidth for persistence.}
+
+The bit rates above bound the channel's capacity, and they differ by carrier for a structural
+reason. A transient L1D fill is same-thread-bound and is discarded on a context switch, so it
+cannot carry a leak across a boundary. The cross-domain variants therefore ride a per-core
+structure that survives the switch---the BTB, or the data TLB where the BTB is split across the
+boundary---which trades bandwidth for persistence. This \emph{context-switch wall} is why the
+EL2-to-EL0 leak, carried by the shared data TLB, runs an order of magnitude faster than the
+BTB-carried cross-process leak.

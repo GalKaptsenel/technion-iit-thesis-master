@@ -6,8 +6,14 @@
 
 % Small convenience macros used throughout the thesis.
 \usepackage{xspace}
+\usepackage{xcolor}
+\usepackage{pifont}
 \newcommand{\revizor}{\textsc{Revizor}\xspace}
 \newcommand{\reg}[1]{\texttt{#1}}
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+% A draft numeric value still to be measured/confirmed, rendered red.
+\newcommand{\rv}[1]{\textcolor{red}{\textbf{#1}}}
 
 % A citation whose exact/official reference is not yet verified. Kept as a plain
 % \cite in the thesis; grep for \vcite to find entries to confirm before printing.
@@ -26,3 +32,5 @@
 \newcommand{\tmax}{t_{\max}}
 \newcommand{\batch}[1]{[\IS,\,#1]}
 \newcommand{\spl}[1]{\sigma_{a\to b}(#1)}
+\newcommand{\Al}{\mathit{Attack}_{\mathrm{L1D}}}
+\newcommand{\AQ}[1]{\mathit{Attack}^{Q}_{#1}}

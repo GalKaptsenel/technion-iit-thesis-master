@@ -1,27 +1,60 @@
 \chapter{Proof-of-Concept Artifacts}
 \label{appendix:pocs}
 
-\scaffold{Per Technion guidelines, software developed for the research is described in
-an appendix. Summarize the four self-scoring proof-of-concept programs from the
-arm-disclosure artifact, their build/run model, and the attacker model, without
-pasting full source. Draw from the arm-disclosure README.}
+The research produced a set of proof-of-concept programs that demonstrate the canonicality leak
+and its reach. As the Technion guidelines ask that software developed for a thesis be described in
+an appendix, we summarize them here; we describe their structure and attacker model rather than
+reproduce their source. Each is \emph{self-scoring}: the victim generates a fresh random secret
+each round, and the harness compares it to the recovered value only to report accuracy. All
+measurements are taken on the Neoverse~N3, each pinned to a single isolated core. The attacker runs
+unprivileged at EL0, and for the cross-process and guest-to-host cases the attacker and victim share
+one physical core; no elevated privilege, special instruction, or configuration is required beyond a
+vulnerable code pattern in the target and the ability to co-locate on a core.
 
 \section{Cross-boundary secret leak}
 \label{app:poc-xboundary}
-\scaffold{\texttt{canon\_leak --mode \{xproc|xvm|xel\}}: one binary, three boundaries;
-PMU and rootless \reg{cntvct\_el0} read-outs.}
+
+A single binary, invoked as \reg{canon\_leak --mode \{xproc|xvm|xel\}}, recovers a victim's secret
+high-pointer bits---a fresh random \reg{PAC} field the attacker does not know in advance---across
+three boundaries, without the victim's key and without the victim disclosing the pointer. The
+\reg{xproc} mode leaks EL0 to EL0 over the shared per-core branch-target buffer, the \reg{xvm} mode
+from an attacker guest to a victim host over the same BTB, and the \reg{xel} mode from an EL2
+kernel-module victim under VHE to an EL0 attacker over the shared L1 data TLB, which it uses because
+the BTB is split across the exception-level boundary. The read-out uses either a PMU event counter
+or the rootless \reg{cntvct\_el0} virtual counter, the latter needing no PMU access, driver, or
+privilege.
 
 \section{Blind stack-canary recovery}
 \label{app:poc-canary}
-\scaffold{\texttt{canary\_leak\_blind}: the two-dimensional-array gadget and the three
-speculation windows (v1/v4/rsb), read via Flush+Reload.}
+
+Invoked as \reg{canary\_leak\_blind -w \{v1|v4|rsb\}}, this PoC recovers a process's own stack canary
+with no prior knowledge of its value. The gadget is a two-dimensional array dereference whose
+out-of-bounds inner index reads the canary, so that only the mispredicted path forms the offending
+address and the access stays in bounds architecturally. The same gadget is driven three independent
+ways---a mistrained bounds check (Spectre-v1), a store-bypassed bound (Spectre-v4), and a return
+shadow (Spectre-RSB). Recovery reads the canonicality oracle of \autoref{chap:canon} through
+Flush+Reload~\cite{flushreload} over a pre-mapped page scaffold, combining an additive sweep for the
+high bits with a top-down carry-leak for the low bits, and recovers the full \reg{[55:0]} value.
 
 \section{RSA-2048 key recovery through OpenSSL}
 \label{app:poc-openssl}
-\scaffold{\texttt{rsa\_leak}: a ROP chain from OpenSSL's own gadgets opening a
-Spectre-v4 window over the BTB channel; near-complete private-key recovery.}
 
-\section{EL3 round trip and the BTB}
+Invoked as \reg{rsa\_leak}, this PoC is an end-to-end attack through an unmodified OpenSSL. A plain
+stack-buffer overflow drives a return-oriented chain built entirely from gadgets found within the
+OpenSSL library itself, with no attacker code in the victim. The chain sets up and fires a
+Spectre-v4 window inside the real victim and transmits over the BTB channel, read with the rootless
+\reg{cntvct\_el0} timer~\cite{primeprobe}. Because the read primitive walks OpenSSL's own heap, it
+recovers the bytes of an in-use RSA-2048 private key; the one build requirement is that the target
+is compiled without pointer-authenticated returns.
+
+\section{An EL3 round trip does not flush the BTB}
 \label{app:poc-smc}
-\scaffold{\texttt{smc\_bench}: evidence that an EL3 world switch does not flush the
-normal-world BTB---the precondition for a possible secure/non-secure crossing.}
+
+Invoked as \reg{smc\_bench}, this PoC tests a necessary precondition for crossing the secure/
+non-secure boundary. We cannot place a victim in the secure world on our hardware, so instead of
+demonstrating the crossing we test whether entering EL3 disturbs the normal-world branch-target
+buffer. The harness primes one EL0 BTB entry, performs an EL3 round trip between the prime and the
+probe, and reports whether the entry survived. It survives intact across many round trips, while
+control experiments confirm the entry is evictable and that the measurement can see a real flush.
+An EL3 world switch therefore does not by itself destroy the prediction state the BTB channel relies
+on, which is the open question of \autoref{sec:concl-open}.

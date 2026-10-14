@@ -3,29 +3,51 @@
 
 \section{Summary}
 \label{sec:concl-summary}
-\scaffold{Recap the contributions and the thesis's central claim: bringing MRT to
-AArch64, strengthening leak detection provably (generalized priming), systematizing
-precondition fuzzing, and using both to discover and weaponize the canonicality- and
-alignment-based leak across server- and mobile-class Arm CPUs and across isolation
-boundaries.}
+
+This thesis brought automated, contract-based leak discovery to AArch64 and used it to find and
+weaponize a new class of Arm leaks. We ported \revizor{}'s model-based relational testing to
+AArch64 with a native-execution contract executor, added headless fuzzing of remote cores, and
+modeled the Pointer Authentication and Memory Tagging extensions
+(\autoref{chap:port}). We showed that \revizor{}'s priming step is incomplete---it cannot report a
+leak whose only effect on its own run lies outside the L1 data cache---and replaced it with a
+generalized rule that keeps the contract-violation definition unchanged, provably detects strictly
+more, and localizes each report to a genuine violation with two optimal localizers
+(\autoref{chap:priming}). We introduced precondition fuzzing, which seals the precondition sites of
+a test case and fills them per input to satisfy or violate a precondition on a speculative-only
+path, without ever faulting the victim (\autoref{chap:precond}). Together these uncovered a leak
+rooted in the CPU's canonicality and alignment checks on loads, stores, and indirect branches
+(\autoref{chap:canon}), which reproduces across server-class and mobile Arm cores and crosses the
+process, virtualization, and privilege boundaries, and which we weaponized end to end to recover a
+complete RSA-2048 private key through OpenSSL (\autoref{chap:eval}).
 
 \section{Open questions}
 \label{sec:concl-open}
 
 \paragraph{Active page-steering instead of refusal.}
-\scaffold{Replace the refusal-based spec-only safety in the port with a page-steering
-sealing primitive (main-only clamp + self-inverse page-bit flip on speculative-only
-decoys) so no test case is discarded for page reachability; wire the spill size clamp.}
+The port keeps architectural accesses out of speculative-only pages by \emph{refusing} and
+discarding any test case whose architectural accesses could reach such a page. A more complete
+design would make page selection a sealing primitive---clamping architectural reach to a single
+page and flipping the page-selecting address bit with a self-inverse operation only on
+speculative-only decoys---so that no test case is discarded for page reachability. Wiring the
+corresponding size clamp for wide (SIMD) accesses is part of the same change.
 
 \paragraph{The unexplained prefetcher effect.}
-\scaffold{Root-cause the L1D IP-prefetcher violation observed on Alder Lake, which is
-deterministic in the prefetcher-enable bit.}
+The L1D instruction-pointer prefetcher violation observed on the Alder Lake baseline is
+deterministic in the prefetcher-control bit but not yet root-caused. Explaining it, and
+determining whether an analogous effect exists on the Arm targets, is left to future work.
 
 \paragraph{The secure / non-secure boundary.}
-\scaffold{An EL3 round trip does not flush the normal-world BTB; whether the BTB
-eviction channel crosses the secure boundary for a real S-EL0 victim is open.}
+A necessary precondition for crossing the secure boundary holds on our hardware: an EL3 world
+switch does not by itself flush the normal-world branch-target buffer, so the BTB eviction channel
+survives it. Whether the channel actually crosses to a secure-world victim, which requires a
+trusted-execution vehicle we did not have, remains open.
 
-\paragraph{Broader precondition classes and mitigations.}
-\scaffold{Further instruction preconditions to fuzz, the exact sign-bit / TBI regime
-for the sign-extension primitive, and the suggested mitigation (make the speculative
-treatment of legal and illegal targets indistinguishable).}
+\paragraph{The sign bit and TBI, and a mitigation.}
+The exact effective sign bit for the sign-extension primitive depends on the Top Byte Ignore
+configuration---bit 55 when TBI is enabled, bit 63 otherwise---and pinning this down per regime is
+a small but necessary refinement. More broadly, the leak admits a direct mitigation: the
+speculative treatment of in-range and out-of-range (and of correctly and incorrectly aligned)
+targets should be made indistinguishable, so that a speculative access to an illegal target either
+allocates exactly as a legal one does or defers allocation until the access is known to be
+architecturally legal. Evaluating such a mitigation, and fuzzing further instruction
+preconditions, are natural next steps.

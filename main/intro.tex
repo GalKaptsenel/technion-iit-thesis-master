@@ -119,10 +119,7 @@ exception-based testing of Meltdown-type leaks~\cite{speculation_fault}, testing
 isolation boundaries~\cite{isolation}, and design-time testing of secure-speculation
 countermeasures~\cite{amulet}. This thesis ports MRT to AArch64, strengthens its
 detection rule, and adds precondition fuzzing for the Arm faults that x86 MRT does not
-model. A concurrent line of work extends MRT to indirect control flow by simulating the
-branch predictor during input generation.% TODO: cite the control-flow-speculation (FlowVizor) sibling work once a reference exists.
-It is complementary, targeting the reachability of Spectre-v2 rather than precondition
-violations.
+model.
 
 \paragraph{Attacks on Arm's defensive extensions.}
 PACMAN~\cite{pacman} speculatively turns a core into a Pointer Authentication oracle, and
