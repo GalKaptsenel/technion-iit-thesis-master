@@ -1,0 +1,39 @@
+% This file contains the abstract part of your thesis - in English and
+% in Hebrew (within \abstractEnglish and \abstractHebrew respectively).
+%
+% Notes:
+% - This file uses the UTF-8 character set encoding for the Hebrew
+%   text not to get garbled. Keep it that way.
+% - Assuming your thesis is mainly in English, Graduate School 
+%   regulations mandate the following lengths for the abstracts:
+%
+%      Language    Min. Length   Max. Length
+%     ---------------------------------------
+%      English       200 words     500 words
+%      Hebrew        500 words   2,000 words
+%
+%   so that the Hebrew abstract typically has some content from
+%   the English introduction and an overview of the results, not
+%   present in the English; it is not just a translation.
+
+\abstractEnglish{
+
+Modern CPUs rely on largely undocumented performance mechanisms-including speculative execution, branch prediction, prefetching, and store-load reordering-that have repeatedly introduced unintended security vulnerabilities. Spectre and Meltdown, first discovered on x86, demonstrated that speculative execution combined with microarchitectural side channels can leak across security boundaries, and despite extensive mitigations, new leaks continue to emerge. Arm CPUs, which power the vast majority of smartphones and are increasingly prevalent in laptops, HPC systems, and datacenters, have received substantially less scrutiny than x86-64, yet are vulnerable to Spectre-class attacks and Arm-specific attacks such as TikTag and PACMAN.
+A recurring pattern underlies many of these leaks: instructions impose preconditions on their operands-for example, a matching MTE tag or valid pointer signature-and violating these preconditions can cause faults or other attacker-observable microarchitectural effects. We port Revizor, a black-box fuzzer based on model-based relational testing, to AArch64, add headless fuzzing of remote CPUs, and extend it to Arm-specific features including MTE and PAuth. We further arm Revizor with a novel and efficient approach for detecting leakage, provably extending the set of detectable leaks, and introduce a methodology for systematically fuzzing preconditions and assumptions of instructions. Both enable us to uncover a previously unknown leak arising from CPU canonicality and alignment checks on loads, stores, and indirect branches. We demonstrate the leak on the Neoverse N3 and Google Tensor G3, spanning server-class and mobile Arm CPUs, and show that it crosses both privilege (EL0–EL2) and virtualization (attacker-VM to victim-host) boundaries. Finally, we weaponize the leak with two distinct ROP chains, built from musl and OpenSSL, achieving arbitrary reads from a victim process's address space and, in the OpenSSL case, recovering a complete RSA-2048 private key.
+
+} % end of English abstract
+
+
+\abstractHebrew{
+
+% Note that certain commands don't work that well in Hebrew "mode".
+% If this happens to you, try wrapping the command within a
+% \textenglish{ } - that may (or may not) help.
+
+מעבדים מודרניים מסתמכים על מנגנונים שונים לשיפור ביצועיהם שרובם אינם מתועדים - כולל הרצה ספקולטיבית,  \textenglish{Branch Prediction, prefetching} ו-\textenglish{store-load reordering} - אשר הובילו שוב ושוב לפרצות אבטחה לא מכוונות. פרצות כגון \textenglish{Spectre} ו-\textenglish{Meltdown}, שהתגלו לראשונה בארכיטקטורת \textenglish{x86}, הוכיחו כי ביצוע ספקולטיבי בשילוב עם ערוצי צד מיקרו-ארכיטקטוניים עלולים לדלוף מידע מעבר לגבולות האבטחה, ולמרות אמצעי הגנה נרחבים, דלפות חדשות ממשיכות לצוץ. מעבדי \textenglish{Arm}, המניעים את הרוב המכריע של הטלפונים החכמים והופכים לנפוצים יותר ויותר במחשבים ניידים, מערכות \textenglish{HPC} וחוות שרתים, זכו לבחינה פחותה משמעותית בהשוואה ל-\textenglish{x86-64}, אך הם עדיין פגיעים להתקפות מסוג \textenglish{Spectre} ולהתקפות ייעודיות ל-\textenglish{Arm} כגון \textenglish{TikTag} ו-\textenglish{PACMAN}.
+
+דפוס חוזר עומד בבסיס רבות מהדלפות אלו: פקודות מציבות תנאים מוקדמים על האופרנדים שלהן - לדוגמה, תגית \textenglish{MTE} תואמת או חתימת מצביע חוקית - והפרה של תנאים אלו עלולה לגרום לשגיאות או לאפקטים מיקרו-ארכיטקטוניים אחרים הניתנים לצפייה על ידי תוקף. אנו מבצעים התאמה של \textenglish{Revizor}, כלי \textenglish{fuzzing} בשיטת קופסה שחורה המבוסס על בדיקות יחסיות מבוססות-מודל, לארכיטקטורת \textenglish{AArch64}, מוסיפים יכולות \textenglish{fuzzing} מרחוק, ומרחיבים אותו כך שיתמוך בתכונות ייחודיות ל-\textenglish{Arm}, כולל \textenglish{MTE} ו-\textenglish{PAuth}. בנוסף, אנו מציידים את \textenglish{Revizor} בגישה חדשנית ויעילה לאיתור דלפות, המרחיבה באופן מוכח את קבוצת הדלפות הניתנות לגילוי, ומציגים מתודולוגיה לבדיקה שיטתית של תנאים מוקדמים והנחות של פקודות.
+
+שני אלו מאפשרים לנו לחשוף דלפה שלא הייתה ידועה קודם לכן, הנובעת מבדיקות תקינות (\textenglish{canonicality}) ויישור (\textenglish{alignment}) של המעבד בעת פעולות טעינה, שמירה והסתעפויות עקיפות. אנו מדגימים את הדלפה על מעבדי \textenglish{Neoverse N3} ו-\textenglish{Google Tensor G3}, המקיפים מעבדי \textenglish{Arm} לשרתים ולמכשירים ניידים, ומראים כי היא חוצה גבולות של הרשאות (\textenglish{EL0--EL2}) ושל וירטואליזציה (ממכונה וירטואלית של התוקף אל המכונה המארחת). לבסוף, אנו הופכים את הדלפה לנשק מעשי באמצעות שתי שרשראות \textenglish{ROP} נפרדות, הבנויות מ-\textenglish{musl} ו-\textenglish{OpenSSL}, ומשיגים קריאה שרירותית ממרחב הכתובות של תהליך קורבן. במקרה של \textenglish{OpenSSL}, אנו מצליחים לשחזר מפתח פרטי \textenglish{RSA-2048} שלם.
+
+} % end of Hebrew abstract
