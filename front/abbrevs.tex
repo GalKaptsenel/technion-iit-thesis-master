@@ -1,18 +1,21 @@
 % Notation and abbreviations for the thesis.
 %
 % Abbreviations use \newacronym[category=notation-category]{key}{SHORT}{long};
-% symbols use \newglossaryentry{key}{type=notation, category=notation-category,
-% name=..., description=..., sort=...}. The notation category and the
-% \keepUnusedAbbreviations call at the bottom are what make every entry appear
-% in the "Notation and Abbreviations" list, whether or not it is \gls-referenced
-% in the body. Requires glossaries-extra (loaded unless the noabbrevs option).
+% instruction mnemonics use \newglossaryentry{key}{type=notation,
+% category=notation-category, name=..., description=..., sort=...}. The notation
+% category and the \keepUnusedAbbreviations call at the bottom make every entry
+% appear, whether or not it is \gls-referenced in the body. Requires
+% glossaries-extra (loaded unless the noabbrevs option).
+%
+% The formal mathematical notation (P, I, C, HTrace, O, Attack_O, run, Q,
+% HTrace^Q, IS, lanes, splice, r(t), t_max, etc.) is intentionally NOT listed
+% here: each symbol is defined in place where it is introduced in the body.
 
 % =====================================================================
-%  Abbreviations --- architecture and the Arm security extensions
+%  Architecture and the Arm security extensions
 % =====================================================================
 
 \newacronym[category=notation-category]{aarch64}{AArch64}{the 64-bit execution state of the Arm architecture}
-\newacronym[category=notation-category]{a64}{A64}{the fixed-width AArch64 instruction set}
 \newacronym[category=notation-category]{isa}{ISA}{instruction set architecture}
 \newacronym[category=notation-category]{asl}{ASL}{Arm Architecture Specification Language}
 \newacronym[category=notation-category,description={EL0 user, EL1 kernel, EL2 hypervisor, EL3 secure firmware}]{el}{EL}{exception level}
@@ -27,16 +30,14 @@
 \newacronym[category=notation-category]{mte}{MTE}{Memory Tagging Extension}
 \newacronym[category=notation-category]{qarma}{QARMA}{the tweakable block cipher used to compute pointer authentication codes}
 \newacronym[category=notation-category]{csv2}{FEAT\_CSV2}{Cache Speculation Variant~2 (isolates branch-prediction contexts)}
-\newacronym[category=notation-category]{fpac}{FEAT\_FPAC}{faulting on pointer-authentication failure}
-\newacronym[category=notation-category]{fpaccombine}{FEAT\_FPACCOMBINE}{faulting on combined-instruction pointer-authentication failure}
+\newacronym[category=notation-category,description={\texttt{FEAT\_FPACCOMBINE} extends this to combined instructions}]{fpac}{FEAT\_FPAC}{faulting on pointer-authentication failure}
 \newacronym[category=notation-category]{nzcv}{NZCV}{the AArch64 condition flags (negative, zero, carry, overflow)}
 \newacronym[category=notation-category]{smc}{SMC}{Secure Monitor Call (a call into EL3)}
-\newacronym[category=notation-category]{simd}{SIMD}{single instruction, multiple data}
 \newacronym[category=notation-category]{soc}{SoC}{system on chip}
 \newacronym[category=notation-category]{cpu}{CPU}{central processing unit}
 
 % =====================================================================
-%  Abbreviations --- microarchitecture
+%  Microarchitecture
 % =====================================================================
 
 \newacronym[category=notation-category]{l1d}{L1D}{level-1 data cache}
@@ -46,7 +47,7 @@
 \newacronym[category=notation-category]{pmu}{PMU}{performance monitoring unit}
 
 % =====================================================================
-%  Abbreviations --- method, framework, and this work
+%  Method, framework, and this work
 % =====================================================================
 
 \newacronym[category=notation-category]{mrt}{MRT}{model-based relational testing}
@@ -57,7 +58,7 @@
 \newacronym[category=notation-category]{ttd}{TTD}{time to first detection}
 
 % =====================================================================
-%  Abbreviations --- exploitation and general
+%  Exploitation and general
 % =====================================================================
 
 \newacronym[category=notation-category]{rop}{ROP}{return-oriented programming}
@@ -81,73 +82,6 @@
 \newglossaryentry{instr-udf}{type=notation, category=notation-category,
   name={\texttt{UDF}}, sort={UDF instr},
   description={the permanently-undefined A64 encoding, used as a sealing placeholder that traps if executed}}
-
-% =====================================================================
-%  Notation --- contracts, traces, and model-based relational testing
-% =====================================================================
-
-\newglossaryentry{symb-prog}{type=notation, category=notation-category,
-  name={\ensuremath{P}}, sort={program P},
-  description={a test-case program}}
-\newglossaryentry{symb-input}{type=notation, category=notation-category,
-  name={\ensuremath{I},\ \ensuremath{I_1},\ \ensuremath{I_2}}, sort={input I},
-  description={a program input: its initial register and sandbox-memory state}}
-\newglossaryentry{symb-contract}{type=notation, category=notation-category,
-  name={\ensuremath{\mathcal{C}}}, sort={contract C},
-  description={a speculation contract}}
-\newglossaryentry{symb-ctrace}{type=notation, category=notation-category,
-  name={\ensuremath{\mathit{CTrace}}}, sort={contract trace},
-  description={the contract trace \ensuremath{\mathcal{C}(P,I)}}}
-\newglossaryentry{symb-htrace}{type=notation, category=notation-category,
-  name={\ensuremath{\mathit{HTrace}}}, sort={hardware trace},
-  description={the hardware trace, the sequence of attacker-visible observations}}
-\newglossaryentry{symb-obs}{type=notation, category=notation-category,
-  name={\ensuremath{O},\ \ensuremath{O_{\mathrm{L1D}}}}, sort={observer O},
-  description={an observation function (observer), and the L1D observer \textsc{Revizor} measures}}
-\newglossaryentry{symb-ustate}{type=notation, category=notation-category,
-  name={\ensuremath{\mu}}, sort={microarchitectural state},
-  description={a microarchitectural state}}
-\newglossaryentry{symb-ctx}{type=notation, category=notation-category,
-  name={\ensuremath{\mathit{Ctx}}}, sort={context Ctx},
-  description={the initial microarchitectural context of a run}}
-\newglossaryentry{symb-attack}{type=notation, category=notation-category,
-  name={\ensuremath{\mathit{Attack}_O(P,I,\mathit{Ctx})}}, sort={Attack},
-  description={the hardware trace of \ensuremath{P} on \ensuremath{I} from context \ensuremath{\mathit{Ctx}} under observer \ensuremath{O}}}
-\newglossaryentry{symb-run}{type=notation, category=notation-category,
-  name={\ensuremath{\mathrm{run}(P,I,\mu)}}, sort={run},
-  description={the microarchitectural state left by running \ensuremath{P} on \ensuremath{I} from state \ensuremath{\mu}}}
-\newglossaryentry{symb-q}{type=notation, category=notation-category,
-  name={\ensuremath{Q}}, sort={follow-up Q},
-  description={a fixed follow-up program run after the victim, independent of its input}}
-\newglossaryentry{symb-htraceq}{type=notation, category=notation-category,
-  name={\ensuremath{\mathit{HTrace}^{Q}},\ \ensuremath{\mathit{Attack}^{Q}_{O}}}, sort={Q-hardware trace},
-  description={the \ensuremath{Q}-hardware trace: the observer read after the victim and then \ensuremath{Q} have run}}
-\newglossaryentry{symb-bot}{type=notation, category=notation-category,
-  name={\ensuremath{\bot}}, sort={empty input},
-  description={the empty input, supplied to a follow-up program \ensuremath{Q}}}
-
-% =====================================================================
-%  Notation --- lanes, splices, and localization
-% =====================================================================
-
-\newglossaryentry{symb-is}{type=notation, category=notation-category,
-  name={\ensuremath{\mathrm{IS}}}, sort={initialization sequence},
-  description={an initialization sequence that drives the microarchitecture to a reproducible state}}
-\newglossaryentry{symb-lane}{type=notation, category=notation-category,
-  name={\ensuremath{L^{(a)}}}, sort={lane},
-  description={a lane: one batch of \ensuremath{k+1} inputs, boosted class by class from the first lane}}
-\newglossaryentry{symb-class}{type=notation, category=notation-category,
-  name={\ensuremath{k}}, sort={classes k},
-  description={the number of contract-equivalence classes; the probe is class \ensuremath{k}}}
-\newglossaryentry{symb-splice}{type=notation, category=notation-category,
-  name={\ensuremath{\sigma_{a\to b}(t)}}, sort={splice},
-  description={the splice of lanes \ensuremath{a} and \ensuremath{b} at split \ensuremath{t}: columns before \ensuremath{t} from \ensuremath{a}, the rest from \ensuremath{b}}}
-\newglossaryentry{symb-rt}{type=notation, category=notation-category,
-  name={\ensuremath{r(t)}}, sort={splice measurement},
-  description={the splice measurement: the probe's L1D reading of the batch \ensuremath{\sigma_{a\to b}(t)}}}
-\newglossaryentry{symb-tmax}{type=notation, category=notation-category,
-  name={\ensuremath{t_{\max}}}, sort={t-max},
-  description={the largest boundary, i.e.\ the highest leaking class}}
 
 % --------------------------------
 % Make every entry above appear in the list, used or not.
