@@ -100,8 +100,8 @@ contributions, in the order the thesis presents them, are the following.
   above, we uncover a previously unknown leak that arises from the CPU's canonicality and
   alignment checks on loads, stores, and indirect branches. We demonstrate it on the Arm
   Neoverse~N3 and the Google Tensor~G3, spanning server-class and mobile Arm cores, and
-  show that it crosses privilege boundaries (EL0 to EL2) and the virtualization boundary
-  (an attacker virtual machine to a victim host). We then weaponize it with two
+  show that it crosses privilege boundaries (EL0-attacker to EL2-victim) and the virtualization
+  boundary (an attacker virtual machine to a victim host). We then weaponize it with two
   return-oriented-programming chains, built from \texttt{musl} and OpenSSL, that achieve
   arbitrary reads from a victim process's address space and, in the OpenSSL case, recover
   a complete RSA-2048 private key (\autoref{chap:eval}).
