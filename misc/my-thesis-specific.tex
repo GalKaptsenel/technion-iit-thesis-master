@@ -9,12 +9,14 @@
 \usepackage{xcolor}
 \usepackage{pifont}
 
-% ---- figures: TikZ, coloured table cells, and the shared figure palette ----
-% (If the Overleaf build complains that bidi must be loaded last, these are the
-%  packages to watch; TikZ normally loads fine after polyglossia/bidi here.)
+% ---- figures: TikZ and the shared figure palette ----
+% NOTE: do NOT load colortbl/array here. The class loads bidi (via polyglossia)
+% before this file, and colortbl re-defines \@tabular after bidi has patched it,
+% which breaks every tabular in the body (bidi's \@tabular / \beginR error). TikZ
+% does not touch \@tabular, so it is fine after bidi. Table emphasis therefore uses
+% \textcolor on cell contents (xcolor), never \cellcolor.
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,calc,positioning,decorations.pathreplacing,matrix,fit,backgrounds}
-\usepackage{colortbl}
 \definecolor{laneA}{RGB}{130,90,170}
 \definecolor{laneB}{RGB}{230,126,34}
 \definecolor{iscol}{RGB}{120,120,120}
