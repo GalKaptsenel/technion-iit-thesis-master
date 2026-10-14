@@ -7,18 +7,18 @@ branch prediction, data and instruction prefetching, and store-to-load forwardin
 pipeline runs instructions past unresolved branches and unresolved faults along a
 predicted path, and discards their architectural results when the prediction turns out
 to be wrong. The microarchitectural traces those discarded instructions leave
-behind---a cache line pulled in, a translation cached, a predictor entry
-allocated---are not discarded. This asymmetry between rolled-back architectural state
+behind---a cache line pulled in, a page table translation cached, a predictor entry
+allocated or even modified---are not discarded. This asymmetry between rolled-back architectural state
 and surviving microarchitectural state is the foundation of the transient-execution
 attacks.
 
 The public disclosure of Spectre~\cite{spectre} and Meltdown~\cite{meltdown} showed
-that the asymmetry is not a curiosity but a security problem: speculation steered by an
-attacker, combined with a microarchitectural side channel, leaks data across the
+that the asymmetry introduces a security problem: speculation steered by an
+attacker, combined with a microarchitectural side channel, can leak sensitive data across security
 boundaries that the architecture is supposed to enforce. The years since have produced
 a steady stream of follow-on variants and, in response, a layer of hardware and
-software mitigations. The mitigations are partial. New transient paths and new
-side-channel carriers keep appearing, because the leaking behaviour is a property of
+software mitigations. The mitigations are partial. Some mitigations could altogether disable the optimization feature via hardware configuration   (SSBS[reference]), and others may be inherently too important that the architecture explciitly allows the leakage. New instructions and optimization techniques keep emarging, resulting in new transient paths and new
+side-channels, because the leaking behaviour is a property of
 undocumented microarchitecture rather than of any one instruction sequence that a patch
 can forbid.
 
