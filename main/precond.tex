@@ -1,52 +1,132 @@
 \chapter{Precondition Fuzzing}
 \label{chap:precond}
 
-\scaffold{Chapter intro: the third contribution. Preconditions must hold on the
-architectural flow, but nothing constrains the speculative paths, where a violation
-can leak without faulting. Random generation cannot target this directly, so we
-\emph{seal} test cases and fill the seals per input to enforce or violate each
-precondition. Draw from uasc2027 ``Precondition fuzzing''.}
+The port's generator, like x86 \revizor{}'s, cannot produce the precondition violations behind
+attacks such as PACMAN and TikTag. This chapter closes that gap with a methodology for
+fuzzing instruction preconditions directly. The idea is to \emph{seal} the precondition sites
+of a test case and fill each seal, per input, so that the precondition is deliberately
+satisfied or violated on a speculative-only path, without ever faulting the victim
+architecturally. \autoref{sec:precond-gap} states the gap, \autoref{sec:precond-sealing}
+through \autoref{sec:precond-resolve} build the mechanism, \autoref{sec:precond-contract} fixes
+the contract it tests against, \autoref{sec:precond-primitives} lists the primitives, and
+\autoref{sec:precond-discussion} argues why the construction is sound.
 
 \section{The generation gap}
 \label{sec:precond-gap}
-\scaffold{Why instrumenting every potentially-faulting instruction and excluding the
-violation everywhere (as the generator does) misses transiently-reachable precondition
-violations---an input-reachability question that is intractable in general.}
+
+A precondition must hold along the architectural flow, but nothing constrains the speculative
+paths, where a violation can leak without faulting the program. Random generation cannot target
+this directly: whether an input makes a given instruction retire is an input-reachability
+question, intractable in general. To stay safe for every input, the generator instruments every
+potentially faulting instruction---masking memory addresses into the sandbox, avoiding
+divide-by-zero, and so on---and so excludes the violation everywhere, transient paths included.
+Precondition violations are excluded by construction. Reaching them requires a way to install a
+violation that is guaranteed to be confined to a speculative-only path.
 
 \section{Sealing a test case}
 \label{sec:precond-sealing}
-\scaffold{The static pass that reserves a short, fixed-width sealing (initialized to
-\reg{UDF}) at every precondition site, producing the sealed test case; assembly once
-into an object test case shared by all inputs.}
+
+We walk a freshly generated test case statically. At each instruction whose operands we want to
+fuzz we reserve a \emph{sealing}: a short, fixed-width area immediately preceding the instruction
+of interest, initialized to \reg{UDF}, the permanently undefined A64 encoding. Sealing every site
+yields the \emph{sealed test case}. Assembled once, it becomes an \emph{object test case}, a byte
+template shared by all inputs. The \reg{UDF} filler guarantees that an unfilled sealing traps if
+it is ever reached, so a sealing only ever executes once it has been deliberately filled.
+
+Per input, we fill each sealing with instructions that enforce or violate its precondition just
+before the guarded instruction---for example, materializing the correct \reg{MTE} tag or \reg{PAC}
+signature to enforce the precondition, or an incorrect tag or signature to violate it. The fills
+are carried by a \emph{relocation} section added to the input's \reg{.reif} file
+(\autoref{sec:port-driving}). Just before the input runs, the loader applies the relocations and
+patches the sealings dynamically. An input that satisfies every precondition is the \emph{genuine}
+variant; an input with at least one unsatisfied, speculative-only sealing is a \emph{decoy}
+variant. The two variants are then run and compared on hardware.
 
 \section{The emulation table}
 \label{sec:precond-emul}
-\scaffold{Binding each sealing to an op-emulator so the genuine variant can be filled
-with values not known statically (a PAC signature, an MTE allocation tag); how the CE
-materializes genuine instructions on reach and restores the idle \reg{UDF} filler.}
+
+Filling the genuine variant---and the architectural sealings of a decoy---requires values that
+cannot be known statically, such as a pointer's \reg{PAC} signature or the allocation tag of the
+granule an \reg{MTE} access touches. We give the contract executor (\autoref{sec:port-ce}) an
+optional \emph{emulation table} whose rows bind each sealing to an \emph{op-emulator}. Each
+op-emulator, in turn, dynamically patches the test case's instructions to satisfy the precondition
+for the live register state, as if the variant had been genuine from the beginning. Because the CE
+executes natively and models the extensions in software, it can compute these values even on a
+host that does not implement the extension.
 
 \section{Resolving a test case}
 \label{sec:precond-resolve}
-\scaffold{Per-input resolution from a single CE trace: the minimal speculation depth
-each sealing is reached at (retiring versus speculative-only) and the value it must
-carry; how this sidesteps the static reachability problem.}
+
+A sealing resolves differently for each input, because inputs take different paths and carry
+different values. We recover what each sealing needs from a single CE trace of the object test
+case, driven by the emulation table. The trace reports, per sealing, the minimal speculation depth
+at which it is reached---depth zero means it retires, deeper means it is reached only
+speculatively---and the value it must carry. This sidesteps the static reachability problem: for a
+concrete input, the trace shows exactly which sites retire, so a violating fill can be placed only
+where it is guaranteed to stay on a speculative-only path.
 
 \section{The contract}
 \label{sec:precond-contract}
-\scaffold{Genuine and decoy run the exact same input and the same code outside the
-sealings; we check against CT-SEQ; every sealing acts behind a speculative-only flow,
-so CT-SEQ requires it to leave the hardware trace unchanged.}
+
+The genuine and decoy variants run the \emph{exact same} input---the same data, \reg{PAC} keys,
+and \reg{MTE} tags---and the same code outside the sealings. We test against CT-SEQ, which exposes
+only the load and store addresses and the control flow of the in-order, non-speculative run. Every
+violating sealing acts behind a speculative-only flow, so CT-SEQ requires it to leave the hardware
+trace unchanged. Any divergence between the two variants is therefore a contract
+violation~\cite{contracts,revizor}.
 
 \section{Sealing primitives}
 \label{sec:precond-primitives}
-\scaffold{The primitives, each perturbing one precondition on a speculative-only site
-while the architectural path keeps the genuine fill: PAC signature, MTE tag,
-canonicality, sign-extension, branch target, and page-table (system-configuration)
-preconditions. Note the sign-bit / TBI subtlety (open item in the handout).}
+
+\autoref{tab:precond-sealings} lists the primitives. Each perturbs one precondition on a
+speculative-only site, while the architectural path keeps the genuine fill. The Pointer
+Authentication and Memory Tagging primitives are the automated analogues of PACMAN and TikTag: the
+genuine fill installs a correct signature or tag, and the decoy an incorrect one, so a transiently
+executed \reg{AUT*} or tagged access fails its check only on a squashed path. The canonicality and
+alignment primitives, which \autoref{chap:canon} studies in depth, make the guarded address in
+range and correctly aligned in the genuine variant and out of range or misaligned in the decoy.
+The sign-extension primitive flips a high address bit so that the required sign extension no longer
+holds; which bit is the effective sign bit depends on the Top Byte Ignore configuration (bit 55
+when TBI is enabled, bit 63 otherwise), so the primitive flips the regime-correct bit.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{6pt}
+\caption{Sealing primitives. Each perturbs one precondition on a speculative-only site, while the
+architectural path keeps the genuine fill.}
+\label{tab:precond-sealings}
+\begin{tabular}{@{}l l l@{}}
+\toprule
+Precondition & genuine & decoy (speculative) \\
+\midrule
+PAC signature  & correct signature    & incorrect signature \\
+MTE tag        & correct tag          & incorrect tag \\
+Canonicality   & canonical address    & non-canonical address \\
+Sign-extension & correct sign bits     & flipped sign bit \\
+Branch target  & valid target         & non-canonical / misaligned \\
+Page-table     & descriptor unchanged  & permissions flipped \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Page-table preconditions.}
+Unlike the others, this primitive violates a system-configuration precondition rather than an
+instruction operand. The sandbox maintains a pool of pages reachable only via speculative paths.
+When a decoy variant executes, it randomly flips a controlled subset of a leaf page-table entry's
+permission and attribute fields---the valid bit, the access flag, the access permissions, or the
+memory-attribute index---while the genuine variant leaves every descriptor unchanged.
 
 \section{Discussion}
 \label{sec:precond-discussion}
-\scaffold{Every retiring sealing satisfies its precondition by construction, so a
-violation only falls on a speculative-only path and never crashes the test case; each
-primitive restores architectural state right after the sealed access so genuine and
-decoy re-converge and any trace divergence is localized to the sealed instruction.}
+
+Every retiring sealing satisfies its precondition by construction, so a violation only ever falls
+on a speculative-only path and never crashes the test case. Each primitive also restores
+architectural state immediately after the sealed access---it strips the forged \reg{PAC} bits,
+retags to the real allocation tag, or undoes a pointer manipulation---so the genuine and decoy
+variants re-converge immediately past the site, and their architectural difference is contained to
+the single sealed instruction. The two variants are therefore not identical code: they differ
+exactly in the perturbed sealings. A hardware-trace divergence between them is thus localized to
+those sealings, and confirming a leak reduces to checking that the divergence reflects the
+precondition being violated speculatively rather than an artifact of the perturbed instructions
+themselves.
