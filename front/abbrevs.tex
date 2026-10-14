@@ -1,80 +1,154 @@
-% Use this file to create "glossary entries" for abbreviations and acronyms,
-% and other notation. The entries defined here don't necessarily have to be 
-% used in the thesis (but then you have to decide whether or not to display
-% the unused entries).
-
-% For this file to compile (and the example text in the main/prelims.tex file),
-% the package glossaries-extra is required. It is automatically included unless
-% the noabbrevs class option is used.
-
-% The following will alter the style for typesetting abbreviations when using 
-% the \gls command. Note you can also use multiple styles by categorizing 
-% abbreviations; see the documentation for the glossaries-extras package at:
-% https://ctan.org/pkg/glossaries-extra
+% Notation and abbreviations for the thesis.
 %
-%\setabbreviationstyle[acronym]{long-short-sc}
-%
-% If you're wondering why we're setting the seemingly-redundant "notation 
-% category", that's a hack discussed here:
-% https://tex.stackexchange.com/q/630541/5640 
+% Abbreviations use \newacronym[category=notation-category]{key}{SHORT}{long};
+% symbols use \newglossaryentry{key}{type=notation, category=notation-category,
+% name=..., description=..., sort=...}. The notation category and the
+% \keepUnusedAbbreviations call at the bottom are what make every entry appear
+% in the "Notation and Abbreviations" list, whether or not it is \gls-referenced
+% in the body. Requires glossaries-extra (loaded unless the noabbrevs option).
 
-\newacronym[%
-  category=notation-category,%
-  description=``The Senate and People of Rome'']% The description does not appear anywhere by default
-  {spqr}% the key of the acronym (used with the \gls command for example)
-  {SPQR}% the short form of the acronym
-  {Senātus Populusque Rōmānus}% the long form of the acronym
+% =====================================================================
+%  Abbreviations --- architecture and the Arm security extensions
+% =====================================================================
 
-\newacronym[%
-  category=notation-category,%
-description=A technology used in data storage devices]%
-  {smart}{SMART}{Self-Monitoring, Analysis and Reporting Technology}
+\newacronym[category=notation-category]{aarch64}{AArch64}{the 64-bit execution state of the Arm architecture}
+\newacronym[category=notation-category]{a64}{A64}{the fixed-width AArch64 instruction set}
+\newacronym[category=notation-category]{isa}{ISA}{instruction set architecture}
+\newacronym[category=notation-category]{asl}{ASL}{Arm Architecture Specification Language}
+\newacronym[category=notation-category,description={EL0 user, EL1 kernel, EL2 hypervisor, EL3 secure firmware}]{el}{EL}{exception level}
+\newacronym[category=notation-category]{vhe}{VHE}{Virtualization Host Extensions}
+\newacronym[category=notation-category]{va}{VA}{virtual address}
+\newacronym[category=notation-category]{ttbr}{TTBR}{translation table base register (\texttt{TTBR0}, \texttt{TTBR1})}
+\newacronym[category=notation-category]{asid}{ASID}{address space identifier}
+\newacronym[category=notation-category]{vmid}{VMID}{virtual machine identifier}
+\newacronym[category=notation-category]{tbi}{TBI}{Top Byte Ignore}
+\newacronym[category=notation-category]{pauth}{PAuth}{Pointer Authentication}
+\newacronym[category=notation-category]{pac}{PAC}{pointer authentication code}
+\newacronym[category=notation-category]{mte}{MTE}{Memory Tagging Extension}
+\newacronym[category=notation-category]{qarma}{QARMA}{the tweakable block cipher used to compute pointer authentication codes}
+\newacronym[category=notation-category]{csv2}{FEAT\_CSV2}{Cache Speculation Variant~2 (isolates branch-prediction contexts)}
+\newacronym[category=notation-category]{fpac}{FEAT\_FPAC}{faulting on pointer-authentication failure}
+\newacronym[category=notation-category]{fpaccombine}{FEAT\_FPACCOMBINE}{faulting on combined-instruction pointer-authentication failure}
+\newacronym[category=notation-category]{nzcv}{NZCV}{the AArch64 condition flags (negative, zero, carry, overflow)}
+\newacronym[category=notation-category]{smc}{SMC}{Secure Monitor Call (a call into EL3)}
+\newacronym[category=notation-category]{simd}{SIMD}{single instruction, multiple data}
+\newacronym[category=notation-category]{soc}{SoC}{system on chip}
+\newacronym[category=notation-category]{cpu}{CPU}{central processing unit}
 
-\newacronym[%
-  category=notation-category,%
-  description=to build or produce something{,} rather than purchasing it ready-made or paying someone to make it]%
-  {DIY}{DIY}{do it yourself}
+% =====================================================================
+%  Abbreviations --- microarchitecture
+% =====================================================================
 
-\newacronym[%
-  category=notation-category,%
-  description=a four-letter acronym]
-  {etla}
-  {ETLA}
-  {extended three-letter acronym}
+\newacronym[category=notation-category]{l1d}{L1D}{level-1 data cache}
+\newacronym[category=notation-category]{tlb}{TLB}{translation lookaside buffer}
+\newacronym[category=notation-category]{btb}{BTB}{branch target buffer}
+\newacronym[category=notation-category]{rsb}{RSB}{return stack buffer}
+\newacronym[category=notation-category]{pmu}{PMU}{performance monitoring unit}
 
-\newabbreviation[%
-  type=notation,%
-  category=notation-category,%
-  description=]% This abbreviation has no description; only the abbreviation and the unabbreviated form will be shown
-  {aut}{Aut}{Automorphism group}
+% =====================================================================
+%  Abbreviations --- method, framework, and this work
+% =====================================================================
 
-\newglossaryentry{symb:c}{%
-  type=notation,%
-  category=notation-category,%
-  name=$c$,%
-  description=the speed of light%
-}
+\newacronym[category=notation-category]{mrt}{MRT}{model-based relational testing}
+\newacronym[category=notation-category]{ctseq}{CT-SEQ}{the constant-time, sequential (non-speculative) contract}
+\newacronym[category=notation-category]{cut}{CUT}{CPU under test}
+\newacronym[category=notation-category]{ce}{CE}{contract executor}
+\newacronym[category=notation-category]{reif}{REIF}{Revizor Extensible Input File}
+\newacronym[category=notation-category]{ttd}{TTD}{time to first detection}
 
-\newglossaryentry{symb:a-b-closed}{%
-  type=notation,%
-  category=notation-category,%
-  name=\ensuremath{a \pm b},%
-  description=the closed interval \ensuremath{\left[a-b,a+b\right]}%
-}
+% =====================================================================
+%  Abbreviations --- exploitation and general
+% =====================================================================
 
-\newglossaryentry{supercali}{%
-  type=notation,%
-  category=notation-category,%
-  name=supercalifragilisticexpialidocious,
-  description=%
-    Atoning for being educable through delicate beauty;
-    Something to say when you have nothing to say.}
+\newacronym[category=notation-category]{rop}{ROP}{return-oriented programming}
+\newacronym[category=notation-category]{rsa}{RSA}{Rivest-Shamir-Adleman public-key cryptosystem}
+\newacronym[category=notation-category]{poc}{PoC}{proof of concept}
+\newacronym[category=notation-category]{hpc}{HPC}{high-performance computing}
+
+% =====================================================================
+%  Instructions referenced as mechanisms
+% =====================================================================
+
+\newglossaryentry{instr-pacstar}{type=notation, category=notation-category,
+  name={\texttt{PAC*}}, sort={PAC instr},
+  description={the AArch64 instructions that compute and insert a pointer authentication code}}
+\newglossaryentry{instr-autstar}{type=notation, category=notation-category,
+  name={\texttt{AUT*}}, sort={AUT instr},
+  description={the AArch64 instructions that verify a pointer authentication code and restore the sign extension of bit~55}}
+\newglossaryentry{instr-prfm}{type=notation, category=notation-category,
+  name={\texttt{PRFM}}, sort={PRFM instr},
+  description={the A64 software-prefetch instruction, which unlike loads and stores does not leak through the canonicality oracle}}
+\newglossaryentry{instr-udf}{type=notation, category=notation-category,
+  name={\texttt{UDF}}, sort={UDF instr},
+  description={the permanently-undefined A64 encoding, used as a sealing placeholder that traps if executed}}
+
+% =====================================================================
+%  Notation --- contracts, traces, and model-based relational testing
+% =====================================================================
+
+\newglossaryentry{symb-prog}{type=notation, category=notation-category,
+  name={\ensuremath{P}}, sort={program P},
+  description={a test-case program}}
+\newglossaryentry{symb-input}{type=notation, category=notation-category,
+  name={\ensuremath{I},\ \ensuremath{I_1},\ \ensuremath{I_2}}, sort={input I},
+  description={a program input: its initial register and sandbox-memory state}}
+\newglossaryentry{symb-contract}{type=notation, category=notation-category,
+  name={\ensuremath{\mathcal{C}}}, sort={contract C},
+  description={a speculation contract}}
+\newglossaryentry{symb-ctrace}{type=notation, category=notation-category,
+  name={\ensuremath{\mathit{CTrace}}}, sort={contract trace},
+  description={the contract trace \ensuremath{\mathcal{C}(P,I)}}}
+\newglossaryentry{symb-htrace}{type=notation, category=notation-category,
+  name={\ensuremath{\mathit{HTrace}}}, sort={hardware trace},
+  description={the hardware trace, the sequence of attacker-visible observations}}
+\newglossaryentry{symb-obs}{type=notation, category=notation-category,
+  name={\ensuremath{O},\ \ensuremath{O_{\mathrm{L1D}}}}, sort={observer O},
+  description={an observation function (observer), and the L1D observer \textsc{Revizor} measures}}
+\newglossaryentry{symb-ustate}{type=notation, category=notation-category,
+  name={\ensuremath{\mu}}, sort={microarchitectural state},
+  description={a microarchitectural state}}
+\newglossaryentry{symb-ctx}{type=notation, category=notation-category,
+  name={\ensuremath{\mathit{Ctx}}}, sort={context Ctx},
+  description={the initial microarchitectural context of a run}}
+\newglossaryentry{symb-attack}{type=notation, category=notation-category,
+  name={\ensuremath{\mathit{Attack}_O(P,I,\mathit{Ctx})}}, sort={Attack},
+  description={the hardware trace of \ensuremath{P} on \ensuremath{I} from context \ensuremath{\mathit{Ctx}} under observer \ensuremath{O}}}
+\newglossaryentry{symb-run}{type=notation, category=notation-category,
+  name={\ensuremath{\mathrm{run}(P,I,\mu)}}, sort={run},
+  description={the microarchitectural state left by running \ensuremath{P} on \ensuremath{I} from state \ensuremath{\mu}}}
+\newglossaryentry{symb-q}{type=notation, category=notation-category,
+  name={\ensuremath{Q}}, sort={follow-up Q},
+  description={a fixed follow-up program run after the victim, independent of its input}}
+\newglossaryentry{symb-htraceq}{type=notation, category=notation-category,
+  name={\ensuremath{\mathit{HTrace}^{Q}},\ \ensuremath{\mathit{Attack}^{Q}_{O}}}, sort={Q-hardware trace},
+  description={the \ensuremath{Q}-hardware trace: the observer read after the victim and then \ensuremath{Q} have run}}
+\newglossaryentry{symb-bot}{type=notation, category=notation-category,
+  name={\ensuremath{\bot}}, sort={empty input},
+  description={the empty input, supplied to a follow-up program \ensuremath{Q}}}
+
+% =====================================================================
+%  Notation --- lanes, splices, and localization
+% =====================================================================
+
+\newglossaryentry{symb-is}{type=notation, category=notation-category,
+  name={\ensuremath{\mathrm{IS}}}, sort={initialization sequence},
+  description={an initialization sequence that drives the microarchitecture to a reproducible state}}
+\newglossaryentry{symb-lane}{type=notation, category=notation-category,
+  name={\ensuremath{L^{(a)}}}, sort={lane},
+  description={a lane: one batch of \ensuremath{k+1} inputs, boosted class by class from the first lane}}
+\newglossaryentry{symb-class}{type=notation, category=notation-category,
+  name={\ensuremath{k}}, sort={classes k},
+  description={the number of contract-equivalence classes; the probe is class \ensuremath{k}}}
+\newglossaryentry{symb-splice}{type=notation, category=notation-category,
+  name={\ensuremath{\sigma_{a\to b}(t)}}, sort={splice},
+  description={the splice of lanes \ensuremath{a} and \ensuremath{b} at split \ensuremath{t}: columns before \ensuremath{t} from \ensuremath{a}, the rest from \ensuremath{b}}}
+\newglossaryentry{symb-rt}{type=notation, category=notation-category,
+  name={\ensuremath{r(t)}}, sort={splice measurement},
+  description={the splice measurement: the probe's L1D reading of the batch \ensuremath{\sigma_{a\to b}(t)}}}
+\newglossaryentry{symb-tmax}{type=notation, category=notation-category,
+  name={\ensuremath{t_{\max}}}, sort={t-max},
+  description={the largest boundary, i.e.\ the highest leaking class}}
 
 % --------------------------------
-
-% Commands below will control the behavior/appearance of the list of abbreviations and acronyms
-
-% Uncomment this command to have _all_ abbreviations and acronyms defined
-% in this file appear in the final list - rather than just the ones you
-% use in the thesis
-%\keepUnusedAbbreviations
+% Make every entry above appear in the list, used or not.
+\keepUnusedAbbreviations
