@@ -13,10 +13,12 @@
 % NOTE: do NOT load colortbl/array here. The class loads bidi (via polyglossia)
 % before this file, and colortbl re-defines \@tabular after bidi has patched it,
 % which breaks every tabular in the body (bidi's \@tabular / \beginR error). TikZ
-% does not touch \@tabular, so it is fine after bidi. Table emphasis therefore uses
-% \textcolor on cell contents (xcolor), never \cellcolor.
+% does not touch \@tabular, so it is fine after bidi. For table column backgrounds we
+% use nicematrix (NiceTabular + \CodeBefore \columncolor), which draws the colors with
+% PGF and never redefines \@tabular, so it is bidi-safe where colortbl is not.
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,calc,positioning,decorations.pathreplacing,matrix,fit,backgrounds}
+\usepackage{nicematrix}
 \definecolor{laneA}{RGB}{130,90,170}
 \definecolor{laneB}{RGB}{230,126,34}
 \definecolor{iscol}{RGB}{120,120,120}

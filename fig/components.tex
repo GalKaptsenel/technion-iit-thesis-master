@@ -5,19 +5,19 @@
   ch/.style={font=\scriptsize, text=black!70, align=center, inner sep=1.5pt},
   ar/.style={-{Stealth[length=1.8mm,width=1.6mm]}, thick, draw=black!75},
 ]
-  \node[box, minimum width=62mm, minimum height=8mm] (fz) at (0,0)
+  \node[box, minimum width=116mm, minimum height=8mm] (fz) at (0,0)
     {\textbf{Fuzzer}~\textnormal{(Python)}\\[-1pt]%
      {\scriptsize generate \,$\to$\, model \,$\to$\, measure \,$\to$\, compare}};
-  \node[box, minimum width=26mm, minimum height=11mm] (ce) at (-1.75,-2.6)
+  \node[box, minimum width=42mm, minimum height=11mm] (ce) at (-3.1,-2.6)
     {Contract\\executor (CE)\\[-1pt]{\scriptsize model $\to$ ctrace}};
-  \node[box, minimum width=28mm, minimum height=11mm] (km) at (1.75,-2.6)
+  \node[box, minimum width=44mm, minimum height=11mm] (km) at (3.1,-2.6)
     {Kernel module\\{\scriptsize \texttt{/dev/executor}}\\[-1pt]{\scriptsize run on CUT $\to$ htrace}};
-  \node[box, dashed, minimum width=26mm, minimum height=6mm] (bpu) at (-1.75,-4.6)
+  \node[box, dashed, minimum width=42mm, minimum height=6mm] (bpu) at (-3.1,-4.6)
     {{\scriptsize CPython: execution clause}};
-  \node[box, minimum width=28mm, minimum height=6mm] (cpu) at (1.75,-4.6)
+  \node[box, minimum width=44mm, minimum height=6mm] (cpu) at (3.1,-4.6)
     {CPU {\scriptsize (CUT)}};
-  \draw[dashed, rounded corners=3pt, draw=black!55] (0.17,-1.87) rectangle (3.33,-5.08);
-  \node[font=\scriptsize\itshape, text=black!55] at (1.75,-5.4) {target device (local or remote)};
+  \draw[dashed, rounded corners=3pt, draw=black!55] (0.75,-1.87) rectangle (5.45,-5.08);
+  \node[font=\scriptsize\itshape, text=black!55] at (3.1,-5.4) {target device (local or remote)};
   \draw[ar] (ce.north) -- (ce.north |- fz.south) node[ch,midway,left=1pt]{pipe};
   \draw[ar] (km.north) -- (km.north |- fz.south)
         node[ch,midway,right=1pt]{\texttt{ioctl}, \texttt{sysfs}};

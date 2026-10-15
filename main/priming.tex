@@ -39,25 +39,25 @@ difference tracks the carried-over context, which is what makes priming discard 
 
 \paragraph{A branch-target-buffer leak.}
 Consider a gadget that makes an indirect call (a \reg{blr x0}) to a function and then loads through
-the value that function returns in \reg{x0}, where the two possible callees return $0$ and $128$
+the value that function returns in \reg{x0}, where the two targets return $0$ and $128$
 (\autoref{fig:priming-miss}(a)). Running the test case on an input trains the call site's BTB toward
-that input's target, and because the test case is loop-free the call executes only once. The trained
-entry surfaces on the next run: after one run trains the first target, the next run mispredicts to
-the first, speculatively loads a line based on the returned value, and brings it into the L1D before
-the misprediction is rolled back. Had the first run chosen the other
-target, the probe would touch line~$128$ alone, so the probe's L1D reveals the earlier run's
-secret. Priming nonetheless discards the pair: the two contract-equivalent inputs are
-architecturally identical, so in a common slot they behave alike, and the footprint tracks the
-slot rather than the input, exactly the false-positive condition.
+that input's target, and because the test case is loop-free the call executes only once. On the next
+run, a contract-equivalent input mispredicts the call to the earlier run's target, speculatively
+loads a line fixed by the value that target returns, and brings it into the L1D before the
+misprediction is rolled back. The later run's L1D footprint therefore carries the earlier run's
+secret, even though the two inputs are architecturally identical.
 
-\paragraph{Why priming drops it.}
-Take the batch $\batch{I_A,I_B,I_C}$ with $I_A$ calling the first target and $I_B,I_C$ the second.
-The two second-target inputs share a contract class. Input $I_B$ runs after $I_A$, follows a
+\paragraph{Why priming drops the branch-target-buffer leak.}
+Priming runs the candidate inputs as a batch after a fixed initialization sequence $\IS$ that resets
+the microarchitectural state, written $\batch{I_0,\dots,I_n}$ for $\IS$ followed by $I_0,\dots,I_n$ in
+order. Take the batch $\batch{I_A,I_B,I_C}$ with $I_A$ calling \reg{func0} (which returns $0$) and
+$I_B,I_C$ calling \reg{func1} (which returns $128$). The two \reg{func1} inputs share the contract
+class $\{128\}$. Input $I_B$ runs after $I_A$, follows a
 first-target slot, mispredicts, and leaves $\{0,128\}$. Input $I_C$ runs after $I_B$, follows a
 second-target slot, and leaves $\{128\}$, a candidate, since two contract-equivalent inputs differ
 in their L1D trace. But $I_B$ and $I_C$ are architecturally identical, so compared \emph{within the
-same slot} they agree (\autoref{tab:priming-drop-btb}): each column is constant, the footprint
-tracks the slot and not the input, and priming records a false positive even though the first run's
+same slot} they agree (\autoref{tab:priming-drop-btb}): each column is constant. The footprint
+tracks the slot and not the input. Thus priming records a false positive even though the first run's
 secret does reach the probe's L1D.
 
 \begin{table}[t]
@@ -68,29 +68,36 @@ two starred cells on the diagonal, which differ. But priming compares the inputs
 (each column), and both columns agree, so the difference tracks the slot, not the input: a false
 positive.}
 \label{tab:priming-drop-btb}
-\begin{tabular}{@{}lcc@{}}
+\begin{NiceTabular}{@{}lcc@{}}
+\CodeBefore
+  \columncolor{laneA!15}{2}
+  \columncolor{probe!15}{3}
+\Body
 \toprule
  & slot after first target & slot after second target \\
 \midrule
-$I_B$ (second target) & $\{0,128\}^\star$ & $\{128\}$ \\
-$I_C$ (second target) & $\{0,128\}$ & $\{128\}^\star$ \\
+$I_B$ (target=\texttt{func1}) & $\{0,128\}^\star$ & $\{128\}$ \\
+$I_C$ (target=\texttt{func1}) & $\{0,128\}$ & $\{128\}^\star$ \\
 \midrule
-\textit{priming compares} & \textcolor{laneA}{equal} & \textcolor{probe}{equal} \\
+\textit{priming compares} & equal & equal \\
 \bottomrule
-\end{tabular}
+\end{NiceTabular}
 \end{table}
 
 \paragraph{A hardware-prefetcher leak.}
 Consider a gadget that issues three reads at an input-chosen stride, confirming that stride to a
 stride prefetcher that then runs ahead (\autoref{fig:priming-miss}(b)). After one run confirms
-stride $S$, a later
-contract-equivalent run at a fixed stride still has the carried-over stream prefetch lines at
-stride $S$ that it never issues, so its L1D carries stride-$S$ lines that reveal the earlier run's
-secret. Again the two inputs are architecturally identical, so priming records a false positive,
+stride $S$, a later run
+still has the streamer's state carried over, and on its first memory access the streamer prefetches
+lines at stride $S$ that this run never issues itself, so its L1D carries stride-$S$ lines that reveal the earlier run's
+secret.
+
+\paragraph{Why priming drops the hardware-prefetcher leak.}
+Again the two inputs are architecturally identical, so priming records a false positive,
 though the secret does reach the probe's L1D. The batch $\batch{I_A,I_B,I_C}$ plays out exactly as
 before (\autoref{tab:priming-drop-pf}): $I_A$ confirms stride $S$, $I_B$ then carries the stale
 stride-$S$ prefetches $\{S,2S\}$ on top of its own $\{0,F,2F\}$, and $I_C$ leaves only $\{0,F,2F\}$.
-Within each slot $I_B$ and $I_C$ agree.
+Within each slot of the batch (a column in the table), $I_B$ and $I_C$ agree.
 
 \begin{table}[t]
 \centering\footnotesize
@@ -99,25 +106,29 @@ Within each slot $I_B$ and $I_C$ agree.
 $\{0,F,2F\}$ and the stale stride-$S$ prefetches $\{S,2S\}$ carried from an $I_A$ predecessor. Both
 columns agree, so priming records a false positive.}
 \label{tab:priming-drop-pf}
-\begin{tabular}{@{}lcc@{}}
+\begin{NiceTabular}{@{}lcc@{}}
+\CodeBefore
+  \columncolor{laneA!15}{2}
+  \columncolor{probe!15}{3}
+\Body
 \toprule
  & slot after stride $S$ & slot after stride $F$ \\
 \midrule
 $I_B$ (stride $F$) & $\{0,F,2F,S,2S\}^\star$ & $\{0,F,2F\}$ \\
 $I_C$ (stride $F$) & $\{0,F,2F,S,2S\}$ & $\{0,F,2F\}^\star$ \\
 \midrule
-\textit{priming compares} & \textcolor{laneA}{equal} & \textcolor{probe}{equal} \\
+\textit{priming compares} & equal & equal \\
 \bottomrule
-\end{tabular}
+\end{NiceTabular}
 \end{table}
 
-\section{Revizor's gap, formally}
+\section{Formally}
 \label{sec:priming-model}
 
 Both leaks share a shape: the secret is written to a structure other than the monitored L1D, and
 it reaches the L1D only through a later run. We make the limitation precise. Write
 $\runf(P,I,\mu)$ for the microarchitectural state left by running $P$ on input $I$ from state
-$\mu$. It is a function of its arguments, since replaying a sequence reproduces its states and
+$\mu$. We treat it as deterministic, since replaying a sequence reproduces its states and
 repeated measurement filters noise. The L1D attacker is then a projection,
 $\Al(P,I,\mathit{Ctx})=O_{\mathrm{L1D}}(\runf(P,I,\mathit{Ctx}))$.
 
@@ -171,7 +182,7 @@ difference is which input ran.
 \begin{definition}[$HTrace^Q$]
 \label{def:prime-qtrace}
 For a program $P$, input $I$, context $\mathit{Ctx}$, and follow-up program $Q$, the
-\emph{$Q$-hardware trace} runs the victim, then $Q$, then reads the observer:
+\emph{$Q$-hardware trace} is retrieved by running the victim, then $Q$, and then reading the observer:
 \[
   \mathit{HTrace}^Q = \AQ{O_{\mathrm{L1D}}}(P,I,\mathit{Ctx})
     = O_{\mathrm{L1D}}\big(\runf(Q,\bot,\runf(P,I,\mathit{Ctx}))\big).
@@ -268,7 +279,7 @@ The two splices around $t$ reach the same context $\nu_t$ (same $\IS$ and prefix
 $\inp{t}{a}$ or $\inp{t}{b}$, and then the \emph{same} fixed continuation $Q$ ending at the probe.
 Reading the probe is therefore the $Q$-hardware trace of \autoref{def:prime-qtrace}:
 $r(t+1)=\AQ{O_{\mathrm{L1D}}}(P,\inp{t}{a},\nu_t)$ and $r(t)=\AQ{O_{\mathrm{L1D}}}(P,\inp{t}{b},\nu_t)$.
-Since $\runf$ is a function of its arguments, the two readings can differ only through which input
+Since $\runf$ is deterministic, the two readings can differ only through which input
 ran, and a boundary means they differ. The two inputs share column $t$, hence a class, and are
 distinct, so the tuple meets \autoref{def:prime-extviolation}. When $t=k$ the continuation is
 empty and the reading is the probe's own L1D trace, the direct case.
