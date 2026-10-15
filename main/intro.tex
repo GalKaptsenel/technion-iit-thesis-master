@@ -60,7 +60,7 @@ rediscovering known Spectre variants automatically and surfacing previously unre
 speculative leaks on commercial Intel and AMD cores~\cite{revizor,hide_seek}. To date,
 however, \revizor{} addresses only x86-64.
 
-\autoref{tab:intro-tools} places the main automated efforts beside this work, grouped by
+\autoref{tab:intro-tools} places main automated efforts, grouped by
 whether they test a real CPU or validate a pre-silicon design.
 
 \begin{table}[t]
@@ -89,18 +89,15 @@ SpecDoctor~\cite{specdoctor} & differential fuzzing & \multicolumn{2}{c}{RTL (RI
 \bottomrule
 \end{tabular}
 \end{table}
-
-The tools fall into the two groups the table shows. Most test a real CPU directly.
-\revizor{} is the first, and three later systems build on it: Hide \& Seek adds randomized,
-contract-driven input generation~\cite{hide_seek}, Speculation at Fault models faults and
-exceptions~\cite{speculation_fault}, and Enter, Exit, Page Fault, Leak tests isolation
+ 
+A real black-box CPU appraoch is mostly done via Revizor and it's exntensions:  Hide \& Seek added test filtering~\cite{hide_seek}, Speculation at Fault models faults and
+exceptions taken architecturaly~\cite{speculation_fault}, and Enter, Exit, Page Fault, Leak tests isolation
 boundaries~\cite{isolation}. Osiris~\cite{osiris} and Medusa~\cite{transynther} instead
-search a real CPU for side channels and data-leak gadgets. The
-second group works pre-silicon, on a simulated design rather than a shipped part:
-AMuLeT~\cite{amulet}, itself a \revizor{} descendant, tests secure-speculation countermeasures
-at design time, and SpecDoctor~\cite{specdoctor} fuzzes an open register-transfer-level core.
+search a real CPU for side channels and data-leak gadgets via [add short explanation]. ScamV leverages SMT solvers and symbolic execution.
+A Pre-silicon appraoch usually based on a simulated design:
+AMuLeT~\cite{amulet}, itself a \revizor{} descendant, uses hardware simulators (like gem5). SpecDoctor~\cite{specdoctor} fuzzes register-transfer-level (RTL) core.
 Across both groups every system but ScamV targets x86-64 or an open design, and none brings
-relational testing to real AArch64 silicon. That is the gap this thesis closes.
+model-based relational testing to real AArch64 silicon. That is the gap this thesis closes.
 
 \section{The Arm blind spot}
 \label{sec:intro-arm}
