@@ -85,7 +85,7 @@ trainable table.}
 \end{figure}
 
 \paragraph{Direction.} The simplest direction predictor is a table of \emph{saturating counters}:
-each branch indexes a small counter, incremented when the branch is taken and
+each branch <address in memory> indexes a small counter, incremented when the branch is taken and
 decremented when it is not, whose top bit gives the prediction. Accuracy improves by adding \emph{history}. A \emph{pattern history
 register} (PHR) shifts in the outcomes of the most recent branches, and the predictor indexes its
 tables with a hash of the branch address and the PHR. Modern cores use \emph{TAGE}, which keeps
