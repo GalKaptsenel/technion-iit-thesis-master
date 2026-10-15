@@ -125,12 +125,22 @@ $I_C$ (stride $F$) & $\{0,F,2F,S,2S\}$ & $\{0,F,2F\}^\star$ \\
 \section{Formally}
 \label{sec:priming-model}
 
-Both leaks share a shape: the secret is written to a structure other than the monitored L1D, and
+Both leaks share a shape (\autoref{fig:priming-shape}): the secret is written to a structure other than the monitored L1D, and
 it reaches the L1D only through a later run. We make the limitation precise. Write
 $\runf(P,I,\mu)$ for the microarchitectural state left by running $P$ on input $I$ from state
 $\mu$. We treat it as deterministic, since replaying a sequence reproduces its states and
 repeated measurement filters noise. The L1D attacker is then a projection,
 $\Al(P,I,\mathit{Ctx})=O_{\mathrm{L1D}}(\runf(P,I,\mathit{Ctx}))$.
+
+\begin{figure}[t]
+\centering
+\fitwidth{\input{fig/priming-shape}}
+\caption{The shape both dropped leaks share. An earlier run writes a resource $X$ other than the
+monitored L1D, so nothing shows in that run's own L1D trace. A later run reads $X$ back, and only
+then does the difference surface in the L1D. Priming removes carried-over state, so it discards this
+evidence together with the noise.}
+\label{fig:priming-shape}
+\end{figure}
 
 \begin{definition}[Non-L1D-cache violation]
 \label{def:prime-ncv}
