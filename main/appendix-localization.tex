@@ -111,20 +111,3 @@ Both localizers use the same splices, the same probe, and the same soundness arg
 \autoref{tab:loc-compare} summarizes them. Runs are per direction, to be doubled for both
 directions and multiplied by the repetition count used to suppress measurement noise. The linear
 scan is the choice when every leaking class is wanted. Binary search when one suffices.
-
-\begin{table}[t]\centering\small
-\setlength{\tabcolsep}{8pt}
-\caption{The two localizers.}
-\label{tab:loc-compare}
-\begin{tabular}{@{}l l l@{}}
-\toprule
- & Linear scan & Binary search \\
-\midrule
-Runs (worst case) & $k$ & $\lceil\log_2(k+1)\rceil$ \\
-Lower bound       & $k$ (\autoref{thm:lb-scan}) & $\lceil\log_2(k+1)\rceil$ (\autoref{thm:lb-bsearch}) \\
-Returns           & $\tmax$. All classes if continued & one leaking class \\
-Soundness         & every pair genuine & every pair genuine \\
-Completeness      & every leaking class & one. May miss others \\
-\bottomrule
-\end{tabular}
-\end{table}

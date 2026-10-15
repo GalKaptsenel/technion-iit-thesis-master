@@ -8,8 +8,8 @@ extensions and for fuzzing physically remote cores. \autoref{sec:port-overview} 
 overall shape, \autoref{sec:port-components} the native-execution architecture,
 \autoref{sec:port-isa} how the instruction set is derived from Arm's specification,
 \autoref{sec:port-ce} the contract executor, \autoref{sec:port-features} the modeling of
-Pointer Authentication and Memory Tagging, \autoref{sec:port-driving} the executor and the
-input format, and \autoref{sec:port-remote} remote fuzzing.
+Pointer Authentication and Memory Tagging, \autoref{sec:port-driving} the executor controls,
+\autoref{sec:port-input} the input format, and \autoref{sec:port-remote} remote fuzzing.
 
 \section{Overview}
 \label{sec:port-overview}
@@ -59,7 +59,7 @@ immediates. Mainline \revizor{} reads this table from a prebuilt file. We instea
 directly from Arm's machine-readable specification, taking each instruction's encoding,
 operand roles, register and memory access roles, and immediate domains from its Architecture
 Specification Language (ASL) definition. Encodings we cannot fully recover from the
-specification are reported and excluded rather than approximated, so the generator emits only
+specification are reported and excluded, so the generator emits only
 instructions that have a complete, validated model. Pinning the specification release keeps
 the instruction set reproducible across fuzzing campaigns.
 
@@ -70,14 +70,17 @@ Rather than emulate AArch64, the CE runs the test case on the real core and obse
 instruction at a time (\autoref{fig:port-trampoline}). It is a user-space process that loads the
 program into an executable
 mapping and single-steps it. The single-stepping exploits the fixed-width A64 encoding: every
-instruction is 32 bits wide, and so is a \reg{BL} (branch-with-link). The CE replaces an
-instruction word in place with a \reg{BL} to a trampoline, and restores the original word
-afterwards. A \reg{BL} does not modify the condition flags, so the \reg{NZCV} state carries
-across the interposed branch into the next test instruction. To run one instruction the CE
-restores it at the program counter while every other instruction still holds its trampoline
-branch. The core executes that one instruction natively, then takes the following word, now a
-\reg{BL}, into the trampoline, where a hook records the architectural state. The CE repeats
-this for each instruction of the test case.
+instruction is 32 bits wide, and so is a \reg{BL} (branch-with-link). Before the test case runs, the CE replaces each and every
+instruction word in place with a \reg{BL} to a trampoline. A \reg{BL} does not modify the
+condition flags, so the \reg{NZCV} state carries across every interposed branch into the next
+test instruction. To run a single instruction the CE restores that one word to its original
+encoding, leaves every other word as its trampoline branch, and transfers control to it. The
+core executes that one instruction natively and then continues along the program's own control
+flow to the next instruction it reaches, which need not be the one immediately after it, since a
+branch or a loop may redirect control. That next word is still a \reg{BL}, so execution falls
+into the trampoline, where a hook records the architectural state. The CE then restores the next
+instruction and reinstates the trampoline at the one just executed, so that exactly one original
+instruction is ever in place, and repeats until the test case completes.
 
 Running on the CPU under test avoids the emulation inconsistencies we observed in common
 emulators such as Unicorn~\cite{unicorn}. It also strikes a middle ground between full
@@ -91,10 +94,14 @@ not.
 \begin{figure}[t]
 \centering
 \fitwidth{\input{fig/trampoline}}
-\caption{The CE single-steps the test case. Each step restores one original instruction word,
-which the core runs natively. The next word is a \reg{BL} into the trampoline, where a hook
-records the architectural state and drives speculation before advancing to the following
-instruction.}
+\caption{The CE single-steps the test case. Every instruction word is replaced by a \reg{BL} to
+the trampoline, and only the next instruction to execute is restored to its original encoding.
+After that instruction runs natively, control reaches the next fetched word, which is again a
+\reg{BL}: for a non-branch (a) it is the following instruction, and for a taken branch (b) it is
+the branch target. The trampoline (\texttt{base\_hook}) saves the register context and calls the
+C hook (\texttt{base\_hook\_c}), which snapshots the architectural state and memory, models the
+requested speculation, emulates \reg{PAC} and \reg{MTE}, and re-arms the slots so that only the
+next instruction is left native.}
 \label{fig:port-trampoline}
 \end{figure}
 
@@ -105,12 +112,12 @@ point (a mispredicted branch, a bypassed store), the CE pushes a checkpoint: a s
 memory, the MTE tag memory, and the architectural call stack. It then redirects execution
 onto the speculative path. When that path ends or exhausts its per-window instruction budget,
 the CE pops the checkpoint, restores the snapshot, and resumes at the recorded address.
-Windows may nest to a configured depth, and the checkpoints form a last-in-first-out stack, so
-an inner window unwinds before the one enclosing it. The clause decides where a window opens,
-and its logic runs in the CE's embedded Python interpreter, so a new contract plugs in without
-touching the C engine.
+The speculation windows the CE simulates may nest to a configurable depth, and the checkpoints
+form a last-in-first-out stack, so an inner window unwinds before the one enclosing it. The execution clause decides where a window opens,
+and its logic runs in the CE's embedded Python interpreter, so a new execution clause plugs in
+without touching the C engine.
 
-\begin{figure}[t]
+\begin{figure}[hb]
 \centering
 \fitwidth{\input{fig/specstack}}
 \caption{Execution forks at each speculation point into a speculative window (dashed) and the
@@ -124,26 +131,35 @@ a last-in-first-out stack.}
 
 The precondition primitives of \autoref{chap:precond} need the model to reproduce the operand
 checks of Pointer Authentication and Memory Tagging faithfully, even on a host that does not
-implement them. Pointer Authentication is modeled in software from the configuration the core
-exposes (the active key configuration and the identification registers that fix the QARMA
-variant and the PAC field layout), so the CE can compute and verify a PAC the way the target
-core would. Memory Tagging is modeled over a simulated tag memory that the speculation-stack
-checkpoints snapshot and restore alongside the data memory, so a transiently executed tagged
-access sees, and can violate, the correct allocation tag. Both extensions are supplied with
+implement them. Pointer Authentication is modeled in software, so the CE can compute and verify a PAC the way
+the target core would. The model signs and authenticates under the keys supplied with each
+input, and applies the QARMA variant and PAC field layout it is configured to match. Memory Tagging is modeled over a simulated tag memory that the speculation-stack
+checkpoints snapshot and restore alongside the data memory, so a simulation of transiently
+executed tagged access sees, and can violate, the correct allocation tag. Both extensions are supplied with
 per-input state (custom PAC keys and an initial tag memory) through the input file described
 next, which lets a single test case be exercised under many keys and tag layouts.
 
-\section{Driving the executor and the input format}
+\section{Driving the executor}
 \label{sec:port-driving}
 
-Control of the kernel module is a small \reg{ioctl} state machine (\autoref{fig:port-execfsm}).
-A test case and its inputs
-load independently, a run is possible only once both are present, and a traced state holds the
-per-input measurements, which a re-run reproduces deterministically. A run reports, per input,
-the L1 data-cache sets the execution touched (the hardware trace of \autoref{sec:bg-mrt}),
-read through a cache side channel. Further knobs, exposed through \reg{sysfs}, select the
-measurement method (Prime+Probe or Flush+Reload), the pinned core, the enabled mitigations,
-and the remaining configuration.
+Control of the kernel module is a small \reg{ioctl} state machine (\autoref{fig:port-execfsm}),
+built around a checkout model. The host \emph{checks out} the test region to load the body, and
+\emph{allocates} each input, where every allocation returns an input identifier (\emph{iid}) that
+names its state slot. Checking out an \emph{iid} makes that slot the active target, so the next
+write fills it, and many inputs can be prepared before a run. A \emph{trace} then runs the loaded
+test over all inputs, and a \emph{get-measurement} reads one input's result back by its \emph{iid}.
+A few further commands round out the same model (unloading, freeing, clearing, and querying), and a
+separate group exposes the PAC primitives (sign, authenticate, strip) that the contract model and
+the validation path use. A run is possible only once both a test and its inputs are present, and
+the traced state reproduces across re-runs. Each measurement reports, per input, the L1 data-cache
+sets the execution touched (the hardware trace of \autoref{sec:bg-mrt}), read through a cache side
+channel.
+
+A second group of controls, exposed through \reg{sysfs}, configures how a run measures rather than
+what it runs. The knobs that matter in practice are the measurement method (Prime+Probe,
+Flush+Reload, or Prime+Reload), the pinned core, the warmup count, and a few toggles over
+the cache and branch-history state each run starts from, together with the speculative-store-bypass
+setting.
 
 \begin{figure}[t]
 \centering
@@ -154,14 +170,29 @@ measurements, which a re-run reproduces.}
 \label{fig:port-execfsm}
 \end{figure}
 
-An input is a self-describing \emph{Revizor Extensible Input File} (\reg{.reif}): a header
-followed by a table of typed sections that the kernel module locates by section type, so new
-per-input state can be added without breaking the layout. The required sections hold the
-input's initial architectural state, the initial register values and the sandbox memory
-contents. Optional sections carry further initial state, such as custom PAC keys and the
-initial MTE tag memory. This extensibility is what later lets precondition fuzzing attach a
-\emph{relocation} section to an input (\autoref{chap:precond}) without changing the file
-format.
+\section{The input format}
+\label{sec:port-input}
+
+An input is a self-describing \emph{Revizor Extensible Input File} (\reg{.reif}): a fixed header,
+a table of typed section descriptors, and the section payloads (\autoref{fig:port-reif}). The
+reader locates each section by its type through the descriptor table rather than by a fixed
+offset, so new per-input state can be added without breaking the layout, and an unknown section
+type is skipped. The required sections hold the sandbox memory contents and the initial register
+values. Optional sections carry further initial state, such as custom PAC keys, an initial MTE tag
+memory, and per-page page-table overrides. This extensibility is what later lets precondition
+fuzzing attach a \emph{relocation} (code-sealing) section to an input (\autoref{chap:precond})
+without changing the file format.
+
+\begin{figure}[t]
+\centering
+\fitwidth{\input{fig/reif}}
+\caption{The REIF layout. A 48-byte header fixes the magic, version, section count, and total
+length, and is followed by one 32-byte descriptor per section, each giving a section's type, byte
+offset, and length. The reader finds a section by its type, so the payloads may appear in any
+order and an unknown type is skipped. The sandbox memory and the initial registers are required,
+and the rest are optional per-input state.}
+\label{fig:port-reif}
+\end{figure}
 
 \section{Remote and headless fuzzing}
 \label{sec:port-remote}
@@ -176,6 +207,16 @@ the kernel module, so a single host can drive many heterogeneous targets without
 Because a network round trip per measurement would dominate the run, a campaign window
 aggregates many test cases and their inputs into one streamed super-batch, and the device
 returns all traces in a single response.
+
+\begin{figure}[ht]
+\centering
+\fitwidth{\input{fig/remotefuzz}}
+\caption{Remote fuzzing. Generation, contract modeling, and analysis stay on the fuzzing host,
+while only the kernel module and the CPU under test sit on the target device. The host streams a
+super-batch of test cases and their inputs to a small on-device helper, and the device returns
+every hardware trace in one response.}
+\label{fig:port-remote}
+\end{figure}
 
 \medskip
 The port reproduces x86 \revizor{}'s methodology on AArch64 and extends it to the Arm security

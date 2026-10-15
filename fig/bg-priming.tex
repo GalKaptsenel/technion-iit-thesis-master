@@ -1,31 +1,36 @@
 \begin{tikzpicture}[
   font=\footnotesize,
-  sq/.style={draw=black!40, minimum size=6mm, inner sep=0pt},
+  sq/.style={draw=black!35, minimum size=6mm, inner sep=0pt},
   ain/.style={sq, fill=laneA!25, draw=laneA!60!black, thick},
   bin/.style={sq, fill=laneB!22, draw=laneB!65!black, thick},
-  lbl/.style={font=\scriptsize, text=black!65, align=center},
-  cmpbox/.style={draw=probe!55!black, dashed, thick, rounded corners=2pt, inner sep=2.5pt},
+  lbl/.style={font=\scriptsize, text=black!65, align=right},
+  clbl/.style={font=\scriptsize, text=probe!45!black, align=center},
+  cmpbox/.style={draw=probe!55!black, dashed, thick, rounded corners=2pt, inner sep=2pt},
 ]
   \def\dx{0.7}
-  % original run: a at position i, b at position j
-  \node[lbl, anchor=east] at (-0.3,1.6) {original\\ sequence};
+  % Row 1 (top): experiment 1, input i (a) placed at position j
+  \node[lbl, anchor=east] at (-0.3,2.4) {experiment 1:\\ $a$ at $j$};
   \foreach \k in {0,...,6}{%
-    \ifnum\k=2 \node[ain] (a1) at ({\k*\dx},1.6) {$a$};%
-    \else\ifnum\k=5 \node[bin] (b1) at ({\k*\dx},1.6) {$b$};%
-    \else \node[sq] at ({\k*\dx},1.6) {};\fi\fi}
-  \node[lbl, anchor=west, text=culprit!75!black] at ({6*\dx+0.45},1.6)
-     {$a$ and $b$ are contract-\\ equivalent, yet their L1D\\ traces differ: a candidate};
-  % primed run: a and b swapped
-  \node[lbl, anchor=east] at (-0.3,0) {primed run\\ ($a$, $b$ swapped)};
+    \ifnum\k=5 \node[ain] (aj) at ({\k*\dx},2.4) {$a$};%
+    \else \node[sq] at ({\k*\dx},2.4) {};\fi}
+  % Row 2 (middle): original run
+  \node[lbl, anchor=east] at (-0.3,1.2) {original run};
   \foreach \k in {0,...,6}{%
-    \ifnum\k=2 \node[bin] (b2) at ({\k*\dx},0) {$b$};%
-    \else\ifnum\k=5 \node[ain] (a2) at ({\k*\dx},0) {$a$};%
-    \else \node[sq] at ({\k*\dx},0) {};\fi\fi}
-  % each column is one fixed context: compare a and b inside it
-  \node[cmpbox, fit=(a1)(b2)] {};
-  \node[cmpbox, fit=(b1)(a2)] {};
-  \node[lbl, text=probe!45!black] at ({2*\dx},-0.72) {context $i$:\\ compare $a$, $b$};
-  \node[lbl, text=probe!45!black] at ({5*\dx},-0.72) {context $j$:\\ compare $a$, $b$};
-  \node[lbl, anchor=west] at ({6*\dx+0.45},-0.2)
+    \ifnum\k=2 \node[ain] (a0) at ({\k*\dx},1.2) {$a$};%
+    \else\ifnum\k=5 \node[bin] (b0) at ({\k*\dx},1.2) {$b$};%
+    \else \node[sq] at ({\k*\dx},1.2) {};\fi\fi}
+  % Row 3 (bottom): experiment 2, input j (b) placed at position i
+  \node[lbl, anchor=east] at (-0.3,0) {experiment 2:\\ $b$ at $i$};
+  \foreach \k in {0,...,6}{%
+    \ifnum\k=2 \node[bin] (bi) at ({\k*\dx},0) {$b$};%
+    \else \node[sq] at ({\k*\dx},0) {};\fi}
+  % each box is one fixed context: compare a and b inside it
+  \node[cmpbox, fit=(aj)(b0)] {};
+  \node[cmpbox, fit=(a0)(bi)] {};
+  \node[clbl] at ({5*\dx},3.0) {context $j$: compare $a$, $b$};
+  \node[clbl] at ({2*\dx},-0.6) {context $i$: compare $a$, $b$};
+  \node[lbl, anchor=west, align=left, text=culprit!72!black] at ({6*\dx+0.4},2.0)
+     {$a@i$ and $b@j$ differ:\\ the candidate};
+  \node[lbl, anchor=west, align=left] at ({6*\dx+0.4},0.4)
      {agree in both contexts:\\ false positive.\\ differ in either: violation};
 \end{tikzpicture}

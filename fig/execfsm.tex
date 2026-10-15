@@ -4,13 +4,13 @@
              align=center, minimum width=24mm, minimum height=9mm, inner sep=2pt},
   fin/.style={st, fill=black!12},
   ed/.style={-{Stealth[length=1.6mm,width=1.4mm]}, semithick, draw=black!75},
-  lbl/.style={font=\scriptsize, text=black!70, inner sep=1.5pt},
+  lbl/.style={font=\scriptsize, text=black!70, inner sep=2pt, fill=white},
 ]
-  \node[st]  (cfg) at (0,0)      {\textsc{Config}\\{\scriptsize no test, no inputs}};
-  \node[st]  (lt)  at (4.0,1.7)  {\textsc{Loaded Test}\\{\scriptsize test only}};
-  \node[st]  (li)  at (4.0,-1.7) {\textsc{Loaded Inputs}\\{\scriptsize inputs only}};
-  \node[st]  (rdy) at (8.0,0)    {\textsc{Ready}\\{\scriptsize test + inputs}};
-  \node[fin] (tr)  at (11.2,0)   {\textsc{Traced}\\{\scriptsize measured}};
+  \node[st]  (cfg) at (0,0)      {\textsc{config}\\{\scriptsize no test, no inputs}};
+  \node[st]  (lt)  at (4.0,1.7)  {\textsc{loaded test}\\{\scriptsize test only}};
+  \node[st]  (li)  at (4.0,-1.7) {\textsc{loaded inputs}\\{\scriptsize inputs only}};
+  \node[st]  (rdy) at (8.0,0)    {\textsc{ready}\\{\scriptsize test + inputs}};
+  \node[fin] (tr)  at (11.2,0)   {\textsc{traced}\\{\scriptsize measured}};
   \draw[ed] (cfg) to[bend left=12]  node[lbl,above left=-3pt]{write test}   (lt);
   \draw[ed] (lt)  to[bend left=12]  node[lbl,below right=-3pt]{unload test} (cfg);
   \draw[ed] (cfg) to[bend right=12] node[lbl,below left=-3pt]{write input}  (li);

@@ -8,8 +8,8 @@ attacker reads from the microarchitectural states a run passes through
 cache, writing $\Al(P,I,\mathit{Ctx})=O_{\mathrm{L1D}}(\runf(P,I,\mathit{Ctx}))$ for the sets a
 run's loads and stores touch, and it reads that observer only once, after the run finishes. This
 chapter shows that these relaxations make priming miss a whole class of genuine, L1D-observable
-leaks, and replaces the rule with one that keeps the contract-violation definition and detects
-strictly more. \autoref{sec:priming-gap} gives two examples, \autoref{sec:priming-model} the
+leaks, and replaces the rule with one that strictly generalizes the contract-violation definition and
+detects strictly more. \autoref{sec:priming-gap} gives two examples, \autoref{sec:priming-model} the
 formal limitation, \autoref{sec:priming-extend} the extended notion of a violation that repairs
 it, \autoref{sec:priming-lanes} and \autoref{sec:priming-boundary} the detection construction and
 its soundness, and \autoref{sec:priming-localizers} the two localizers. The optimality proofs are
@@ -18,8 +18,10 @@ in \autoref{appendix:localization}.
 \section{Leaks current priming drops}
 \label{sec:priming-gap}
 
-Priming assumes that an input's leakage appears in its own L1D trace. It fails when the leakage is
-written to a carrier structure other than the L1D and is not reset between inputs. Two examples
+Recall that \revizor{} runs the inputs of one test case as a back-to-back series and reads a single
+L1D trace per input, at the end of that input's own run (\autoref{sec:bg-mrt}). Priming assumes that
+an input's leakage appears in that trace. It fails when the leakage is written to a carrier structure
+other than the L1D and is not reset between inputs, so it surfaces only in a later input's trace. Two examples
 make this concrete (\autoref{fig:priming-miss}), and both are observable in the L1D (they lie
 within \revizor{}'s own threat model), yet priming discards them.
 
@@ -328,5 +330,23 @@ tight. The matching lower bounds and a worked example are in \autoref{appendix:l
 
 Both localizers use the same splices and the same soundness argument, and both keep every leak the
 current rule keeps. Where the linear scan reports every leaking class, binary search reports one,
-much faster. The generalization therefore certifies a non-L1D-cache violation that current priming
-cannot report, as a genuine extended contract violation separated by one identical probe.
+much faster (\autoref{tab:loc-compare}). The generalization therefore certifies a non-L1D-cache
+violation that current priming cannot report, as a genuine extended contract violation separated by
+one identical probe.
+
+\begin{table}[t]\centering\small
+\setlength{\tabcolsep}{8pt}
+\caption{The two localizers.}
+\label{tab:loc-compare}
+\begin{tabular}{@{}l l l@{}}
+\toprule
+ & Linear scan & Binary search \\
+\midrule
+Runs (worst case) & $k$ & $\lceil\log_2(k+1)\rceil$ \\
+Lower bound       & $k$ (\autoref{thm:lb-scan}) & $\lceil\log_2(k+1)\rceil$ (\autoref{thm:lb-bsearch}) \\
+Returns           & $\tmax$. All classes if continued & one leaking class \\
+Soundness         & every pair genuine & every pair genuine \\
+Completeness      & every leaking class & one. May miss others \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -73,7 +73,7 @@ an \emph{indirect} branch, where it goes. An indirect branch takes its target fr
 from memory, as in a C++ virtual call, a jump table, or a return. The target is therefore not
 encoded in the instruction and must be predicted. Separate structures supply these guesses
 (\autoref{fig:bg-predictors}), and each is a shared, finite table an attacker can train or
-probe~\cite{aciicmez_btb,branchscope}.
+probe~\cite{bunnyhop,branchscope}.
 
 \begin{figure}[t]
 \centering
@@ -187,18 +187,6 @@ The stride of $64$ bytes (a typical line size) puts each value on its own line, 
 the array and finding the single fast line recovers the secret byte. This $256$-way encoding is the
 standard transmitter at the end of a transient-execution attack.
 
-\begin{figure}[ht]
-\centering
-\fitwidth{\input{fig/bg-spectrev1}}
-\caption{A worked Spectre-v1. The attacker first trains the branch by calling the gadget a few
-times with \texttt{x < len}, then calls it once with \texttt{x} out of bounds. The predictor still
-takes the branch, so the core speculatively reads the secret byte $s$ and caches
-\reg{arr2[}$s\cdot 64$\reg{]} before the bound check resolves and squashes the transient path. The
-two calls differ only in $s$ and leave identical architectural state, yet the footprint of $s$
-survives in the cache and a Flush+Reload of \reg{arr2} reads it out.}
-\label{fig:bg-spectrev1}
-\end{figure}
-
 \paragraph{Leaks as a cascade.}
 It is useful to view a leak as a cascade. A secret-dependent operation changes the state of some
 \emph{carrier} structure. That change may propagate through further carriers until it reaches an
@@ -268,6 +256,18 @@ in a secret the program never reveals architecturally (here, two values of the o
 byte) produce identical architectural behavior yet different cache footprints. That gap between
 ``architecturally indistinguishable'' and ``distinguishable through the microarchitecture'' is
 exactly what a contract violation will formalize.
+
+\begin{figure}[ht]
+\centering
+\fitwidth{\input{fig/bg-spectrev1}}
+\caption{A worked Spectre-v1. The attacker first trains the branch by calling the gadget a few
+times with \texttt{x < len}, then calls it once with \texttt{x} out of bounds. The predictor still
+takes the branch, so the core speculatively reads the secret byte $s$ and caches
+\reg{arr2[}$s\cdot 64$\reg{]} before the bound check resolves and squashes the transient path. The
+two calls differ only in $s$ and leave identical architectural state, yet the footprint of $s$
+survives in the cache and a Flush+Reload of \reg{arr2} reads it out.}
+\label{fig:bg-spectrev1}
+\end{figure}
 
 \paragraph{The Spectre variants.}
 The family is distinguished by the speculation primitive it abuses.
@@ -394,7 +394,7 @@ tagged. The top address bits select the half, and canonicality requires those bi
 
 An address is \emph{canonical} when the bits above the configured virtual-address size are all zero,
 selecting the \reg{TTBR0} range, or all one, selecting the \reg{TTBR1} range. Any other value is
-out of range and raises an address-size or translation fault. Arm does not use the x86 term
+out of range and raises a fault. Arm does not use the x86 term
 ``canonical'' for this condition, but the requirement is its analogue and we use the term
 throughout. A 64-bit pointer therefore carries meaning in bits well above the virtual-address
 field, and the Arm extensions place further data there. \autoref{fig:bg-ptrlayout} shows the
@@ -576,27 +576,30 @@ undocumented. \revizor{} therefore measures a single structure, the L1 data cach
 input's execution, through a cache side channel such as Flush+Reload or Prime+Probe. It therefore
 tests the contract with respect to an \emph{L1D observer}: effects in other structures appear in
 the hardware trace only once they propagate into the L1D. Because the context of a black-box CPU
-cannot be set directly, \revizor{} sets it indirectly, running the inputs back to back with only a
-partial reset between them~\cite{revizor,hide_seek}, so each input's context is the state its
-predecessors left.
+cannot be set directly, \revizor{} sets it indirectly. It runs the inputs of one test case as a
+single back-to-back series, with only a partial reset between consecutive inputs~\cite{revizor,hide_seek},
+so each input's context is the microarchitectural state its predecessors in the series left behind.
+The state is fully reset between one test case and the next, so every test case is measured
+independently, and an input's context is only ever the inputs that ran before it on the same program.
 
 \paragraph{Priming.}
 A candidate violation is then a pair of contract-equivalent inputs, at
 positions $i<j$, whose L1D traces differ. Since the two traces are measured in different contexts,
-the difference may stem from the contexts rather than the inputs. \emph{Priming} closes this gap by
-re-running the sequence with the two inputs swapped into each other's position, so each input is
-measured in both contexts (\autoref{fig:bg-priming}). The candidate is a false positive when both swapped comparisons agree,
-and a violation otherwise. \autoref{chap:priming} shows that this rule, while sound, is incomplete,
+the difference may stem from the contexts rather than the inputs. \emph{Priming} closes this gap with
+two experiments. It reruns the sequence once with input $i$ moved into position $j$, and once with
+input $j$ moved into position $i$, so that the two inputs are compared within each context in turn
+(\autoref{fig:bg-priming}). The candidate is a false positive when the two inputs agree in both contexts,
+and a violation when they differ in either. \autoref{chap:priming} shows that this rule, while sound, is incomplete,
 and replaces it with a provably stronger one.
 
 \begin{figure}[h]
 \centering
 \fitwidth{\input{fig/bg-priming}}
-\caption{Priming validates a candidate. In the original sequence the two suspected inputs $a$ and
-$b$ run at positions $i$ and $j$, in different contexts, and their L1D traces differ. Priming
-re-runs the sequence with $a$ and $b$ swapped, so each input is also measured in the other's
-context. Within each context $a$ and $b$ are then compared. If they agree in both contexts the
-candidate is a false positive, and if they differ in either it is a real violation.}
+\caption{Priming validates a candidate. In the original sequence (middle) the suspected inputs $a$
+and $b$ run at positions $i$ and $j$, in different contexts, and their L1D traces differ. Priming
+then runs two further experiments, placing $a$ in position $j$ (top) and $b$ in position $i$ (bottom),
+so that $a$ and $b$ can be compared within one fixed context at a time. If they agree in both contexts
+the candidate is a false positive, and if they differ in either it is a real violation.}
 \label{fig:bg-priming}
 \end{figure}
 

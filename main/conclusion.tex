@@ -10,8 +10,8 @@ AArch64 with a native-execution contract executor, added headless fuzzing of rem
 modeled the Pointer Authentication and Memory Tagging extensions
 (\autoref{chap:port}). We showed that \revizor{}'s priming step is incomplete (it cannot report a
 leak whose only effect on its own run lies outside the L1 data cache), and replaced it with a
-generalized rule that keeps the contract-violation definition unchanged, provably detects strictly
-more, and localizes each report to a genuine violation with two optimal localizers
+generalized rule that strictly generalizes the contract-violation definition, provably detects
+strictly more, and localizes each report to a genuine violation with two optimal localizers
 (\autoref{chap:priming}). We introduced precondition fuzzing, which seals the precondition sites of
 a test case and fills them per input to satisfy or violate a precondition on a speculative-only
 path, without ever faulting the victim (\autoref{chap:precond}). Together these uncovered a leak

@@ -1,23 +1,70 @@
 \begin{tikzpicture}[
-  font=\footnotesize,
-  stp/.style={draw=black!70, fill=black!4, rounded corners=2.5pt, thick,
-              align=center, text width=44mm, minimum height=7mm, inner sep=3pt},
-  ar/.style={-{Stealth[length=1.8mm,width=1.6mm]}, thick, draw=black!75},
-  lbl/.style={font=\scriptsize, text=black!65, inner sep=1.5pt},
+  font=\scriptsize,
+  cell/.style={draw, rounded corners=1.5pt, minimum width=26mm, minimum height=5.2mm,
+               inner sep=1.5pt, font=\ttfamily\scriptsize, align=center},
+  bl/.style={cell, fill=black!4, draw=black!30, text=black!45},
+  nat/.style={cell, fill=laneA!22, draw=laneA!70!black, very thick, text=black},
+  box/.style={draw, rounded corners=3pt, align=left, inner sep=5pt, thick},
+  tramp/.style={box, fill=probe!10, draw=probe!55!black, text width=34mm},
+  chook/.style={box, fill=laneB!12, draw=laneB!60!black, text width=46mm},
+  hd/.style={font=\footnotesize\bfseries, text=black!70},
+  cs/.style={font=\scriptsize, text=black!60, align=center},
+  ar/.style={-{Stealth[length=2.2mm,width=2mm]}, thick, draw=black!70},
+  jmp/.style={-{Stealth[length=1.8mm,width=1.6mm]}, draw=culprit!78!black, thick},
 ]
-  \node[stp] (rs) at (0,0)    {restore instruction $i$ at the PC};
-  \node[stp] (ex) at (0,-1.55){execute instruction $i$ natively on the CUT};
-  \node[stp] (tr) at (0,-3.1) {\texttt{BL} trampoline: save register context};
-  \node[stp] (hk) at (0,-4.95){hook: record architectural state;\\ drive speculation\\ {\scriptsize (checkpoint $\cdot$ redirect $\cdot$ roll back)}};
-  \draw[ar] (rs) -- (ex);
-  \draw[ar] (ex) -- (tr) node[lbl,midway,right=1pt]{next executed word is \texttt{BL hook}};
-  \draw[ar] (tr) -- (hk);
-  \draw[ar] (hk.west) -- ++(-0.75,0) |- (rs.west);
-  \node[lbl, rotate=90, fill=white, inner sep=1pt] at (-2.95,-2.475) {next instruction};
-  \path let \p1 = (current bounding box.north east),
-            \p2 = (current bounding box.south west),
-            \n1 = {max(\x1, -\x2)} in
-        coordinate (bbne) at (\n1, \y1) coordinate (bbsw) at (-\n1, \y2);
-  \pgfresetboundingbox
-  \useasboundingbox (bbsw) rectangle (bbne);
+  \def\px{0}       % before column x
+  \def\qx{13.7}    % after column x
+
+  % ---- block headers ----
+  \node[hd] at (\px,4.35) {before};
+  \node[hd] at (\qx,4.35) {after};
+
+  % ===== case (a): add (sequential) =====
+  \node[cs, anchor=east] at (\px-1.75,2.7) {(a) \texttt{add}};
+  \node[bl]  (ba0) at (\px,3.6) {BL base\_hook};
+  \node[nat] (ba1) at (\px,3.0) {add x1, x1, \#1};
+  \node[bl]  (ba2) at (\px,2.4) {BL base\_hook};
+  \node[bl]  (ba3) at (\px,1.8) {BL base\_hook};
+  \draw[jmp] (ba1.east) to[out=0,in=0,looseness=2.4] (ba2.east);
+  \node[cs, text=culprit!72!black, anchor=west] at (\px+1.5,2.7) {falls\\ through};
+  % after
+  \node[bl]  (aa0) at (\qx,3.6) {BL base\_hook};
+  \node[bl]  (aa1) at (\qx,3.0) {BL base\_hook};
+  \node[nat] (aa2) at (\qx,2.4) {orr x5, x5, x6};
+  \node[bl]  (aa3) at (\qx,1.8) {BL base\_hook};
+
+  % ===== case (b): forward branch (taken) =====
+  \node[cs, anchor=east] at (\px-1.75,-0.7) {(b) forward\\ branch};
+  \node[nat] (bb0) at (\px,0.2)  {b.eq L};
+  \node[bl]  (bb1) at (\px,-0.4) {BL base\_hook};
+  \node[bl]  (bb2) at (\px,-1.0) {BL base\_hook};
+  \node[bl]  (bb3) at (\px,-1.6) {L: BL base\_hook};
+  \draw[jmp] (bb0.east) to[out=0,in=0,looseness=1.5] (bb3.east);
+  \node[cs, text=culprit!72!black, anchor=west] at (\px+1.6,-0.7) {taken:\\ jump to L};
+  % after
+  \node[bl]  (ab0) at (\qx,0.2)  {BL base\_hook};
+  \node[bl]  (ab1) at (\qx,-0.4) {BL base\_hook};
+  \node[bl]  (ab2) at (\qx,-1.0) {BL base\_hook};
+  \node[nat] (ab3) at (\qx,-1.6) {L: ldr x3, [x4]};
+
+  % ===== center pipeline =====
+  \node[tramp] (tr) at (4.75,0.9) {\textbf{trampoline} (\texttt{base\_hook})\\[2pt]
+     save \texttt{x0..x29}, \texttt{LR}, \texttt{PC}, \texttt{SP}, \texttt{NZCV}\\[1pt]
+     \texttt{blr base\_hook\_c}};
+  \node[chook] (ch) at (9.5,0.9) {\textbf{C hook} (\texttt{base\_hook\_c})\\[2pt]
+     snapshot the registers and the whole memory image\\[1pt]
+     run the execution clause: checkpoint, redirect, roll back (this models speculation)\\[1pt]
+     emulate \reg{PAC} and \reg{MTE} in software\\[1pt]
+     re-arm every slot to \texttt{BL}, leave only the next instruction native};
+
+  % reached BL feeds the trampoline
+  \draw[ar] (ba2.east) to[out=0,in=150] (tr.north west);
+  \draw[ar] (bb3.east) to[out=0,in=210] (tr.south west);
+  \node[cs, align=center] at (2.35,0.95) {next fetched\\ word is a\\ \texttt{BL}};
+  % trampoline to C hook
+  \draw[ar] (tr.east) -- (ch.west) node[cs, midway, above, text=black!60]{\texttt{blr}};
+  % C hook re-arms, producing the after image
+  \draw[ar] (ch.east) to[out=30,in=180] (aa2.west);
+  \draw[ar] (ch.east) to[out=-30,in=180] (ab3.west);
+  \node[cs, align=center, text=probe!45!black] at (12.35,0.95) {re-arm:\\ only the next\\ instr.\ native};
 \end{tikzpicture}

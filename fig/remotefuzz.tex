@@ -1,0 +1,36 @@
+\begin{tikzpicture}[
+  font=\footnotesize,
+  chip/.style={draw=black!45, rounded corners=2pt, fill=black!4, inner sep=3pt,
+               minimum width=34mm, minimum height=5.5mm, align=center, font=\scriptsize},
+  mlab/.style={font=\footnotesize\bfseries},
+  ar/.style={-{Stealth[length=2.6mm,width=2.2mm]}, very thick, draw=black!72},
+  flow/.style={-{Stealth[length=1.8mm,width=1.5mm]}, semithick, draw=black!50},
+  lbl/.style={font=\scriptsize, text=black!60, align=center},
+  sub/.style={font=\scriptsize, text=black!55},
+]
+  % ===== host (fuzzing machine) =====
+  \node[mlab] (htitle) at (0,1.55) {fuzzing host};
+  \node[chip, fill=laneA!14, draw=laneA!55!black] (hg) at (0,0.8)   {generator};
+  \node[chip, fill=probe!12, draw=probe!55!black]  (hc) at (0,0.1)  {contract executor (CE)};
+  \node[chip, fill=laneB!16, draw=laneB!55!black]  (ha) at (0,-0.6) {analyzer};
+  \node[draw=black!55, rounded corners=4pt, thick, fit=(htitle)(hg)(hc)(ha),
+        inner sep=4pt] (host) {};
+  \node[sub, below=1pt of host] {generation, contract modeling, analysis};
+
+  % ===== target device =====
+  \node[mlab] (dtitle) at (7.6,1.55) {target device};
+  \node[chip] (dh) at (7.6,0.8)  {on-device helper};
+  \node[chip] (dk) at (7.6,0.1)  {kernel module};
+  \node[chip, fill=culprit!10, draw=culprit!55!black] (dc) at (7.6,-0.6) {CPU under test};
+  \node[draw=black!55, rounded corners=4pt, thick, fit=(dtitle)(dh)(dk)(dc),
+        inner sep=4pt] (dev) {};
+  \node[sub, below=1pt of dev] {execution and measurement on the silicon};
+  \draw[flow] (dh) -- (dk);
+  \draw[flow] (dk) -- (dc);
+
+  % ===== link =====
+  \draw[ar] ([yshift=4mm]host.east) -- node[lbl, above]{super-batch:\\ test cases $+$ inputs}
+        ([yshift=4mm]dev.west);
+  \draw[ar] ([yshift=-4mm]dev.west) -- node[lbl, below]{hardware traces\\ (one response)}
+        ([yshift=-4mm]host.east);
+\end{tikzpicture}

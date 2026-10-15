@@ -17,7 +17,7 @@ The quantitative reach across isolation boundaries and the end-to-end exploits a
 
 On AArch64, a virtual address is translated only when the bits above the configured
 virtual-address size are all zero, selecting the TTBR0 range, or all one, selecting the TTBR1
-range. Any other value is out of range and raises an address-size or translation fault. Arm
+range. Any other value is out of range and raises a fault. Arm
 does not use the x86 term \emph{canonical} for this condition, but the requirement is the
 analogue of x86 canonicality, and we use the term for it throughout.
 

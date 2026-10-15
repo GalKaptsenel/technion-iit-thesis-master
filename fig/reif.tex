@@ -1,0 +1,57 @@
+\begin{tikzpicture}[
+  font=\footnotesize,
+  blk/.style={draw, rounded corners=2.5pt, align=left, inner sep=4pt, thick, text width=46mm},
+  hdr/.style={blk, fill=laneA!12, draw=laneA!60!black},
+  dsc/.style={blk, fill=probe!10, draw=probe!55!black},
+  pay/.style={blk, fill=laneB!12, draw=laneB!55!black},
+  cat/.style={draw, rounded corners=2.5pt, align=left, inner sep=5pt, thick,
+              fill=black!2, draw=black!45},
+  sz/.style={font=\scriptsize, text=black!55, align=center},
+  ar/.style={-{Stealth[length=2mm,width=1.8mm]}, thick, draw=black!65},
+]
+  % ===== left: file layout =====
+  \node[hdr] (h) {%
+    {\bfseries header}\hfill{\scriptsize\textcolor{black!55}{48\,B, fixed}}\\[3pt]
+    {\ttfamily\scriptsize
+     \begin{tabular}{@{}l@{\hspace{2pt}}l@{}}
+     magic      & : u64\\
+     version    & : u64\\
+     header\_len & : u64\\
+     n\_sections & : u64\\
+     flags      & : u64\\
+     total\_len  & : u64\\
+     \end{tabular}}};
+  \node[dsc, below=2.4mm of h] (d) {%
+    {\bfseries section table}\hfill{\scriptsize\textcolor{black!55}{32\,B $\times$ \texttt{n\_sections}}}\\[3pt]
+    {\ttfamily\scriptsize
+     \begin{tabular}{@{}l@{\hspace{2pt}}l@{}}
+     type   & : u64\\
+     flags  & : u64\\
+     offset & : u64\\
+     length & : u64\\
+     \end{tabular}}};
+  \node[pay, below=2.4mm of d] (p) {%
+    {\bfseries section payloads}\\[2pt]
+    {\scriptsize\textcolor{black!55}{each begins at its descriptor's \texttt{offset}}}};
+  % indirection: a descriptor locates its payload
+  \draw[ar] (d.east) to[out=0,in=0,looseness=1.8]
+     node[sz, right=7pt, pos=0.5]{\texttt{offset},\\ \texttt{length}} (p.east);
+
+  % ===== right: the section catalog =====
+  \node[cat, anchor=north west] (c) at ($(h.north east)+(1.75,0)$) {%
+    {\bfseries section types}\quad{\scriptsize\textcolor{probe!55!black}{req}uired / \textcolor{black!50}{opt}ional}\\[3pt]
+    \scriptsize
+    \begin{tabular}{@{}r@{\ \ }l@{\ \ }l@{\ \ }l@{}}
+    \ttfamily 0x01 & \ttfamily MEMORY\_MAIN   & \textcolor{probe!55!black}{req} & sandbox main region\\[1pt]
+    \ttfamily 0x02 & \ttfamily MEMORY\_FAULTY & \textcolor{probe!55!black}{req} & sandbox faulty region\\[1pt]
+    \ttfamily 0x03 & \ttfamily GPR           & \textcolor{probe!55!black}{req} & \texttt{x0..x5}, \reg{PSTATE} flags, \texttt{sp}\\[1pt]
+    \ttfamily 0x04 & \ttfamily SIMD          & \textcolor{black!50}{opt} & \texttt{v0..v7} (reserved)\\[1pt]
+    \ttfamily 0x05 & \ttfamily PAC\_KEYS      & \textcolor{black!50}{opt} & per-input \reg{PAC} keys\\[1pt]
+    \ttfamily 0x06 & \ttfamily MTE\_TAGS      & \textcolor{black!50}{opt} & one 4-bit tag per 16-byte granule\\[1pt]
+    \ttfamily 0x07 & \ttfamily CODE\_RELOC    & \textcolor{black!50}{opt} & word splices into the test body (sealing)\\[1pt]
+    \ttfamily 0x09 & \ttfamily PTE\_SETTINGS  & \textcolor{black!50}{opt} & per-page descriptor overrides\\
+    \end{tabular}};
+  % the descriptor's type names one catalog row
+  \draw[ar] (d.north east) to[out=20,in=180] ($(c.west)+(0,-0.15)$);
+  \node[sz, anchor=south west] at ($(d.north east)+(0.1,0.02)$) {\texttt{type} selects};
+\end{tikzpicture}
