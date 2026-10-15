@@ -15,13 +15,13 @@
 %  Architecture and the Arm security extensions
 % =====================================================================
 
-\newacronym[category=notation-category]{aarch64}{AArch64}{the 64-bit execution state of the Arm architecture}
+\newacronym[category=notation-category]{aarch64}{AArch64}{the 64-bit version of the Arm architecture family}
 \newacronym[category=notation-category]{isa}{ISA}{instruction set architecture}
 \newacronym[category=notation-category]{asl}{ASL}{Arm Architecture Specification Language}
-\newacronym[category=notation-category,description={EL0 user, EL1 kernel, EL2 hypervisor, EL3 secure firmware}]{el}{EL}{exception level}
+\newacronym[category=notation-category]{el}{EL}{exception level}
 \newacronym[category=notation-category]{vhe}{VHE}{Virtualization Host Extensions}
 \newacronym[category=notation-category]{va}{VA}{virtual address}
-\newacronym[category=notation-category]{ttbr}{TTBR}{translation table base register (\texttt{TTBR0}, \texttt{TTBR1})}
+\newacronym[category=notation-category]{ttbr}{TTBR}{translation table base register}
 \newacronym[category=notation-category]{asid}{ASID}{address space identifier}
 \newacronym[category=notation-category]{vmid}{VMID}{virtual machine identifier}
 \newacronym[category=notation-category]{tbi}{TBI}{Top Byte Ignore}
@@ -29,12 +29,11 @@
 \newacronym[category=notation-category]{pac}{PAC}{pointer authentication code}
 \newacronym[category=notation-category]{mte}{MTE}{Memory Tagging Extension}
 \newacronym[category=notation-category]{qarma}{QARMA}{the tweakable block cipher used to compute pointer authentication codes}
-\newacronym[category=notation-category]{csv2}{FEAT\_CSV2}{Cache Speculation Variant~2 (isolates branch-prediction contexts)}
-\newacronym[category=notation-category,description={\texttt{FEAT\_FPACCOMBINE} extends this to combined instructions}]{fpac}{FEAT\_FPAC}{faulting on pointer-authentication failure}
-\newacronym[category=notation-category]{nzcv}{NZCV}{the AArch64 condition flags (negative, zero, carry, overflow)}
-\newacronym[category=notation-category]{smc}{SMC}{Secure Monitor Call (a call into EL3)}
+\newacronym[category=notation-category]{csv2}{FEAT\_CSV2}{Cache Speculation Variant~2}
+\newacronym[category=notation-category]{fpac}{FEAT\_FPAC}{faulting on pointer-authentication failure}
+\newacronym[category=notation-category]{nzcv}{NZCV}{negative, zero, carry, and overflow condition flags}
+\newacronym[category=notation-category]{smc}{SMC}{Secure Monitor Call}
 \newacronym[category=notation-category]{soc}{SoC}{system on chip}
-\newacronym[category=notation-category]{cpu}{CPU}{central processing unit}
 
 % =====================================================================
 %  Microarchitecture
@@ -50,7 +49,7 @@
 \newacronym[category=notation-category]{btb}{BTB}{branch target buffer}
 \newacronym[category=notation-category]{phr}{PHR}{pattern history register}
 \newacronym[category=notation-category]{tage}{TAGE}{TAgged GEometric history length branch predictor}
-\newacronym[category=notation-category]{ittage}{ITTAGE}{Indirect Target TAGE, the indirect-branch target predictor}
+\newacronym[category=notation-category]{ittage}{ITTAGE}{Indirect Target TAGE}
 \newacronym[category=notation-category]{rsb}{RSB}{return stack buffer}
 \newacronym[category=notation-category]{pmu}{PMU}{performance monitoring unit}
 
@@ -59,7 +58,7 @@
 % =====================================================================
 
 \newacronym[category=notation-category]{mrt}{MRT}{model-based relational testing}
-\newacronym[category=notation-category]{ctseq}{CT-SEQ}{the constant-time, sequential (non-speculative) contract}
+\newacronym[category=notation-category]{ctseq}{CT-SEQ}{the constant-time, sequential contract}
 \newacronym[category=notation-category]{cut}{CUT}{CPU under test}
 \newacronym[category=notation-category]{ce}{CE}{contract executor}
 \newacronym[category=notation-category]{reif}{REIF}{Revizor Extensible Input File}
@@ -80,10 +79,10 @@
 
 \newglossaryentry{instr-pacstar}{type=notation, category=notation-category,
   name={\texttt{PAC*}}, sort={PAC instr},
-  description={the AArch64 instructions that compute and insert a pointer authentication code}}
+  description={the instructions that sign a pointer with a PAC, such as \texttt{PACIA} and \texttt{PACDA}}}
 \newglossaryentry{instr-autstar}{type=notation, category=notation-category,
   name={\texttt{AUT*}}, sort={AUT instr},
-  description={the AArch64 instructions that verify a pointer authentication code and restore the sign extension of bit~55}}
+  description={the instructions that verify a pointer's PAC, such as \texttt{AUTIA} and \texttt{AUTDA}}}
 \newglossaryentry{instr-prfm}{type=notation, category=notation-category,
   name={\texttt{PRFM}}, sort={PRFM instr},
   description={the A64 software-prefetch instruction, which unlike loads and stores does not leak through the canonicality oracle}}
