@@ -481,7 +481,7 @@ CPU the context cannot be set directly, so each candidate must be validated to s
 is caused by the inputs rather than by their differing contexts.
 
 \paragraph{The Revizor pipeline.}
-\revizor{}~\cite{revizor,revizor_micro} implements MRT as four components followed by a validation
+\revizor{}~\cite{revizor} implements MRT as four components followed by a validation
 step (\autoref{fig:bg-revizor}). A \emph{generator} produces small random programs, with memory
 accesses confined to a sandboxed region, together with random inputs that initialize the registers
 and the sandbox memory. A \emph{model} runs each program and input on an emulator of the contract

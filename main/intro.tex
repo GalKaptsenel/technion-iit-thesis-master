@@ -51,7 +51,7 @@ Finding such leaks by hand is slow and demanding. Building each attack manually 
 deep expertise and an intimate familiarity with the target microarchitecture, which makes the
 approach hard to scale to full-fledged modern cores. Automating the search is therefore
 necessary, and model-based relational testing (MRT), realized in the \revizor{}
-fuzzer~\cite{revizor,revizor_micro}, was introduced for exactly that purpose. Rather than try
+fuzzer~\cite{revizor}, was introduced for exactly that purpose. Rather than try
 to establish the absence of any leakage, which no real processor could satisfy, MRT tests a
 black-box CPU against an explicit leakage contract that states what the processor is
 permitted to leak. The fuzzer then looks for pairs of inputs that the contract deems
@@ -60,8 +60,8 @@ rediscovering known Spectre variants automatically and surfacing previously unre
 speculative leaks on commercial Intel and AMD cores~\cite{revizor,hide_seek}. To date,
 however, \revizor{} addresses only x86-64.
 
-\autoref{tab:intro-tools} places the main automated efforts beside this work, grouped by
-whether they test a real CPU or validate a pre-silicon design.
+\autoref{tab:intro-tools} places the main automated efforts, grouped by whether they test a
+real CPU or validate a pre-silicon design.
 
 \begin{table}[t]
 \centering
@@ -90,18 +90,19 @@ SpecDoctor~\cite{specdoctor} & differential fuzzing & \multicolumn{2}{c}{RTL (RI
 \end{tabular}
 \end{table}
 
-The tools fall into the two groups the table shows. Most test a real CPU directly.
-\revizor{} is the first, and three later systems build on it: Hide \& Seek adds randomized,
-contract-driven input generation~\cite{hide_seek}, Speculation at Fault models faults and
-exceptions~\cite{speculation_fault}, and Enter, Exit, Page Fault, Leak tests isolation
-boundaries~\cite{isolation}. Osiris~\cite{osiris} and Medusa~\cite{transynther} instead
-search a real CPU for side channels and data-leak gadgets. The
-second group works pre-silicon, on a simulated design rather than a shipped part:
-AMuLeT~\cite{amulet}, itself a \revizor{} descendant, applies the same relational testing to a
-secure-speculation countermeasure at design time, and SpecDoctor~\cite{specdoctor} fuzzes an open
-register-transfer-level core.
-Across both groups every system but ScamV targets x86-64 or an open design, and none brings
-relational testing to real AArch64 silicon. That is the gap this thesis closes.
+Testing a real, black-box CPU is done mostly with \revizor{} and its extensions: Hide \& Seek
+adds test filtering~\cite{hide_seek}, Speculation at Fault models faults and exceptions taken
+architecturally~\cite{speculation_fault}, and Enter, Exit, Page Fault, Leak tests isolation
+boundaries~\cite{isolation}. Osiris~\cite{osiris} and Medusa~\cite{transynther} instead search a
+real CPU directly for side channels and data-leak gadgets. Osiris fuzzes instruction-sequence
+triples drawn from the ISA and times them for side channels, while Medusa mutates memory-access
+gadgets to synthesize data-sampling leaks. ScamV~\cite{scamv} leverages symbolic execution and SMT
+solvers to generate its experiments. The pre-silicon approach is usually based on a simulated
+design: AMuLeT~\cite{amulet}, itself a \revizor{} descendant, applies the same relational testing
+to a microarchitectural simulator such as gem5, and SpecDoctor~\cite{specdoctor} fuzzes an open
+register-transfer-level (RTL) core. Across both groups every system but ScamV targets x86-64 or an
+open design, and none brings model-based relational testing to real AArch64 silicon. That is the
+gap this thesis closes.
 
 \section{The Arm blind spot}
 \label{sec:intro-arm}
@@ -194,7 +195,7 @@ these claims in the order the thesis develops them.
 
 \paragraph{Model-based relational testing.}
 \revizor{} introduced model-based relational testing and the black-box testing of CPUs
-against speculation contracts~\cite{revizor,revizor_micro}, building on the hardware-software
+against speculation contracts~\cite{revizor}, building on the hardware-software
 leakage-contract framework of Guarnieri et al.~\cite{contracts}. Subsequent work extended the
 approach in several directions, adding speculation and observation filtering driven by
 contract-aware input generation~\cite{hide_seek}, exception-based testing of Meltdown-type
