@@ -66,26 +66,27 @@ real CPU or validate a pre-silicon design.
 \begin{table}[t]
 \centering
 \footnotesize
-\caption{Automated microarchitectural leak finding, grouped by validation setting. A dagger
-($\dagger$) marks tools that build on \revizor{}.}
+\caption{Automated microarchitectural leak finding, grouped by whether it tests real silicon or a
+pre-silicon design. MRT is model-based relational testing. A dagger ($\dagger$) marks tools that
+build on \revizor{}.}
 \label{tab:intro-tools}
-\begin{tabular}{@{}llcc@{}}
+\begin{tabular}{@{}lll@{}}
 \toprule
-Tool & Approach & x86-64 & AArch64 \\
+Tool & Approach & Target \\
 \midrule
-\multicolumn{4}{@{}l}{\emph{Testing of real CPUs}}\\
-\revizor{}~\cite{revizor} & MRT & \cmark & \\
-Hide \& Seek~\cite{hide_seek}$^\dagger$ & MRT & \cmark & \\
-Speculation at Fault~\cite{speculation_fault}$^\dagger$ & MRT & \cmark & \\
-Enter, Exit, Page Fault, Leak~\cite{isolation}$^\dagger$ & MRT & \cmark & \\
-Osiris~\cite{osiris} & side-channel fuzzing & \cmark & \\
-Medusa~\cite{transynther} & attack synthesis & \cmark & \\
-ScamV~\cite{scamv} & model validation & & \cmark \\
-This thesis$^\dagger$ & MRT & & \cmark \\
+\multicolumn{3}{@{}l}{\emph{Real silicon}}\\
+\revizor{}~\cite{revizor} & MRT & x86-64 \\
+Hide \& Seek~\cite{hide_seek}$^\dagger$ & MRT & x86-64 \\
+Speculation at Fault~\cite{speculation_fault}$^\dagger$ & MRT & x86-64 \\
+Enter, Exit, Page Fault, Leak~\cite{isolation}$^\dagger$ & MRT & x86-64 \\
+Osiris~\cite{osiris} & side-channel fuzzing & x86-64 \\
+Medusa~\cite{transynther} & attack synthesis & x86-64 \\
+ScamV~\cite{scamv} & model validation & AArch64 \\
+This thesis$^\dagger$ & MRT & AArch64 \\
 \addlinespace
-\multicolumn{4}{@{}l}{\emph{Pre-silicon design validation}}\\
-AMuLeT~\cite{amulet}$^\dagger$ & MRT & \multicolumn{2}{c}{design model} \\
-SpecDoctor~\cite{specdoctor} & differential fuzzing & \multicolumn{2}{c}{RTL (RISC-V)} \\
+\multicolumn{3}{@{}l}{\emph{Pre-silicon design}}\\
+AMuLeT~\cite{amulet}$^\dagger$ & MRT & gem5 model \\
+SpecDoctor~\cite{specdoctor} & differential fuzzing & RISC-V RTL \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -96,8 +97,8 @@ architecturally~\cite{speculation_fault}, and Enter, Exit, Page Fault, Leak test
 boundaries~\cite{isolation}. Osiris~\cite{osiris} and Medusa~\cite{transynther} instead search a
 real CPU directly for side channels and data-leak gadgets. Osiris fuzzes instruction-sequence
 triples drawn from the ISA and times them for side channels, while Medusa mutates memory-access
-gadgets to synthesize data-sampling leaks. ScamV~\cite{scamv} leverages symbolic execution and SMT
-solvers to generate its experiments. The pre-silicon approach is usually based on a simulated
+gadgets to synthesize data-sampling leaks. ScamV~\cite{scamv} validates an abstract observational model of a core against the
+hardware, using symbolic execution and SMT solvers to generate the distinguishing experiments. The pre-silicon approach is usually based on a simulated
 design: AMuLeT~\cite{amulet}, itself a \revizor{} descendant, applies the same relational testing
 to a microarchitectural simulator such as gem5, and SpecDoctor~\cite{specdoctor} fuzzes an open
 register-transfer-level (RTL) core. Across both groups every system but ScamV targets x86-64 or an
