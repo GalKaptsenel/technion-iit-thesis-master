@@ -3,19 +3,19 @@
 
 Modern high-performance processors owe much of their performance to optimizations the
 programmer never sees. They execute instructions out of order~\cite{tomasulo,hennessy_patterson},
-speculate past unresolved control flow~\cite{smith_bpred}, predict branch directions and
-even the outcomes of computations, and prefetch data and instructions into the caches ahead
-of demand. The implementation details of these mechanisms are largely undocumented, and it
-is all but certain that further structures exist whose very existence is not publicly known.
-On a prediction the processor immediately executes the instructions that follow from it, and
-once the true outcome is known it keeps that work if the guess was right. If the guess was
-wrong, it squashes the transiently executed instructions and restores the architectural
-state, so correctness is never compromised. The changes those instructions induced in the
-microarchitectural state, however, are not undone with it. A cache line that was filled
-stays resident, a translation produced by a page walk remains in the TLB, and the predictors
-and prefetchers keep the imprint of the discarded work. It is this asymmetry, between an
-architectural state that is restored and a microarchitectural state that persists, that
-makes transient-execution attacks possible.
+speculate past unresolved control flow~\cite{smith_bpred}, predict branch directions and even
+the outcomes of computations, and prefetch data and instructions into the caches ahead of
+demand. The implementation details of these mechanisms are largely undocumented, and it is
+all but certain that further structures exist whose very existence is not publicly known. On a
+prediction the processor immediately executes the instructions that follow from it, and once
+the true outcome is known it keeps that work if the guess was right. If the guess was wrong,
+it squashes the transiently executed instructions and restores the architectural state, so
+correctness is never compromised. The changes those instructions induced in the
+microarchitectural state, however, are not undone with it. A cache line that was filled stays
+resident, a translation produced by a page walk remains in the TLB, and the predictors and
+prefetchers keep the imprint of the discarded work. It is this asymmetry, between an
+architectural state that is restored and a microarchitectural state that persists, that makes
+transient-execution attacks possible.
 
 The disclosure of Spectre~\cite{spectre} and Meltdown~\cite{meltdown} showed the security
 cost of this asymmetry. Many of the structures that hold this residual state are shared
@@ -60,29 +60,48 @@ rediscovering known Spectre variants automatically and surfacing previously unre
 speculative leaks on commercial Intel and AMD cores~\cite{revizor,hide_seek}. To date,
 however, \revizor{} addresses only x86-64.
 
+\autoref{tab:intro-tools} places the main automated efforts beside this work, grouped by
+whether they test a real CPU or validate a pre-silicon design.
+
 \begin{table}[t]
 \centering
 \footnotesize
-\caption{Microarchitectural leak finding on commercial CPUs. Systematic,
-contract-based testing has so far targeted x86-64. On AArch64 only abstract model
-validation exist.}
+\caption{Automated microarchitectural leak finding, grouped by validation setting. A dagger
+($\dagger$) marks tools that build on \revizor{}.}
 \label{tab:intro-tools}
 \begin{tabular}{@{}llcc@{}}
 \toprule
 Tool & Approach & x86-64 & AArch64 \\
 \midrule
-\revizor{}~\cite{revizor}                    & MRT                         & \cmark & \\
-Hide \& Seek~\cite{hide_seek}                & MRT                         & \cmark & \\
-Speculation at Fault~\cite{speculation_fault}& MRT                         & \cmark & \\
-Enter, Exit, Page Fault, Leak~\cite{isolation}& MRT                        & \cmark & \\
-Osiris~\cite{osiris}                         & side-channel search         & \cmark & \\
-Medusa~\cite{transynther}                    & attack synthesis            & \cmark & \\
-ScamV~\cite{scamv}                           & model validation            &        & \cmark \\
-\midrule
-This thesis                                  & MRT and precondition fuzzing&        & \cmark \\
+\multicolumn{4}{@{}l}{\emph{Testing of real CPUs}}\\
+\revizor{}~\cite{revizor} & MRT & \cmark & \\
+Hide \& Seek~\cite{hide_seek}$^\dagger$ & MRT & \cmark & \\
+Speculation at Fault~\cite{speculation_fault}$^\dagger$ & MRT & \cmark & \\
+Enter, Exit, Page Fault, Leak~\cite{isolation}$^\dagger$ & MRT & \cmark & \\
+Osiris~\cite{osiris} & side-channel search & \cmark & \\
+Medusa~\cite{transynther} & attack synthesis & \cmark & \\
+ScamV~\cite{scamv} & model validation & & \cmark \\
+This thesis & MRT + precondition fuzzing & & \cmark \\
+\addlinespace
+\multicolumn{4}{@{}l}{\emph{Pre-silicon design validation}}\\
+AMuLeT~\cite{amulet}$^\dagger$ & countermeasure testing & \multicolumn{2}{c}{design model} \\
+SpecDoctor~\cite{specdoctor} & differential fuzzing & \multicolumn{2}{c}{RTL (RISC-V)} \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+The tools fall into the two groups the table shows. Most test a real CPU directly.
+\revizor{} is the first, and three later systems build on it: Hide \& Seek adds randomized,
+contract-driven input generation~\cite{hide_seek}, Speculation at Fault models faults and
+exceptions~\cite{speculation_fault}, and Enter, Exit, Page Fault, Leak tests isolation
+boundaries~\cite{isolation}. Osiris~\cite{osiris} and Medusa~\cite{transynther} instead
+search a real CPU for side channels and data-leak gadgets, while ScamV~\cite{scamv} validates
+an abstract side-channel model against real Arm hardware rather than hunting for leaks. The
+second group works pre-silicon, on a simulated design rather than a shipped part:
+AMuLeT~\cite{amulet}, itself a \revizor{} descendant, tests secure-speculation countermeasures
+at design time, and SpecDoctor~\cite{specdoctor} fuzzes an open register-transfer-level core.
+Across both groups every system but ScamV targets x86-64 or an open design, and none brings
+relational testing to real AArch64 silicon. That is the gap this thesis closes.
 
 \section{The Arm blind spot}
 \label{sec:intro-arm}
@@ -193,9 +212,9 @@ result also differs in kind, in that it leaks the sign bit of a failed authentic
 than probing the signature itself.
 
 \paragraph{Microarchitectural side channels.}
-The leaks we find are read out using the standard cache attacks, namely
-Flush+Reload~\cite{flushreload}, Flush+Flush~\cite{flushflush}, and
-Prime+Probe~\cite{primeprobe}, together with the translation and branch-prediction structures.
+The leaks we find are read out with the standard cache attacks Flush+Reload, Flush+Flush, and
+Prime+Probe~\cite{flushreload,flushflush,primeprobe}, together with the translation and
+branch-prediction structures.
 
 \paragraph{Automated side-channel and transient-bug discovery.}
 Automated discovery of microarchitectural side channels and transient-execution bugs has been
