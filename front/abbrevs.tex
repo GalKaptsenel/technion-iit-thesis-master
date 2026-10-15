@@ -58,6 +58,15 @@
 % =====================================================================
 
 \newacronym[category=notation-category]{mrt}{MRT}{model-based relational testing}
+\newglossaryentry{speculationcontract}{type=notation, category=notation-category,
+  name={speculation contract}, sort={speculation contract},
+  description={a specification that fixes, for each program and input, which executions a CPU may make microarchitecturally distinguishable, and therefore what it is permitted to leak}}
+\newglossaryentry{contracttrace}{type=notation, category=notation-category,
+  name={contract trace}, sort={contract trace},
+  description={the sequence of observations a speculation contract allows for a given program and input. Two inputs with equal contract traces must stay indistinguishable on a correct CPU}}
+\newglossaryentry{hardwaretrace}{type=notation, category=notation-category,
+  name={hardware trace}, sort={hardware trace},
+  description={what an attacker actually observes when a program runs on the hardware, read through microarchitectural side channels. A contract violation is a pair of inputs with equal contract traces but different hardware traces}}
 \newacronym[category=notation-category]{ctseq}{CT-SEQ}{the constant-time, sequential contract}
 \newacronym[category=notation-category]{cut}{CUT}{CPU under test}
 \newacronym[category=notation-category]{ce}{CE}{contract executor}

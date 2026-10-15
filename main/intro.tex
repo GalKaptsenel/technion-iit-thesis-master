@@ -1,110 +1,189 @@
 \chapter{Introduction}
 \label{chap:intro}
 
-Modern general-purpose processors owe much of their performance to mechanisms that
-are, by design, invisible to the programmer: out-of-order and speculative execution,
-branch prediction, data and instruction prefetching, and store-to-load forwarding. A
-pipeline runs instructions past unresolved branches and unresolved faults along a
-predicted path, and discards their architectural results when the prediction turns out
-to be wrong. The microarchitectural traces those discarded instructions leave
-behind---a cache line pulled in, a page table translation cached, a predictor entry
-allocated or even modified---are not discarded. This asymmetry between rolled-back architectural state
-and surviving microarchitectural state is the foundation of the transient-execution
-attacks.
+Modern general-purpose processors owe much of their speed to work the programmer
+never sees. They execute instructions out of order. They speculate past unresolved
+control flow. They predict branches. They prefetch data and instructions. They forward
+stores to later loads. A pipeline does not wait for a branch or a possible fault to
+resolve. It predicts how each will turn out, using a variety of predictors, and keeps
+executing along the predicted continuation. When a prediction is wrong, the processor
+rolls back the architectural results of that work. The microarchitectural traces it
+leaves behind are not rolled back. A cache line stays resident. A translation stays
+cached. A predictor entry stays allocated, or stays modified. This asymmetry, between
+rolled-back architectural state and surviving microarchitectural state, is the
+foundation of transient-execution attacks.
 
 The public disclosure of Spectre~\cite{spectre} and Meltdown~\cite{meltdown} showed
-that the asymmetry introduces a security problem: speculation steered by an
-attacker, combined with a microarchitectural side channel, can leak sensitive data across security
-boundaries that the architecture is supposed to enforce. The years since have produced
-a steady stream of follow-on variants and, in response, a layer of hardware and
-software mitigations. The mitigations are partial. Some mitigations could altogether disable the optimization feature via hardware configuration   (SSBS[reference]), and others may be inherently too important that the architecture explciitly allows the leakage. New instructions and optimization techniques keep emarging, resulting in new transient paths and new
-side-channels, because the leaking behaviour is a property of
-undocumented microarchitecture rather than of any one instruction sequence that a patch
-can forbid.
+what the asymmetry costs. Speculation that an attacker can steer, paired with a
+microarchitectural side channel, leaks data across boundaries the architecture is meant
+to enforce. The years since have produced a steady stream of variants. They have also
+produced a layer of hardware and software mitigations. The mitigations are partial. A
+few optimizations can be turned off through an architectural control. Speculative store
+bypass is one, and the SSBS state bit disables it for a chosen context~\cite{arm_ssbs}.
+Most speculation cannot be turned off at all. The prediction it relies on is too central
+to performance, so the architecture offers no global switch and leaves the defence to
+software at each vulnerable site. Spectre~v1 is the standard example, mitigated only by a
+speculation barrier and index masking at every bounds check~\cite{spectre}. New
+instructions and optimization techniques keep emerging. Each one can open new, sometimes
+unique and unexpected, transient paths and side channels.
+
+\section{Automated leak discovery}
+\label{sec:intro-automated}
+
+Finding these leaks by hand is slow and specialised. Each attack is built manually. It
+demands deep expertise and intimate familiarity with the target microarchitecture. The
+effort does not scale to the breadth of behaviour a modern core exposes.
+
+Model-based relational testing (MRT), realized in the \revizor{} fuzzer%
+~\cite{revizor,revizor_micro}, automates the search. It tests a black-box CPU against an
+explicit leakage contract. It then reports inputs that the contract calls
+indistinguishable but the hardware tells apart. On x86-64 it has been effective. It
+rediscovers the known Spectre variants automatically, and it has surfaced previously
+unreported speculative leaks on commercial Intel and AMD cores~\cite{revizor,hide_seek}.
+Today, however, MRT and its relatives target only x86-64.
+
+\autoref{tab:intro-tools} lists the main automated and hand-built efforts. Systematic,
+contract-based testing of commercial silicon has targeted x86-64. On AArch64 there is
+only abstract model validation and a small set of hand-built attacks.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{Microarchitectural leak finding on commercial CPUs. Systematic,
+contract-based testing has so far targeted x86-64. On AArch64 only abstract model
+validation and hand-built attacks exist. This thesis brings model-based relational
+testing to AArch64.}
+\label{tab:intro-tools}
+\begin{tabular}{@{}llcc@{}}
+\toprule
+Tool & Approach & x86-64 & AArch64 \\
+\midrule
+\revizor{}~\cite{revizor}                    & MRT, contract testing       & \cmark & \\
+Hide \& Seek~\cite{hide_seek}                & MRT, random inputs          & \cmark & \\
+Speculation at Fault~\cite{speculation_fault}& MRT, fault leaks            & \cmark & \\
+Enter, Exit, Page Fault, Leak~\cite{isolation}& MRT, isolation            & \cmark & \\
+Osiris~\cite{osiris}                         & side-channel search         & \cmark & \\
+Medusa~\cite{transynther}                    & attack synthesis            & \cmark & \\
+ScamV~\cite{scamv}                           & model validation            &        & \cmark \\
+PACMAN~\cite{pacman}                         & hand-built attack           &        & \cmark \\
+TikTag~\cite{tiktag}                         & hand-built attack           &        & \cmark \\
+\midrule
+This thesis                                  & MRT and precondition fuzzing&        & \cmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{What counts as a leak}
+\label{sec:intro-leak}
+
+The search needs a precise notion of a leak, and the intuition behind it is a controlled
+comparison. We fix the microarchitecture. We fix the program under test. We vary only its
+input. We then run the program and watch its microarchitectural trace, meaning what an
+attacker could observe through a side channel.
+
+Holding the first two fixed is what makes a difference meaningful. A change in the trace
+points to a leak only when the input is the one thing that could have caused it. The same
+microarchitecture rules out the hardware as the cause. The same program rules out the code
+as the cause. Only the input is left. So when two inputs that the contract calls
+indistinguishable still produce different traces, the program has leaked something about
+the input through the hardware.
+
+Priming is what makes this comparison trustworthy. State left in the microarchitecture by
+earlier runs is noise, and it can either hide a real difference or manufacture a false one.
+Priming controls that state before each measurement, so a difference in the trace reflects
+the inputs rather than the history. \autoref{chap:background} makes the contract, the
+traces, and priming precise, and \autoref{chap:priming} strengthens priming so that it can
+detect leaks beyond the L1 data cache.
 
 \section{The Arm blind spot}
 \label{sec:intro-arm}
 
-Almost all of this scrutiny has been directed at the x86-64 microarchitectures of Intel
-and AMD. Arm has received far less attention, even though it now powers the vast
-majority of the world's smartphones and is expanding quickly into laptops,
-high-performance computing, and the datacenter. The gap is not for lack of exposure.
-Arm cores speculate, predict, and prefetch like any other high-performance design, so
-they are subject to the same Spectre-class attacks. They are also subject to attacks
-that target Arm's own defensive extensions. PACMAN~\cite{pacman} turns a core into a
-speculative oracle for Pointer Authentication codes, and TikTag~\cite{tiktag}
-speculatively leaks the outcome of a Memory Tagging Extension tag check. Both are
-powerful, and both were constructed by hand.
+Almost all of this scrutiny has fallen on the x86-64 microarchitectures of Intel and AMD.
+Arm has received far less, even though it now runs the vast majority of the world's
+smartphones and is moving quickly into laptops, high-performance computing, and the
+datacenter. The gap is not for lack of exposure. Arm cores speculate, predict, and
+prefetch like any other high-performance design. They are therefore open to the same
+Spectre-class attacks. They are also open to attacks on Arm's own defensive extensions.
+PACMAN~\cite{pacman} speculatively distinguishes a correct \gls{pac} from an incorrect
+one, so an attacker can verify guessed codes without raising the fault that a wrong guess
+would normally cause. TikTag~\cite{tiktag} speculatively leaks the result of an \gls{mte}
+tag check. Both attacks are powerful. Both were built by hand.
 
-Hand-crafted attacks do not scale to the breadth of behaviour a modern core exposes.
-Model-based relational testing (MRT), as realized in the \revizor{}
-fuzzer~\cite{revizor,revizor_micro}, offers a systematic alternative: it tests a
-black-box CPU against an explicit leakage contract and reports inputs that the contract
-says are indistinguishable but the hardware distinguishes. \revizor{} has been effective
-on x86, but it models x86 and does not target the Arm-specific features---Pointer
-Authentication, Memory Tagging, the canonicality and alignment rules of AArch64 address
-translation---that are precisely where Arm's most interesting leaks lie.
+These Arm-specific mechanisms have no x86 counterpart. \gls{pauth}, \gls{mte}, and the
+canonicality and alignment rules of AArch64 address translation are not modelled by any
+contract-based tool. The systematic search that works on x86 therefore has no Arm
+equivalent, and the only Arm results so far are hand-crafted.
 
 \section{Preconditions as a source of leakage}
 \label{sec:intro-precond}
 
-A single pattern underlies many of these leaks. Instructions impose \emph{preconditions}
-on their operands. A tagged load requires its pointer's Memory Tagging Extension tag to
-match the tag of the memory it addresses. An authenticated indirect branch requires its
-pointer to carry a valid Pointer Authentication code. Every memory access requires its
-address to be canonical, in range for the active translation regime, and correctly
-aligned. Architecturally, violating a precondition raises a synchronous fault, so the
-violating instruction never retires on the well-formed path. Speculatively, the same
-check runs early, and its outcome decides whether a dependent load allocates a cache
+A single pattern underlies many of these leaks. Instructions place \emph{preconditions}
+on their operands. A tagged load requires its pointer's \gls{mte} tag to match the tag of
+the memory it addresses. Using an authenticated pointer requires it to carry a valid
+\gls{pac}. Every memory access requires its address to be canonical, in range for the
+active translation regime, and correctly aligned. Architecturally, a precondition violation must raise a synchronous fault. The offending
+instruction traps instead of completing. On a committed execution the violation is
+therefore visible only as that fault, and never as a silent leak. Speculatively, the same checks still run. Their outcome can change the state of a variety
+of microarchitectural structures. It may decide whether a dependent load allocates a cache
 line, whether a page-table walk fills a translation, or whether a mispredicted branch
-allocates a predictor entry. The precondition is therefore a one-bit decision that the
-hardware computes from a secret operand and exposes through a microarchitectural trace,
-on a path that never faults the victim.
+allocates a predictor entry. Some of the structures involved are not even publicly
+documented. PACMAN~\cite{pacman} is one example. It dereferences an authenticated pointer
+under speculation and reads the authentication outcome out of the data cache.
+TikTag~\cite{tiktag} is another. It gates a speculative load on an \gls{mte} tag check and
+observes the outcome through the same cache side channel. The precondition is therefore a
+secret-dependent decision, evaluated on a transient path that never faults the victim. The
+structures it disturbs can still carry the secret out.
 
-This observation turns a broad search problem into a structured one. Rather than hope a
-random test case happens to exercise a leaking precondition on a transiently reachable
-path, we can \emph{seal} the precondition sites of a test case and fill each seal, per
-input, to deliberately satisfy or violate the precondition on a speculative-only path.
-Detecting the resulting leak, however, runs into a limitation of \revizor{}'s existing
-decision rule, which this thesis also removes.
-
-\section{Contributions}
+\section{In this thesis}
 \label{sec:intro-contributions}
 
-This thesis brings automated, contract-based leak discovery to AArch64 and uses it to
-find, characterize, and weaponize a previously unknown class of Arm leaks. Its
-contributions, in the order the thesis presents them, are the following.
+This thesis brings automated, contract-based leak discovery to AArch64. It then uses it
+to find, explain, and weaponize a previously unknown class of Arm leaks. We make four
+claims.
+
+First, model-based relational testing carries to AArch64 in full. Code generation,
+sandboxing, and a native contract executor are all included, and the fuzzer can drive
+remote devices that cannot host the toolchain. Second, \revizor{}'s current detection
+rule misses a whole class of real leaks, and a stronger rule recovers them provably while
+still pointing each report at one genuine violation. Third, the preconditions that
+instructions place on their operands are a systematic and fuzzable source of speculative
+leakage. Fourth, fuzzing them uncovers a canonicality and alignment leak on production
+Arm cores, one that crosses privilege and virtualization boundaries and that we turn into
+full key recovery.
+
+The contributions below state these claims precisely, in the order the thesis presents
+them.
 
 \begin{itemize}
 \item \textbf{An AArch64 port of \revizor{} (\autoref{chap:port}).} We port the MRT
-  fuzzer to AArch64---code generation, sandboxing, and a native-execution contract
-  executor---add headless fuzzing of remote CPUs so one controller can drive devices
-  that cannot host the full toolchain, and extend the model to Arm-specific features,
-  including the Memory Tagging Extension and Pointer Authentication.
+  fuzzer to AArch64. The port covers code generation, sandboxing, and a native-execution
+  contract executor. We add headless fuzzing of remote CPUs, so one controller can drive
+  devices that cannot host the full toolchain. We extend the model to Arm-specific
+  features, including the \gls{mte} and \gls{pauth}.
 
 \item \textbf{Generalized priming (\autoref{chap:priming}).} We show that \revizor{}'s
-  current priming rule cannot report a whole class of genuine leaks---those whose only
-  effect on the run that causes them lies outside the L1 data cache---and give a
-  generalization that keeps the contract-violation definition unchanged, provably detects
-  every leak the current rule detects and strictly more, and localizes a reported leak to
-  a genuine violation. We give two localizers, a linear scan and a binary search, and
-  prove each optimal for what it returns.
+  current priming rule cannot report a whole class of genuine leaks. These are the leaks
+  whose only effect on the run that causes them lies outside the L1 data cache. We give a
+  generalization that keeps the contract-violation definition unchanged. It provably
+  detects every leak the current rule detects, and strictly more. It also localizes a
+  reported leak to a genuine violation. We give two localizers, a linear scan and a binary
+  search, and prove each optimal for what it returns.
 
 \item \textbf{Precondition fuzzing (\autoref{chap:precond}).} We introduce a methodology
-  for systematically fuzzing the preconditions and assumptions of instructions, by
-  sealing precondition sites in a test case and filling the seals per input to enforce or
+  for systematically fuzzing the preconditions and assumptions of instructions. We seal
+  precondition sites in a test case. We then fill the seals per input, to enforce or
   violate each precondition on a speculative-only path, without ever faulting the victim
   architecturally.
 
 \item \textbf{The canonicality and alignment leak (\autoref{chap:canon}).} Using the
-  above, we uncover a previously unknown leak that arises from the CPU's canonicality and
+  above, we uncover a previously unknown leak. It arises from the CPU's canonicality and
   alignment checks on loads, stores, and indirect branches. We demonstrate it on the Arm
-  Neoverse~N3 and the Google Tensor~G3, spanning server-class and mobile Arm cores, and
-  show that it crosses privilege boundaries (EL0-attacker to EL2-victim) and the virtualization
-  boundary (an attacker virtual machine to a victim host). We then weaponize it with two
+  Neoverse~N3 and the Google Tensor~G3, which span server-class and mobile Arm cores. We
+  show that it crosses privilege boundaries (EL0-attacker to EL2-victim) and the
+  virtualization boundary (attacker-VM to victim-host). We then weaponize it with two
   return-oriented-programming chains, built from \texttt{musl} and OpenSSL, that achieve
-  arbitrary reads from a victim process's address space and, in the OpenSSL case, recover
-  a complete RSA-2048 private key (\autoref{chap:eval}).
+  arbitrary reads from a victim process's address space. In the OpenSSL case we recover a
+  complete RSA-2048 private key (\autoref{chap:eval}).
 \end{itemize}
 
 \section{Related work}
@@ -112,27 +191,25 @@ contributions, in the order the thesis presents them, are the following.
 
 \paragraph{Model-based relational testing.}
 \revizor{} introduced MRT and the black-box testing of CPUs against speculation
-contracts~\cite{revizor,revizor_micro}, on the foundation of the hardware--software
-leakage-contract framework~\cite{contracts}. Follow-on work added speculation and
-observation filtering with contract-driven input generation~\cite{hide_seek},
-exception-based testing of Meltdown-type leaks~\cite{speculation_fault}, testing of
-isolation boundaries~\cite{isolation}, and design-time testing of secure-speculation
-countermeasures~\cite{amulet}. This thesis ports MRT to AArch64, strengthens its
-detection rule, and adds precondition fuzzing for the Arm faults that x86 MRT does not
-model.
+contracts~\cite{revizor,revizor_micro}, on the foundation of the hardware-software
+leakage-contract framework~\cite{contracts}. Later work added speculation and observation
+filtering with contract-driven input generation~\cite{hide_seek}. Further work added
+exception-based testing of Meltdown-type leaks~\cite{speculation_fault} and testing of
+isolation boundaries~\cite{isolation}. Design-time testing of secure-speculation
+countermeasures followed~\cite{amulet}. All of this targets x86-64. This thesis ports MRT
+to AArch64, strengthens its detection rule, and adds precondition fuzzing for the Arm
+faults that x86 MRT does not model.
 
 \paragraph{Attacks on Arm's defensive extensions.}
-PACMAN~\cite{pacman} speculatively turns a core into a Pointer Authentication oracle, and
-TikTag~\cite{tiktag} speculatively leaks Memory Tagging Extension tag-check outcomes.
-Both are hand-crafted analogues of the precondition gates this thesis fuzzes
-automatically. We discover and classify such gadgets rather than construct them by hand,
-and our Pointer Authentication result leaks the sign bit of a failed authentication
-rather than probing the signature.
+PACMAN~\cite{pacman} and TikTag~\cite{tiktag} are hand-crafted counterparts of the
+precondition gates this thesis fuzzes automatically. We discover and classify such
+gadgets rather than build them by hand. Our Pointer Authentication result also differs in
+kind. It leaks the sign bit of a failed authentication rather than probing the signature.
 
 \paragraph{Microarchitectural side channels and automated discovery.}
-The leaks we find are read out with the standard cache attacks Flush+Reload%
-~\cite{flushreload}, Flush+Flush~\cite{flushflush}, and Prime+Probe~\cite{primeprobe},
-and with the translation and branch-prediction structures. Automated discovery of
+We read out the leaks we find with the standard cache attacks Flush+Reload%
+~\cite{flushreload}, Flush+Flush~\cite{flushflush}, and Prime+Probe~\cite{primeprobe}, and
+with the translation and branch-prediction structures. Automated discovery of
 microarchitectural side channels and transient-execution bugs has been pursued by
 Osiris~\cite{osiris}, Medusa~\cite{transynther}, and SpecDoctor~\cite{specdoctor}, and by
 abstract side-channel model validation such as ScamV~\cite{scamv}. These tools search for
@@ -146,8 +223,8 @@ our extension localizes each violation to a single sealed precondition.
 the MRT framework the thesis builds on. \autoref{chap:port} describes the AArch64 port of
 \revizor{} and its remote-fuzzing and Arm-feature extensions. \autoref{chap:priming}
 develops generalized priming and its two localizers. \autoref{chap:precond} presents
-precondition fuzzing. \autoref{chap:canon} dissects the canonicality and alignment leak,
-and \autoref{chap:eval} evaluates the fuzzer and the leak end to end.
+precondition fuzzing. \autoref{chap:canon} dissects the canonicality and alignment leak.
+\autoref{chap:eval} evaluates the fuzzer and the leak end to end.
 \autoref{chap:conclusion} concludes and lists open questions. \autoref{appendix:localization}
-gives the full localization proofs, and \autoref{appendix:pocs} describes the
+gives the full localization proofs. \autoref{appendix:pocs} describes the
 proof-of-concept artifacts.
