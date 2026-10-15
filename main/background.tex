@@ -594,11 +594,9 @@ and replaces it with a provably stronger one.
 \begin{figure}[h]
 \centering
 \fitwidth{\input{fig/bg-priming}}
-\caption{Priming validates a candidate. In the original sequence (middle) the suspected inputs $a$
-and $b$ run at positions $i$ and $j$, in different contexts, and their L1D traces differ. Priming
-then runs two further experiments, placing $a$ in position $j$ (top) and $b$ in position $i$ (bottom),
-so that $a$ and $b$ can be compared within one fixed context at a time. If they agree in both contexts
-the candidate is a false positive, and if they differ in either it is a real violation.}
+\caption{Priming validates a candidate. The original run (middle) leaves $a$ and $b$ in different
+contexts, where their L1D traces differ. Two experiments re-run them with $a$ at position $j$ (top)
+and $b$ at position $i$ (bottom), comparing the pair within one fixed context at a time.}
 \label{fig:bg-priming}
 \end{figure}
 

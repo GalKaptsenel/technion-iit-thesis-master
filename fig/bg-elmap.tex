@@ -32,8 +32,8 @@
         anchor=north] (tbl) at (3.0,-1.95) {%
     \begin{tabular}{@{}l@{\hspace{7mm}}l@{}}
     \multicolumn{2}{@{}l@{}}{\textbf{\footnotesize microarchitectural isolation across privilege}}\\[3pt]
-    caches (L1, L2) & shared \\
-    TLB            & tagged by \reg{ASID} (and \reg{VMID}) \\
+    caches (L1, L2) & shared (address tag, not per-domain) \\
+    TLB            & tagged per domain (\reg{ASID}, \reg{VMID}) \\
     BTB            & physically split \\
     \end{tabular}};
 \end{tikzpicture}

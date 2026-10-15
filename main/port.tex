@@ -70,17 +70,15 @@ Rather than emulate AArch64, the CE runs the test case on the real core and obse
 instruction at a time (\autoref{fig:port-trampoline}). It is a user-space process that loads the
 program into an executable
 mapping and single-steps it. The single-stepping exploits the fixed-width A64 encoding: every
-instruction is 32 bits wide, and so is a \reg{BL} (branch-with-link). Before the test case runs, the CE replaces each and every
-instruction word in place with a \reg{BL} to a trampoline. A \reg{BL} does not modify the
-condition flags, so the \reg{NZCV} state carries across every interposed branch into the next
-test instruction. To run a single instruction the CE restores that one word to its original
-encoding, leaves every other word as its trampoline branch, and transfers control to it. The
-core executes that one instruction natively and then continues along the program's own control
-flow to the next instruction it reaches, which need not be the one immediately after it, since a
-branch or a loop may redirect control. That next word is still a \reg{BL}, so execution falls
-into the trampoline, where a hook records the architectural state. The CE then restores the next
-instruction and reinstates the trampoline at the one just executed, so that exactly one original
-instruction is ever in place, and repeats until the test case completes.
+instruction is 32 bits wide, and so is a \reg{BL} (branch-with-link). Before the test case runs,
+the CE overwrites every instruction word with a \reg{BL} to a trampoline. A \reg{BL} leaves the
+condition flags untouched, so the \reg{NZCV} state carries across the interposed branch into the
+next instruction. To run one instruction, the CE restores its word to the original encoding and
+jumps to it, while every other word stays a trampoline branch. The core runs that instruction
+natively and then reaches the next one, whose word is still a \reg{BL}, so control falls into the
+trampoline and a hook records the architectural state. The CE then re-arms the instruction it just
+ran, restores the next, and repeats, so exactly one original instruction is ever in place until the
+test case completes.
 
 Running on the CPU under test avoids the emulation inconsistencies we observed in common
 emulators such as Unicorn~\cite{unicorn}. It also strikes a middle ground between full
@@ -94,14 +92,9 @@ not.
 \begin{figure}[t]
 \centering
 \fitwidth{\input{fig/trampoline}}
-\caption{The CE single-steps the test case. Every instruction word is replaced by a \reg{BL} to
-the trampoline, and only the next instruction to execute is restored to its original encoding.
-After that instruction runs natively, control reaches the next fetched word, which is again a
-\reg{BL}: for a non-branch (a) it is the following instruction, and for a taken branch (b) it is
-the branch target. The trampoline (\texttt{base\_hook}) saves the register context and calls the
-C hook (\texttt{base\_hook\_c}), which snapshots the architectural state and memory, models the
-requested speculation, emulates \reg{PAC} and \reg{MTE}, and re-arms the slots so that only the
-next instruction is left native.}
+\caption{The CE single-steps the test case. Each step restores one original instruction word,
+which the core runs natively. The next word is a \reg{BL} into the trampoline, where a hook records
+the architectural state and drives speculation before advancing to the following instruction.}
 \label{fig:port-trampoline}
 \end{figure}
 
