@@ -76,5 +76,20 @@
       \glsentrylong{#1}%
     }%
   }%
+  % Widen the name column so a multi-word term such as "speculation contract"
+  % stays on one line instead of wrapping into "speculation" / "contract".
+  \renewglossarystyle{iitthesis}{%
+    \renewenvironment{theglossary}%
+      {\begin{longtable}{p{4cm}@{\quad}p{\textwidth - 4cm - \glspagelistwidth}p{\glspagelistwidth}}}%
+      {\end{longtable}}%
+    \renewcommand*{\glossaryheader}{}%
+    \renewcommand*{\glsgroupheading}[1]{}%
+    \renewcommand*{\glossentry}[2]{%
+      \textbf{\glstarget{##1}{\glossentryname{##1}}}%
+      & \formatglossarydescription{##1}%
+      & ##2 \tabularnewline%
+    }%
+    \renewcommand*{\glsgroupskip}{}%
+  }%
 }
 \makeatother

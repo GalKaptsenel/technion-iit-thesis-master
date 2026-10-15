@@ -29,9 +29,9 @@
 \newacronym[category=notation-category]{pac}{PAC}{pointer authentication code}
 \newacronym[category=notation-category]{mte}{MTE}{Memory Tagging Extension}
 \newacronym[category=notation-category]{qarma}{QARMA}{the tweakable block cipher used to compute pointer authentication codes}
-\newacronym[category=notation-category]{csv2}{FEAT\_CSV2}{Cache Speculation Variant~2}
-\newacronym[category=notation-category]{fpac}{FEAT\_FPAC}{faulting on pointer-authentication failure}
-\newacronym[category=notation-category]{nzcv}{NZCV}{negative, zero, carry, and overflow condition flags}
+\newacronym[category=notation-category]{csv2}{FEAT\_CSV2}{An AArch64 CPU hardware feature which guarantees that branch predictions trained in one execution context cannot steer speculative execution in another, closing the cross-context branch-target-injection channel known as Spectre v2}
+\newacronym[category=notation-category]{fpac}{FEAT\_FPAC}{An AArch64 CPU hardware feature which makes a failed pointer authentication fault precisely at the authentication instruction, instead of deferring the fault to a later use of the stripped pointer}
+\newacronym[category=notation-category]{nzcv}{NZCV}{negative, zero, carry, and overflow condition flags, the AArch64 counterpart of the x86 FLAGS register}
 \newacronym[category=notation-category]{smc}{SMC}{Secure Monitor Call}
 \newacronym[category=notation-category]{soc}{SoC}{system on chip}
 
@@ -63,10 +63,10 @@
   description={a specification that fixes, for each program and input, which executions a CPU may make microarchitecturally distinguishable, and therefore what it is permitted to leak}}
 \newglossaryentry{contracttrace}{type=notation, category=notation-category,
   name={contract trace}, sort={contract trace},
-  description={the sequence of observations a speculation contract allows for a given program and input. Two inputs with equal contract traces must stay indistinguishable on a correct CPU}}
+  description={the sequence of observations a speculation contract allows for a given program and input}}
 \newglossaryentry{hardwaretrace}{type=notation, category=notation-category,
   name={hardware trace}, sort={hardware trace},
-  description={what an attacker actually observes when a program runs on the hardware, read through microarchitectural side channels. A contract violation is a pair of inputs with equal contract traces but different hardware traces}}
+  description={what an attacker actually observes when a program runs on the hardware, read through microarchitectural side channels}}
 \newacronym[category=notation-category]{ctseq}{CT-SEQ}{the constant-time, sequential contract}
 \newacronym[category=notation-category]{cut}{CUT}{CPU under test}
 \newacronym[category=notation-category]{ce}{CE}{contract executor}
@@ -92,12 +92,9 @@
 \newglossaryentry{instr-autstar}{type=notation, category=notation-category,
   name={\texttt{AUT*}}, sort={AUT instr},
   description={the instructions that verify a pointer's PAC, such as \texttt{AUTIA} and \texttt{AUTDA}}}
-\newglossaryentry{instr-prfm}{type=notation, category=notation-category,
-  name={\texttt{PRFM}}, sort={PRFM instr},
-  description={the A64 software-prefetch instruction, which unlike loads and stores does not leak through the canonicality oracle}}
 \newglossaryentry{instr-udf}{type=notation, category=notation-category,
   name={\texttt{UDF}}, sort={UDF instr},
-  description={the permanently-undefined A64 encoding, used as a sealing placeholder that traps if executed}}
+  description={the permanently-undefined A64 encoding}}
 
 % --------------------------------
 % Make every entry above appear in the list, used or not.
