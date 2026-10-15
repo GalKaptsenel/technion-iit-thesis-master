@@ -1,0 +1,26 @@
+\begin{tikzpicture}[
+  font=\footnotesize,
+  cell/.style={draw=black!60, thick, minimum width=42mm, minimum height=7mm,
+               align=center, inner sep=2pt, anchor=south west},
+  ret/.style={cell, fill=culprit!12, draw=culprit!65},
+  chain/.style={cell, fill=laneB!16, draw=laneB!60!black},
+  gad/.style={draw=black!55, fill=black!4, rounded corners=2pt, align=left,
+              font=\ttfamily\scriptsize, inner sep=3pt, minimum width=30mm},
+  ar/.style={-{Stealth[length=1.7mm]}, semithick, draw=black!70},
+  lbl/.style={font=\scriptsize, text=black!65, align=left},
+]
+  % the overwritten return slot and the gadget-address chain above it
+  \node[ret]   (ret) at (0,0)    {saved return addr $\to$ \texttt{\&gadget\textsubscript{1}}};
+  \node[chain] (g2)  at (0,0.72) {\texttt{\&gadget\textsubscript{2}}};
+  \node[chain] (g3)  at (0,1.44) {\texttt{\&gadget\textsubscript{3}}\ \ $\cdots$};
+  \node[lbl, anchor=south] at (2.1,2.26) {high address};
+  \node[lbl, anchor=north] at (2.1,-0.1) {low address};
+  % gadgets already present in the victim's code, each ending in ret
+  \node[gad] (gad1) at (6.3,0.35) {gadget$_1$:\ \dots\ ret};
+  \node[gad] (gad2) at (6.3,1.07) {gadget$_2$:\ \dots\ ret};
+  \node[gad] (gad3) at (6.3,1.79) {gadget$_3$:\ \dots\ ret};
+  \node[lbl, anchor=south, align=center] at (6.3,2.2) {gadgets already in the\\ victim's code and libraries};
+  \draw[ar] (ret.east) to[out=0,in=180] (gad1.west);
+  \draw[ar] (g2.east)  to[out=0,in=180] (gad2.west);
+  \draw[ar] (g3.east)  to[out=0,in=180] (gad3.west);
+\end{tikzpicture}

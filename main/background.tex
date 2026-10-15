@@ -294,15 +294,25 @@ agnostic to the particular speculative primitive a target exposes.
 \label{sec:bg-exploitation}
 
 The end-to-end attacks of \autoref{chap:eval} turn a speculative read into control-flow hijacking,
-which brings in two classical exploitation ideas (\autoref{fig:bg-ropstack}).
+which brings in two classical exploitation ideas.
 
-A \emph{stack canary} is a per-process random value the compiler places between a function's local
+A \emph{stack canary} (\autoref{fig:bg-canary}) is a per-process random value the compiler places
+between a function's local
 buffers and its saved return address. The function re-checks the canary just before returning and
 aborts if it changed. A linear buffer overflow that reaches the return address is therefore caught
 with high probability, because it has to overwrite the random canary value on the way. Defeating the protection therefore means first learning
 the canary value, after which the overflow can be written with the canary left intact.
 
-\emph{Return-oriented programming} (ROP) then turns the overflow into computation without injecting
+\begin{figure}[h]
+\centering
+\fitwidth{\input{fig/bg-canary}}
+\caption{The stack canary. A per-process random value sits between a function's local buffers and
+its saved return address, so a linear overflow that reaches the return address must overwrite the
+canary on the way. The function checks the canary before returning, which detects the tampering.}
+\label{fig:bg-canary}
+\end{figure}
+
+\emph{Return-oriented programming} (ROP, \autoref{fig:bg-rop}) then turns the overflow into computation without injecting
 any code, which is what gets past a non-executable stack. The attacker overwrites the saved return
 address, and the words above it, with a chain of addresses of \emph{gadgets}: short instruction
 sequences that already exist in the victim's own code and end in a return. Each gadget does one small
@@ -310,14 +320,23 @@ step and returns into the next, so the chain carries out arbitrary work built en
 target's existing bytes. \autoref{chap:eval} drives such a chain, assembled from gadgets in OpenSSL,
 to read a victim's memory and recover an RSA-2048 key.
 
-\begin{figure}[t]
+Return-oriented programming is harder on AArch64 than on x86. A function returns with the \reg{RET}
+instruction, which transfers control to the address held in the link register \reg{X30} rather than
+to a value popped from the stack, so an attacker cannot simply place the next gadget's address on
+the stack and let \reg{RET} jump to it. A usable gadget must instead end in an epilogue that first
+reloads \reg{X30} from the stack, typically \reg{LDP X29, X30, [SP], \#N} followed by \reg{RET}, so
+that each gadget restores the next return address into the link register before returning. This
+makes useful gadgets scarcer and chaining them more involved. RiscyROP~\cite{riscyrop} automates
+the discovery and chaining of such gadgets on AArch64 and RISC-V.
+
+\begin{figure}[h]
 \centering
-\fitwidth{\input{fig/bg-ropstack}}
-\caption{Stack-canary and ROP layout. A linear overflow from a local buffer must preserve the stack
-canary to avoid detection, then overwrites the saved return address and the words above it with a
-chain of gadget addresses. Each gadget is a short sequence ending in a return, found in the victim's
-own code, and returns into the next.}
-\label{fig:bg-ropstack}
+\fitwidth{\input{fig/bg-rop}}
+\caption{A return-oriented-programming chain. The overflow overwrites the saved return address and
+the words above it with the addresses of \emph{gadgets}, short sequences already present in the
+victim's code that each end in \texttt{ret}. Each gadget runs one step and returns into the next,
+so the chain performs arbitrary work without injecting any code.}
+\label{fig:bg-rop}
 \end{figure}
 
 \section{The AArch64 security architecture}

@@ -1,0 +1,22 @@
+\begin{tikzpicture}[
+  font=\footnotesize,
+  cell/.style={draw=black!60, thick, minimum width=42mm, minimum height=7mm,
+               align=center, inner sep=2pt, anchor=south west},
+  canary/.style={cell, fill=probe!14, draw=probe!60!black},
+  ret/.style={cell, fill=culprit!12, draw=culprit!65},
+  buf/.style={cell, fill=black!5},
+  ar/.style={-{Stealth[length=1.7mm]}, semithick, draw=black!70},
+  lbl/.style={font=\scriptsize, text=black!65, align=left},
+]
+  % stack grows down: high address at the top
+  \node[buf]    (buf) at (0,0)    {local buffer};
+  \node[canary] (can) at (0,0.72) {stack canary};
+  \node[ret]    (ret) at (0,1.44) {saved return address};
+  \node[lbl, anchor=south] at (2.1,2.26) {high address};
+  \node[lbl, anchor=north] at (2.1,-0.1) {low address};
+  \draw[ar, draw=culprit!70] (-0.45,0.1) -- (-0.45,2.0)
+     node[midway, left, lbl, text=culprit, rotate=90, anchor=south]{overflow writes up};
+  \node[lbl, anchor=west, text=black!60, align=left] at (4.7,0.72)
+     {a linear overflow reaches the return\\ address only by overwriting the canary,\\
+      and the function checks the canary\\ before returning, so the change is caught};
+\end{tikzpicture}
