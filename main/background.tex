@@ -570,7 +570,9 @@ traces class by class.}
 
 \paragraph{Measuring traces, context, and priming.}
 Measuring the full hardware trace of Equation~\eqref{eq:bg-htrace} on a black-box CPU is
-infeasible, so \revizor{} measures a single structure, the L1 data cache, at the end of each
+infeasible. It would mean reading the state after every instruction, which perturbs that very
+state, and it would require access to every microarchitectural structure, many of which are
+undocumented. \revizor{} therefore measures a single structure, the L1 data cache, at the end of each
 input's execution, through a cache side channel such as Flush+Reload or Prime+Probe. It therefore
 tests the contract with respect to an \emph{L1D observer}: effects in other structures appear in
 the hardware trace only once they propagate into the L1D. Because the context of a black-box CPU
