@@ -174,8 +174,7 @@ uint8\_t probe[256 * 64];\\
 t = probe[secret * 64];
 \end{quote}
 The stride of $64$ bytes (a typical line size) puts each value on its own line, so Flush+Reloading
-the array and finding the single fast line recovers the secret byte. This $256$-way encoding is the
-standard transmitter at the end of a transient-execution attack.
+the array and finding the single fast line recovers the secret byte.
 
 \paragraph{Leaks as a cascade.}
 It is useful to view a leak as a cascade. A \emph{carrier} is any microarchitectural structure whose
