@@ -266,11 +266,7 @@ The family is distinguished by the speculation primitive it abuses.
   \item \textbf{Spectre-v1} (bounds-check bypass) mistrains a conditional branch so a bounds check
     is bypassed on the transient path, as above.
   \item \textbf{Spectre-v2} (branch-target injection) poisons an indirect branch's predicted
-    target so the victim speculatively executes an attacker-chosen gadget. Two cases matter here.
-    In one, the gadget's transient memory accesses leave a footprint in the \emph{L1 data cache},
-    the channel existing tools already probe. In the other, the poisoned prediction leaves its mark
-    only in the \emph{branch-target buffer}, a channel that surfaces only on a later run
-    (\autoref{chap:priming}, \autoref{chap:canon}).
+    target so the victim speculatively executes an attacker-chosen gadget.
   \item \textbf{Spectre-v4} (speculative store bypass) exploits memory disambiguation: a load is
     speculatively forwarded stale data because the aliasing store has not yet resolved, running a
     dependent access on the transient path.
