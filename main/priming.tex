@@ -364,9 +364,8 @@ tight. The matching lower bounds and a worked example are in \autoref{appendix:l
 \end{algorithmic}
 \end{algorithm}
 
-Both localizers use the same splices and the same soundness argument, and both keep every leak the
-current rule keeps. Where the linear scan reports every leaking class, binary search reports one,
-much faster (\autoref{tab:loc-compare}). The generalization therefore certifies a non-L1D-cache
+Both keep every leak the current priming rule keeps. Where the linear scan reports every leaking class, binary search reports one,
+asymptotically faster (\autoref{tab:loc-compare}). The generalization therefore certifies a non-L1D-cache
 violation that current priming cannot report, as a genuine extended contract violation separated by
 one identical probe.
 
