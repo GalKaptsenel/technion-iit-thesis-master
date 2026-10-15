@@ -58,15 +58,13 @@ testing to AArch64.}
 \toprule
 Tool & Approach & x86-64 & AArch64 \\
 \midrule
-\revizor{}~\cite{revizor}                    & MRT, contract testing       & \cmark & \\
-Hide \& Seek~\cite{hide_seek}                & MRT, random inputs          & \cmark & \\
-Speculation at Fault~\cite{speculation_fault}& MRT, fault leaks            & \cmark & \\
-Enter, Exit, Page Fault, Leak~\cite{isolation}& MRT, isolation            & \cmark & \\
+\revizor{}~\cite{revizor}                    & MRT       & \cmark & \\
+Hide \& Seek~\cite{hide_seek}                & MRT       & \cmark & \\
+Speculation at Fault~\cite{speculation_fault}& MRT       & \cmark & \\
+Enter, Exit, Page Fault, Leak~\cite{isolation}& MRT            & \cmark & \\
 Osiris~\cite{osiris}                         & side-channel search         & \cmark & \\
 Medusa~\cite{transynther}                    & attack synthesis            & \cmark & \\
 ScamV~\cite{scamv}                           & model validation            &        & \cmark \\
-PACMAN~\cite{pacman}                         & hand-built attack           &        & \cmark \\
-TikTag~\cite{tiktag}                         & hand-built attack           &        & \cmark \\
 \midrule
 This thesis                                  & MRT and precondition fuzzing&        & \cmark \\
 \bottomrule
