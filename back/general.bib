@@ -1,50 +1,243 @@
 % ===========================================================================
-% References for the uASC'27 submission.
-% NOTE: entries marked %VERIFY need their exact venue/pages/year double-checked
-% before camera-ready. Kept minimal and accurate; expand in Related Work.
+% Thesis bibliography. Academic entries reformatted to Google Scholar style
+% (full venue names; field order title, author, booktitle/journal, volume,
+% pages, year, publisher/organization) and verified against authoritative
+% sources. Page numbers appear only where confirmed from a primary source
+% (USENIX, Springer, ...). IEEE- and ACM-published entries whose page ranges
+% could not be fetched (Xplore / ACM DL / DBLP block automated access) are
+% marked "% pages unverified" with their DOI, rather than guessed.
 % ===========================================================================
 
 @inproceedings{revizor,
-  author    = {Oleksenko, Oleksii and Fetzer, Christof and K{\"o}pf, Boris and Silberstein, Mark},
-  title     = {Revizor: Testing Black-Box {CPUs} Against Speculation Contracts},
-  booktitle = {Proc. ACM Int. Conf. on Architectural Support for Programming Languages and Operating Systems (ASPLOS)},
-  year      = {2022}
+  title={Revizor: Testing Black-Box {CPUs} Against Speculation Contracts},
+  author={Oleksenko, Oleksii and Fetzer, Christof and K{\"o}pf, Boris and Silberstein, Mark},
+  booktitle={Proceedings of the 27th ACM International Conference on Architectural Support for Programming Languages and Operating Systems},
+  year={2022},
+  organization={ACM}
 }
+% pages unverified (ACM DL unreachable); ASPLOS 2022 (ACM)
 
 @inproceedings{contracts,
-  author    = {Guarnieri, Marco and K{\"o}pf, Boris and Reineke, Jan and Vila, Pepe},
-  title     = {Hardware-Software Contracts for Secure Speculation},
-  booktitle = {Proc. IEEE Symposium on Security and Privacy (S\&P)},
-  year      = {2021}
+  title={Hardware-Software Contracts for Secure Speculation},
+  author={Guarnieri, Marco and K{\"o}pf, Boris and Reineke, Jan and Vila, Pepe},
+  booktitle={2021 IEEE Symposium on Security and Privacy (SP)},
+  year={2021},
+  organization={IEEE}
 }
+% pages unverified (IEEE Xplore returns no static content); source: https://ieeexplore.ieee.org/document/9519500/
 
 @inproceedings{spectre,
-  author    = {Kocher, Paul and Horn, Jann and Fogh, Anders and Genkin, Daniel and Gruss, Daniel and Haas, Werner and Hamburg, Mike and Lipp, Moritz and Mangard, Stefan and Prescher, Thomas and Schwarz, Michael and Yarom, Yuval},
-  title     = {Spectre Attacks: Exploiting Speculative Execution},
-  booktitle = {Proc. IEEE Symposium on Security and Privacy (S\&P)},
-  year      = {2019}
+  title={Spectre Attacks: Exploiting Speculative Execution},
+  author={Kocher, Paul and Horn, Jann and Fogh, Anders and Genkin, Daniel and Gruss, Daniel and Haas, Werner and Hamburg, Mike and Lipp, Moritz and Mangard, Stefan and Prescher, Thomas and Schwarz, Michael and Yarom, Yuval},
+  booktitle={2019 IEEE Symposium on Security and Privacy (SP)},
+  year={2019},
+  organization={IEEE}
 }
+% pages unverified (IEEE Xplore returns no static content); source: https://ieeexplore.ieee.org/document/8835233/
 
 @inproceedings{meltdown,
-  author    = {Lipp, Moritz and Schwarz, Michael and Gruss, Daniel and Prescher, Thomas and Haas, Werner and Fogh, Anders and Horn, Jann and Mangard, Stefan and Kocher, Paul and Genkin, Daniel and Yarom, Yuval and Hamburg, Mike},
-  title     = {Meltdown: Reading Kernel Memory from User Space},
-  booktitle = {Proc. USENIX Security Symposium},
-  year      = {2018}
+  title={Meltdown: Reading Kernel Memory from User Space},
+  author={Lipp, Moritz and Schwarz, Michael and Gruss, Daniel and Prescher, Thomas and Haas, Werner and Fogh, Anders and Horn, Jann and Mangard, Stefan and Kocher, Paul and Genkin, Daniel and Yarom, Yuval and Hamburg, Mike},
+  booktitle={27th USENIX Security Symposium (USENIX Security 18)},
+  pages={973--990},
+  year={2018},
+  publisher={USENIX Association}
 }
+% source: https://www.usenix.org/conference/usenixsecurity18/presentation/lipp
 
 @inproceedings{pacman,
-  author    = {Ravichandran, Joseph and Na, Weon Taek and Lang, Jay and Yan, Mengjia},
-  title     = {{PACMAN}: Attacking {ARM} Pointer Authentication with Speculative Execution},
-  booktitle = {Proc. ACM/IEEE Int. Symposium on Computer Architecture (ISCA)},
-  year      = {2022}
+  title={{PACMAN}: Attacking {ARM} Pointer Authentication with Speculative Execution},
+  author={Ravichandran, Joseph and Na, Weon Taek and Lang, Jay and Yan, Mengjia},
+  booktitle={2022 ACM/IEEE 49th Annual International Symposium on Computer Architecture (ISCA)},
+  year={2022},
+  organization={IEEE}
 }
+% pages unverified (IEEE Xplore returns no static content); source: https://ieeexplore.ieee.org/document/10120652/
 
 @inproceedings{tiktag,
-  author    = {Kim, Juhee and Park, Jinbum and Roh, Sihyeon and Chung, Jaeyoung and Lee, Youngjoo and Kim, Taesoo and Lee, Byoungyoung},
-  title     = {{TikTag}: Breaking {ARM}'s Memory Tagging Extension with Speculative Execution},
-  booktitle = {Proc. IEEE Symposium on Security and Privacy (S\&P)},
-  year      = {2025},
+  title={{TikTag}: Breaking {ARM}'s Memory Tagging Extension with Speculative Execution},
+  author={Kim, Juhee and Park, Jinbum and Roh, Sihyeon and Chung, Jaeyoung and Lee, Youngjoo and Kim, Taesoo and Lee, Byoungyoung},
+  booktitle={2025 IEEE Symposium on Security and Privacy (SP)},
+  year={2025},
+  organization={IEEE}
 }
+% pages unverified (IEEE Xplore doc 11023460 returns no static content); source: https://compsec.snu.ac.kr
+
+@article{revizor_micro,
+  title={Revizor: Testing Black-Box {CPUs} Against Speculation Contracts},
+  author={Oleksenko, Oleksii and Fetzer, Christof and K{\"o}pf, Boris and Silberstein, Mark},
+  journal={IEEE Micro},
+  year={2023},
+  publisher={IEEE}
+}
+% volume/number/pages unverified (IEEE Micro Top Picks; IEEE Xplore unreachable); source: https://ieeexplore.ieee.org/document/10167519/
+
+@inproceedings{hide_seek,
+  title={Hide and Seek with Spectres: Efficient Discovery of Speculative Information Leaks with Random Testing},
+  author={Oleksenko, Oleksii and Guarnieri, Marco and K{\"o}pf, Boris and Silberstein, Mark},
+  booktitle={2023 IEEE Symposium on Security and Privacy (SP)},
+  year={2023},
+  organization={IEEE}
+}
+% pages unverified (IEEE Xplore returns no static content); source: https://ieeexplore.ieee.org/document/10179391/
+
+@inproceedings{speculation_fault,
+  title={Speculation at Fault: Modeling and Testing Microarchitectural Leakage of {CPU} Exceptions},
+  author={Hofmann, Jana and Vannacci, Emanuele and Fournet, C{\'e}dric and K{\"o}pf, Boris and Oleksenko, Oleksii},
+  booktitle={32nd USENIX Security Symposium (USENIX Security 23)},
+  pages={7143--7160},
+  year={2023},
+  publisher={USENIX Association}
+}
+% source: https://www.usenix.org/conference/usenixsecurity23/presentation/hofmann
+
+@inproceedings{isolation,
+  title={Enter, Exit, Page Fault, Leak: Testing Isolation Boundaries for Microarchitectural Leaks},
+  author={Oleksenko, Oleksii and Solt, Flavien and Fournet, C{\'e}dric and Hofmann, Jana and K{\"o}pf, Boris and Volos, Stavros},
+  booktitle={2026 IEEE Symposium on Security and Privacy (SP)},
+  year={2026},
+  organization={IEEE}
+}
+% pages unverified (S&P 2026, forthcoming); source: arXiv:2507.06039
+
+@inproceedings{amulet,
+  title={{AMuLeT}: Automated Design-Time Testing of Secure Speculation Countermeasures},
+  author={Fu, Bo and Tenenbaum, Leo and Adler, David and Klein, Assaf and Gogia, Arpit and Alameldeen, Alaa R. and Guarnieri, Marco and Silberstein, Mark and Oleksenko, Oleksii and Saileshwar, Gururaj},
+  booktitle={Proceedings of the 30th ACM International Conference on Architectural Support for Programming Languages and Operating Systems, Volume 2},
+  year={2025},
+  organization={ACM}
+}
+% pages unverified (ACM DL unreachable); source: https://arxiv.org/html/2503.00145
+
+@inproceedings{scamv,
+  title={Validation of Abstract Side-Channel Models for Computer Architectures},
+  author={Buiras, Pablo and Nemati, Hamed and Lindner, Andreas and Guanciale, Roberto and Jacobs, Swen},
+  booktitle={International Conference on Computer Aided Verification},
+  series={Lecture Notes in Computer Science},
+  volume={12224},
+  pages={225--248},
+  year={2020},
+  organization={Springer}
+}
+% source: https://link.springer.com/chapter/10.1007/978-3-030-53288-8_12
+
+@inproceedings{osiris,
+  title={{Osiris}: Automated Discovery of Microarchitectural Side Channels},
+  author={Weber, Daniel and Ibrahim, Ahmad and Nemati, Hamed and Schwarz, Michael and Rossow, Christian},
+  booktitle={30th USENIX Security Symposium (USENIX Security 21)},
+  pages={1415--1432},
+  year={2021},
+  publisher={USENIX Association}
+}
+% source: https://www.usenix.org/conference/usenixsecurity21/presentation/weber
+
+@inproceedings{transynther,
+  title={{Medusa}: Microarchitectural Data Leakage via Automated Attack Synthesis},
+  author={Moghimi, Daniel and Lipp, Moritz and Sunar, Berk and Schwarz, Michael},
+  booktitle={29th USENIX Security Symposium (USENIX Security 20)},
+  pages={1427--1444},
+  year={2020},
+  publisher={USENIX Association}
+}
+% source: https://www.usenix.org/conference/usenixsecurity20/presentation/moghimi-medusa
+
+@inproceedings{specdoctor,
+  title={{SpecDoctor}: Differential Fuzz Testing to Find Transient Execution Vulnerabilities},
+  author={Hur, Jaewon and Song, Suhwan and Kim, Sunwoo and Lee, Byoungyoung},
+  booktitle={Proceedings of the 2022 ACM SIGSAC Conference on Computer and Communications Security},
+  year={2022},
+  organization={ACM}
+}
+% pages unverified (ACM DL unreachable; CCS'22 proceedings 3548606); source: https://doi.org/10.1145/3548606.3560578
+
+@inproceedings{flushreload,
+  title={{FLUSH+RELOAD}: A High Resolution, Low Noise, {L3} Cache Side-Channel Attack},
+  author={Yarom, Yuval and Falkner, Katrina},
+  booktitle={23rd USENIX Security Symposium (USENIX Security 14)},
+  pages={719--732},
+  year={2014},
+  publisher={USENIX Association}
+}
+% source: https://www.usenix.org/conference/usenixsecurity14/technical-sessions/presentation/yarom
+
+@inproceedings{flushflush,
+  title={{Flush+Flush}: A Fast and Stealthy Cache Attack},
+  author={Gruss, Daniel and Maurice, Cl{\'e}mentine and Wagner, Klaus and Mangard, Stefan},
+  booktitle={International Conference on Detection of Intrusions and Malware, and Vulnerability Assessment},
+  series={Lecture Notes in Computer Science},
+  volume={9721},
+  pages={279--299},
+  year={2016},
+  organization={Springer}
+}
+% source: https://link.springer.com/chapter/10.1007/978-3-319-40667-1_14
+
+@inproceedings{primeprobe,
+  title={Last-Level Cache Side-Channel Attacks are Practical},
+  author={Liu, Fangfei and Yarom, Yuval and Ge, Qian and Heiser, Gernot and Lee, Ruby B.},
+  booktitle={2015 IEEE Symposium on Security and Privacy (SP)},
+  year={2015},
+  organization={IEEE}
+}
+% pages unverified (commonly cited as 605--622; IEEE Xplore unreachable); source: https://ieeexplore.ieee.org/document/7163050/
+
+@inproceedings{unicorn,
+  title={{Unicorn}: Next Generation {CPU} Emulator Framework},
+  author={Nguyen Anh Quynh and Dang Hoang Vu},
+  booktitle={Black Hat USA},
+  year={2015}
+}
+% unpaginated briefing; source: https://www.blackhat.com/us-15/briefings.html
+
+@article{tage,
+  title={A Case for (Partially) Tagged Geometric History Length Branch Prediction},
+  author={Seznec, Andr{\'e} and Michaud, Pierre},
+  journal={Journal of Instruction-Level Parallelism (JILP)},
+  volume={8},
+  year={2006}
+}
+% online journal, no page range (vol 8, Feb 2006); source: https://jilp.org/vol8/index.html
+
+@inproceedings{phantom_trails,
+  title={Phantom Trails: Practical Pre-Silicon Discovery of Transient Data Leaks},
+  author={de Faveri Tron, Alvise and Isemann, Raphael and Ragab, Hany and Giuffrida, Cristiano and von Gleissenthall, Klaus and Bos, Herbert},
+  booktitle={34th USENIX Security Symposium (USENIX Security 25)},
+  pages={2539--2556},
+  year={2025},
+  publisher={USENIX Association}
+}
+% source: https://www.usenix.org/conference/usenixsecurity25/presentation/de-faveri-tron
+
+@inproceedings{introspectre,
+  title={{IntroSpectre}: A Pre-Silicon Framework for Discovery and Analysis of Transient Execution Vulnerabilities},
+  author={Ghaniyoun, Moein and Barber, Kristin and Zhang, Yinqian and Teodorescu, Radu},
+  booktitle={2021 ACM/IEEE 48th Annual International Symposium on Computer Architecture (ISCA)},
+  year={2021},
+  organization={IEEE}
+}
+% pages unverified (IEEE Xplore returns no static content); source: https://ieeexplore.ieee.org/document/9499757/
+
+@inproceedings{dejavuzz,
+  title={{DejaVuzz}: Disclosing Transient Execution Bugs with Dynamic Swappable Memory and Differential Information Flow Tracking Assisted Processor Fuzzing},
+  author={Xu, Jinyan and Li, Yinshuai and Zhou, Yajin and Zhou, Yangye and Tan, Qinhan and Chang, Rui and Zhang, Xingzhi and Zhang, Yinqian and Shen, Wenbo},
+  booktitle={Proceedings of the 52nd Annual International Symposium on Computer Architecture},
+  year={2025},
+  organization={ACM}
+}
+% pages unverified (ACM DL unreachable; DOI 10.1145/3676642.3736115); source: https://arxiv.org/html/2504.20934
+
+@inproceedings{teesec,
+  title={{TEESec}: Pre-Silicon Vulnerability Discovery for Trusted Execution Environments},
+  author={Ghaniyoun, Moein and Barber, Kristin and Xiao, Yuan and Zhang, Yinqian and Teodorescu, Radu},
+  booktitle={Proceedings of the 50th Annual International Symposium on Computer Architecture},
+  year={2023},
+  organization={ACM}
+}
+% pages unverified (ACM DL unreachable; DOI 10.1145/3579371.3589070); source: https://par.nsf.gov/servlets/purl/10464673
+
+% ---------------------------------------------------------------------------
+% Vendor documentation, whitepapers, and web sources (left as @misc).
+% ---------------------------------------------------------------------------
 
 @misc{arm_pac,
   author       = {{Arm Ltd.}},
@@ -102,121 +295,6 @@
   year         = {2019}
 }
 
-@article{revizor_micro,
-  author  = {Oleksii Oleksenko and Christof Fetzer and Boris K\"{o}pf and Mark Silberstein},
-  title   = {Revizor: Testing Black-Box {CPUs} Against Speculation Contracts},
-  journal = {IEEE Micro},
-  year    = {2023}
-}
-
-@inproceedings{hide_seek,
-  author    = {Oleksii Oleksenko and Marco Guarnieri and Boris K\"{o}pf and Mark Silberstein},
-  title     = {Hide and Seek with Spectres: Efficient Discovery of Speculative
-               Information Leaks with Random Testing},
-  booktitle = {2023 IEEE Symposium on Security and Privacy (SP)},
-  year      = {2023}
-}
-
-@inproceedings{speculation_fault,
-  author    = {Jana Hofmann and Emanuele Vannacci and C\'{e}dric Fournet and
-               Boris K\"{o}pf and Oleksii Oleksenko},
-  title     = {Speculation at Fault: Modeling and Testing Microarchitectural
-               Leakage of {CPU} Exceptions},
-  booktitle = {32nd USENIX Security Symposium (USENIX Security)},
-  year      = {2023}
-}
-
-@inproceedings{isolation,
-  author    = {Oleksii Oleksenko and Flavien Solt and C\'{e}dric Fournet and
-               Jana Hofmann and Boris K\"{o}pf and Stavros Volos},
-  title     = {Enter, Exit, Page Fault, Leak: Testing Isolation Boundaries for
-               Microarchitectural Leaks},
-  booktitle = {2026 IEEE Symposium on Security and Privacy (SP)},
-  year      = {2026}
-}
-
-@inproceedings{amulet,
-  author    = {Bo Fu and Leo Tenenbaum and David Adler and Assaf Klein and
-               Arpit Gogia and Alaa R. Alameldeen and Marco Guarnieri and
-               Mark Silberstein and Oleksii Oleksenko and Gururaj Saileshwar},
-  title     = {{AMuLeT}: Automated Design-Time Testing of Secure Speculation
-               Countermeasures},
-  booktitle = {Proceedings of the 30th ACM International Conference on
-               Architectural Support for Programming Languages and Operating
-               Systems (ASPLOS)},
-  year      = {2025}
-}
-
-@inproceedings{scamv,
-  author    = {Pablo Buiras and Hamed Nemati and Andreas Lindner and Roberto Guanciale},
-  title     = {Validation of Abstract Side-Channel Models for Computer Architectures},
-  booktitle = {Computer Aided Verification (CAV)},
-  year      = {2020}
-}
-
-@inproceedings{osiris,
-  author    = {Daniel Weber and Ahmad Ibrahim and Hamed Nemati and
-               Michael Schwarz and Christian Rossow},
-  title     = {{Osiris}: Automated Discovery of Microarchitectural Side Channels},
-  booktitle = {30th USENIX Security Symposium (USENIX Security)},
-  year      = {2021}
-}
-
-@inproceedings{transynther,
-  author    = {Daniel Moghimi and Moritz Lipp and Berk Sunar and Michael Schwarz},
-  title     = {{Medusa}: Microarchitectural Data Leakage via Automated Attack Synthesis},
-  booktitle = {29th USENIX Security Symposium (USENIX Security)},
-  year      = {2020}
-}
-
-@inproceedings{specdoctor,
-  author    = {Jaewon Hur and Suhwan Song and Sunwoo Kim and Byoungyoung Lee},
-  title     = {{SpecDoctor}: Differential Fuzz Testing to Find Transient Execution
-               Vulnerabilities},
-  booktitle = {Proceedings of the 2022 ACM SIGSAC Conference on Computer and
-               Communications Security (CCS)},
-  year      = {2022}
-}
-
-@inproceedings{flushreload,
-  author    = {Yuval Yarom and Katrina Falkner},
-  title     = {{FLUSH+RELOAD}: A High Resolution, Low Noise, {L3} Cache
-               Side-Channel Attack},
-  booktitle = {23rd USENIX Security Symposium (USENIX Security)},
-  pages     = {719--732},
-  year      = {2014}
-}
-
-@inproceedings{flushflush,
-  author    = {Daniel Gruss and Cl\'{e}mentine Maurice and Klaus Wagner and Stefan Mangard},
-  title     = {{Flush+Flush}: A Fast and Stealthy Cache Attack},
-  booktitle = {Detection of Intrusions and Malware, and Vulnerability Assessment (DIMVA)},
-  year      = {2016}
-}
-
-@inproceedings{primeprobe,
-  author    = {Fangfei Liu and Yuval Yarom and Qian Ge and Gernot Heiser and Ruby B. Lee},
-  title     = {Last-Level Cache Side-Channel Attacks are Practical},
-  booktitle = {2015 IEEE Symposium on Security and Privacy (SP)},
-  pages     = {605--622},
-  year      = {2015}
-}
-
-@inproceedings{unicorn,
-  author    = {Nguyen Anh Quynh and Dang Hoang Vu},
-  title     = {{Unicorn}: Next Generation {CPU} Emulator Framework},
-  booktitle = {Black Hat USA},
-  year      = {2015}
-}
-
-@article{tage,
-  author  = {Andr\'{e} Seznec and Pierre Michaud},
-  title   = {A Case for (Partially) Tagged Geometric History Length Branch Prediction},
-  journal = {Journal of Instruction-Level Parallelism (JILP)},
-  volume  = {8},
-  year    = {2006}
-}
-
 @misc{chen2024dissectingconditionalbranchpredictors,
   author       = {Jiajie Chen and Peng Qu and Youhui Zhang},
   title        = {Dissecting Conditional Branch Predictors of Apple Firestorm and
@@ -233,36 +311,4 @@
   author       = {Jiajie Chen},
   title        = {Reverse Engineering Conditional Branch Predictors},
   howpublished = {\url{https://jia.je/cpu/cbp.html}}
-}
-
-@inproceedings{phantom_trails,
-  author    = {Andrea {de Faveri Tron} and others},
-  title     = {Phantom Trails: Practical Pre-Silicon Discovery of Transient Data Leaks},
-  booktitle = {34th USENIX Security Symposium (USENIX Security)},
-  year      = {2025},
-}
-
-@inproceedings{introspectre,
-  author    = {Moein Ghaniyoun and Kristin Barber and Yinqian Zhang and Radu Teodorescu},
-  title     = {{IntroSpectre}: A Pre-Silicon Framework for Discovery and Analysis
-               of Transient Execution Vulnerabilities},
-  booktitle = {Proceedings of the 48th Annual International Symposium on Computer
-               Architecture (ISCA)},
-  year      = {2021},
-}
-
-@inproceedings{dejavuzz,
-  title     = {{DejaVuzz}: Disclosing Transient Execution Bugs with Dynamic
-               Swappable Memory and Differential Information Flow Tracking Assisted
-               Processor Fuzzing},
-  booktitle = {Proceedings of the 52nd Annual International Symposium on Computer
-               Architecture (ISCA)},
-  year      = {2025},
-}
-
-@inproceedings{teesec,
-  title     = {{TEESec}: Pre-Silicon Vulnerability Discovery for Trusted Execution
-               Environments},
-  booktitle = {Proceedings of the International Symposium on Computer Architecture (ISCA)},
-  year      = {2024},
 }
