@@ -1,0 +1,22 @@
+# LaTeX build output (latexmk writes these into aux/ per .latexmkrc)
+aux/
+*.aux
+*.log
+*.fls
+*.fdb_latexmk
+*.out
+*.toc
+*.lof
+*.lot
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+*.synctex.gz
+*.glo
+*.gls
+*.glg
+*.acn
+*.acr
+*.alg
+*.ist
