@@ -2,17 +2,15 @@
 \label{chap:background}
 
 This chapter fixes the microarchitectural and architectural background the thesis relies on,
-and the model-based relational-testing framework it extends. It is written to be self-contained:
-a reader who knows general computer architecture but neither the transient-execution literature
-nor the AArch64 security extensions should be able to follow the contributions from here alone.
+and the model-based relational-testing framework it extends.
 \autoref{sec:bg-speculation} and \autoref{sec:bg-sidechannels} recall out-of-order and
 speculative execution and the side channels that make its transient effects observable.
 \autoref{sec:bg-spectre} works through the transient-execution attacks, with a detailed
 Spectre-v1 example, and \autoref{sec:bg-exploitation} the stack-canary and
 return-oriented-programming primitives the end-to-end attacks build on.
 \autoref{sec:bg-aarch64} describes the AArch64 isolation boundaries, the
-layout of a 64-bit pointer, and the security extensions---Pointer Authentication and Memory
-Tagging---whose preconditions this thesis fuzzes, and \autoref{sec:bg-arm-attacks} the
+layout of a 64-bit pointer, and the security extensions (Pointer Authentication and Memory
+Tagging) whose preconditions this thesis fuzzes, and \autoref{sec:bg-arm-attacks} the
 hand-crafted attacks against them. \autoref{sec:bg-mrt} introduces speculation contracts,
 model-based relational testing, and the \revizor{} fuzzer this work ports and generalizes.
 
@@ -22,37 +20,32 @@ model-based relational testing, and the \revizor{} fuzzer this work ports and ge
 A processor core executes far faster than memory responds: a hit in the first-level cache
 returns in a few cycles, while a miss that reaches main memory costs hundreds. A core that
 stalled on every unresolved dependency would spend most of its time idle. High-performance cores
-therefore execute \emph{out of order}---they begin any instruction whose inputs are ready rather
-than waiting for its program predecessors---and retire the results \emph{in order}, so that the
-architectural state changes exactly as the program specifies. The reorder buffer holds the
-in-flight instructions until they can retire, and an exception or a misprediction discarded
-before retirement leaves the architectural state untouched.
+therefore execute \emph{out of order}: They begin executing instructions as soon as their inputs are ready, rather than waiting for predecessor instructions to complete. Eventualy the out-of-order processor retires the results \emph{in order}, so that the
+architectural state changes exactly as the program specifies. The reorder buffer (ROB - [should be specifid also in the abbrovations]) holds the
+in-flight instructions until they can retire. If an exception or a misprediction occures prior an instruction is retired, it is discarded (phrase better),  leaves the architectural state untouched.
 
-To keep the window of ready instructions full, the core also \emph{speculates}: it predicts the
-outcome of an unresolved decision and continues past it before the decision is known. The most
-important predictions are the following.
+To keep the window of ready-to-execute instructions full, the core also \emph{speculates}: it predicts the
+outcome of an unresolved decision and continues past it before the decision is known. Couple important and extensively researched predictors are the following [add citations for papers on them]
 \begin{itemize}
-  \item \textbf{Conditional-branch direction.} A branch predictor~\cite{tage} guesses whether a
-    conditional branch is taken, so the core can keep fetching past it. The guess is learned from
-    the branch's history, and an attacker who shares the predictor can train that history.
-  \item \textbf{Indirect-branch and return target.} For an indirect branch or a function return,
-    the core predicts the target address from a branch-target buffer (BTB) or a return-stack
+  \item \textbf{Conditional-branch predictor (CBP - add to abreviations).} A branch predictor~\cite{tage} guesses whether a
+    conditional branch is taken, so the core can keep fetching past it.
+  \item \textbf{Indirect-branch predictor (IBP -- add to abreviations) and return target buffer (BTB).} For indirect branches,
+    the core predicts the target address from a branch-target buffer (BTB)
     buffer, and speculatively executes at the predicted target.
+     \item \textbf{Return stack buffre (RSB - add also).} For a function return,
+    the core pushes to here after every funtion call, and then predicts the target by poping out, and speculatively executes at the predicted target.
   \item \textbf{Store-to-load forwarding (memory disambiguation).} When a load's address may
     alias an older, not-yet-resolved store, the core may predict no alias and forward stale
     memory to the load, or forward the store's data before the address check completes.
 \end{itemize}
 When a prediction is later found wrong, the core \emph{squashes} the instructions it executed on
-the mistaken path---the \emph{transient} instructions---and rolls the architectural state, the
-registers and memory, back to the last correct point. Program behavior is unaffected; the
+the mistaken path, the \emph{transient} instructions, and rolls the architectural state, including the
+registers and memory, back to the last correct point. Program behavior is unaffected, the
 transient instructions never retire.
 
 The microarchitectural state, however, is \emph{not} rolled back. A cache line pulled in during a
-transient load stays in the cache, a translation cached in a TLB stays cached, an entry allocated
-in a branch predictor or a prefetcher survives, and so do effects in structures that are not
-publicly documented. This asymmetry---architectural results discarded, microarchitectural effects
-retained---is what every transient-execution attack exploits: a transient instruction that never
-``happened'' architecturally can still leave a measurable trace.
+transient load stays in the cache, a translation cached in a TLB stays cached, an entry allocated or modified
+in a branch predictor or a prefetcher survives.
 
 \paragraph{A first example.}
 Consider a bounds-checked array read, \reg{if (i < n) t = a[i];}, where the branch has almost
