@@ -60,3 +60,21 @@
 % but not \RETURN; add it in the same uppercase style, as algpseudocode's \Return.
 \algnewcommand\algorithmicreturn{\textbf{return}}
 \algnewcommand\RETURN{\STATE \algorithmicreturn{} }
+
+% ---- notation list: show each abbreviation's expansion once ----
+% The class's \formatglossarydescription prints "long (description)" for any entry
+% that has a long form. Plain acronyms (long-short style) get description = long by
+% default, so the list rendered the expansion twice, as "long (long)". Collapse it:
+% an abbreviation shows its expansion once; a notation symbol (no long field) still
+% shows its description. Guarded so a noabbrevs build (macro undefined) stays safe.
+\makeatletter
+\@ifundefined{formatglossarydescription}{}{%
+  \renewcommand*{\formatglossarydescription}[1]{%
+    \ifglsfieldeq{#1}{long}{}{%
+      \glossentrydesc{#1}%
+    }{%
+      \glsentrylong{#1}%
+    }%
+  }%
+}
+\makeatother
