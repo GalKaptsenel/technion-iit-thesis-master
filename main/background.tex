@@ -20,27 +20,34 @@ model-based relational testing, and the \revizor{} fuzzer this work ports and ge
 A processor core executes far faster than memory responds: a hit in the first-level cache
 returns in a few cycles, while a miss that reaches main memory costs hundreds. A core that
 stalled on every unresolved dependency would spend most of its time idle. High-performance cores
-therefore execute \emph{out of order}: They begin executing instructions as soon as their inputs are ready, rather than waiting for predecessor instructions to complete. Eventualy the out-of-order processor retires the results \emph{in order}, so that the
-architectural state changes exactly as the program specifies. The reorder buffer (ROB - [should be specifid also in the abbrovations]) holds the
-in-flight instructions until they can retire. If an exception or a misprediction occures prior an instruction is retired, it is discarded (phrase better),  leaves the architectural state untouched.
+therefore execute \emph{out of order}: they begin executing an instruction as soon as its inputs are
+ready, rather than waiting for its program predecessors to complete. The results are nonetheless
+retired \emph{in order}, so that the architectural state changes exactly as the program specifies.
+A reorder buffer (ROB) holds the in-flight instructions until they can retire, and any instruction
+that an exception or a misprediction discards before it retires leaves the architectural state
+untouched.
 
 To keep the window of ready-to-execute instructions full, the core also \emph{speculates}: it predicts the
-outcome of an unresolved decision and continues past it before the decision is known. Couple important and extensively researched predictors are the following [add citations for papers on them]
+outcome of an unresolved decision and continues past it before the decision is known. Several of
+these predictors have been studied extensively~\cite{hennessy_patterson}, and the ones that matter
+for this thesis are the following.
 \begin{itemize}
-  \item \textbf{Conditional-branch predictor (CBP - add to abreviations).} A branch predictor~\cite{tage} guesses whether a
-    conditional branch is taken, so the core can keep fetching past it.
-  \item \textbf{Indirect-branch predictor (IBP -- add to abreviations) and return target buffer (BTB).} For indirect branches,
-    the core predicts the target address from a branch-target buffer (BTB)
-    buffer, and speculatively executes at the predicted target.
-     \item \textbf{Return stack buffre (RSB - add also).} For a function return,
-    the core pushes to here after every funtion call, and then predicts the target by poping out, and speculatively executes at the predicted target.
+  \item \textbf{Conditional-branch predictor (CBP).} The conditional-branch
+    predictor~\cite{smith_bpred,tage} guesses whether a conditional branch is taken, so that the
+    core can keep fetching past the branch before its condition resolves.
+  \item \textbf{Indirect-branch predictor (IBP) and branch-target buffer (BTB).} For an indirect
+    branch, whose target is computed at run time, the core predicts the target address from the
+    branch-target buffer and speculatively executes at the predicted target.
+  \item \textbf{Return stack buffer (RSB).} For a function return, the core pushes the return
+    address onto the return stack buffer at every call and predicts the return target by popping
+    its top entry, then speculatively executes at that address.
   \item \textbf{Store-to-load forwarding (memory disambiguation).} When a load's address may
     alias an older, not-yet-resolved store, the core may predict no alias and forward stale
     memory to the load, or forward the store's data before the address check completes.
 \end{itemize}
 When a prediction is later found wrong, the core \emph{squashes} the instructions it executed on
 the mistaken path, the \emph{transient} instructions, and rolls the architectural state, including the
-registers and memory, back to the last correct point. Program behavior is unaffected, the
+registers and memory, back to the last correct point. Program behavior is unaffected, since the
 transient instructions never retire.
 
 The microarchitectural state, however, is \emph{not} rolled back. A cache line pulled in during a

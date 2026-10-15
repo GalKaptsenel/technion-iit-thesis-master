@@ -78,13 +78,13 @@ Tool & Approach & x86-64 & AArch64 \\
 Hide \& Seek~\cite{hide_seek}$^\dagger$ & MRT & \cmark & \\
 Speculation at Fault~\cite{speculation_fault}$^\dagger$ & MRT & \cmark & \\
 Enter, Exit, Page Fault, Leak~\cite{isolation}$^\dagger$ & MRT & \cmark & \\
-Osiris~\cite{osiris} & side-channel search & \cmark & \\
+Osiris~\cite{osiris} & side-channel fuzzing & \cmark & \\
 Medusa~\cite{transynther} & attack synthesis & \cmark & \\
 ScamV~\cite{scamv} & model validation & & \cmark \\
 This thesis$^\dagger$ & MRT & & \cmark \\
 \addlinespace
 \multicolumn{4}{@{}l}{\emph{Pre-silicon design validation}}\\
-AMuLeT~\cite{amulet}$^\dagger$ & countermeasure testing & \multicolumn{2}{c}{design model} \\
+AMuLeT~\cite{amulet}$^\dagger$ & MRT & \multicolumn{2}{c}{design model} \\
 SpecDoctor~\cite{specdoctor} & differential fuzzing & \multicolumn{2}{c}{RTL (RISC-V)} \\
 \bottomrule
 \end{tabular}
@@ -97,8 +97,9 @@ exceptions~\cite{speculation_fault}, and Enter, Exit, Page Fault, Leak tests iso
 boundaries~\cite{isolation}. Osiris~\cite{osiris} and Medusa~\cite{transynther} instead
 search a real CPU for side channels and data-leak gadgets. The
 second group works pre-silicon, on a simulated design rather than a shipped part:
-AMuLeT~\cite{amulet}, itself a \revizor{} descendant, tests secure-speculation countermeasures
-at design time, and SpecDoctor~\cite{specdoctor} fuzzes an open register-transfer-level core.
+AMuLeT~\cite{amulet}, itself a \revizor{} descendant, applies the same relational testing to a
+secure-speculation countermeasure at design time, and SpecDoctor~\cite{specdoctor} fuzzes an open
+register-transfer-level core.
 Across both groups every system but ScamV targets x86-64 or an open design, and none brings
 relational testing to real AArch64 silicon. That is the gap this thesis closes.
 
