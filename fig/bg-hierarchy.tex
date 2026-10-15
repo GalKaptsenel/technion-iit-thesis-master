@@ -12,6 +12,9 @@
                align=center, minimum width=20mm, minimum height=9mm, inner sep=2pt},
   pf/.style={draw=culprit!60, fill=culprit!8, rounded corners=2pt, thick,
              align=center, minimum width=17mm, minimum height=7mm, inner sep=2pt},
+  bp/.style={draw=black!60, fill=black!5, rounded corners=2pt, thick,
+             align=center, minimum width=14mm, minimum height=6mm, inner sep=1.5pt,
+             font=\scriptsize},
   ar/.style={{Stealth[length=1.6mm]}-{Stealth[length=1.6mm]}, thick, draw=black!70},
   lbl/.style={font=\scriptsize, text=black!60, align=center},
 ]
@@ -44,4 +47,14 @@
   \node[lbl] at (10.2,3.05) {hundreds of cycles};
   \draw[-{Stealth[length=1.8mm]}, draw=black!45] (1.6,2.7) -- (11.0,2.7);
   \node[lbl, anchor=east, text=black!50] at (1.5,2.7) {latency:};
+  % branch prediction unit (per-core), another trainable structure feeding fetch
+  \node[bp] (cbp) at (-3.2, 0.78) {CBP};
+  \node[bp] (ibp) at (-3.2, 0)    {IBP};
+  \node[bp] (rsb) at (-3.2,-0.78) {RSB};
+  \node[draw=black!55, rounded corners=3pt, thick, fill=none,
+        fit=(cbp)(ibp)(rsb), inner sep=4.5pt] (bpu) {};
+  \node[fill=white, inner sep=1.5pt, font=\scriptsize\bfseries, text=black!70]
+        at (bpu.north) {BPU};
+  \draw[-{Stealth[length=1.6mm]}, thick, draw=black!70]
+        (bpu.east) -- node[lbl, above]{next PC} (core.west);
 \end{tikzpicture}

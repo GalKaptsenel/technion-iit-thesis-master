@@ -134,7 +134,8 @@ never asked for, the prefetcher is itself a secret-dependent carrier (\autoref{c
 \fitwidth{\input{fig/bg-hierarchy}}
 \caption{The per-core cache and TLB hierarchy. L1I and L1D are backed by L2, a shared LLC, and DRAM,
 with access latency growing from a few cycles to hundreds. The dTLB and iTLB cache address
-translations, and the hardware prefetcher fills lines ahead of use.}
+translations, and the hardware prefetcher fills lines ahead of use. The branch prediction unit (BPU)
+steers fetch through its conditional (CBP), indirect (IBP), and return (RSB) predictors.}
 \label{fig:bg-hierarchy}
 \end{figure}
 
