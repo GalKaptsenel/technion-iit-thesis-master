@@ -322,14 +322,12 @@ step and returns into the next, so the chain carries out arbitrary work built en
 target's existing bytes. \autoref{chap:eval} drives such a chain, assembled from gadgets in OpenSSL,
 to read a victim's memory and recover an RSA-2048 key.
 
-Return-oriented programming is harder on AArch64 than on x86. A function returns with the \reg{RET}
-instruction, which transfers control to the address held in the link register \reg{X30} rather than
-to a value popped from the stack, so an attacker cannot simply place the next gadget's address on
-the stack and let \reg{RET} jump to it. A usable gadget must instead end in an epilogue that first
-reloads \reg{X30} from the stack, typically \reg{LDP X29, X30, [SP], \#N} followed by \reg{RET}, so
-that each gadget restores the next return address into the link register before returning. This
-makes useful gadgets scarcer and chaining them more involved. RiscyROP~\cite{riscyrop} automates
-the discovery and chaining of such gadgets on AArch64 and RISC-V.
+Return-oriented programming is more challenging on AArch64 than on x86. A function returns with the
+\reg{RET} instruction, which transfers control to the address held in the link register \reg{X30}.
+On x86, by contrast, a return takes its target from a value popped off the stack. Thus an attacker
+cannot simply place the next gadget's address on the stack and let \reg{RET} jump to it. This makes
+useful gadgets scarcer and chaining them more involved. RiscyROP~\cite{riscyrop} automates the
+discovery and chaining of such gadgets on AArch64 and RISC-V.
 
 \begin{figure}[h]
 \centering
@@ -385,8 +383,7 @@ Register & Address range & Used for \\
 \centering
 \fitwidth{\input{fig/bg-elmap}}
 \caption{AArch64 exception levels (left) and the two halves of the virtual address space (right).
-Architectural state is isolated per level. Microarchitectural structures are shared or merely
-tagged. The top address bits select the half, and canonicality requires those bits to be uniformly zero
+Architectural state is isolated per level, the microarchitecture only partially (bottom table). The top address bits select the half, and canonicality requires those bits to be uniformly zero
 (\reg{TTBR0}) or one (\reg{TTBR1}). Any other value is out of range and faults.}
 \label{fig:bg-elmap}
 \end{figure}

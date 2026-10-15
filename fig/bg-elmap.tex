@@ -1,32 +1,39 @@
 \begin{tikzpicture}[
   font=\footnotesize,
   el/.style={draw=black!65, thick, rounded corners=2pt, align=center,
-             minimum width=38mm, minimum height=8.5mm, inner sep=2pt},
-  reg/.style={draw=black!55, thick, align=center, inner sep=2pt, minimum width=34mm},
+             minimum width=36mm, minimum height=9mm, inner sep=2pt},
+  reg/.style={draw=black!55, thick, align=center, inner sep=2pt, minimum width=38mm},
   lbl/.style={font=\scriptsize, text=black!65, align=center},
   ar/.style={-{Stealth[length=2mm]}, thick, draw=black!70},
 ]
   % left: exception-level stack (EL0 bottom .. EL3 top)
-  \node[el, fill=probe!14]  (el0) at (0,0)     {\textbf{EL0}\\{\scriptsize user applications}};
-  \node[el, fill=laneB!16]  (el1) at (0,1.15)  {\textbf{EL1}\\{\scriptsize OS kernel}};
-  \node[el, fill=laneA!16]  (el2) at (0,2.30)  {\textbf{EL2}\\{\scriptsize hypervisor (VHE)}};
-  \node[el, fill=culprit!12](el3) at (0,3.45)  {\textbf{EL3}\\{\scriptsize secure firmware}};
-  \draw[ar] (-2.55,-0.45) -- (-2.55,3.9) node[lbl, rotate=90, anchor=south, pos=0.5, yshift=4pt]{increasing privilege};
-  \node[lbl, align=center, text=black!70] at (0,-1.05)
-     {architectural state isolated per level;\\ microarchitecture only \emph{partially} so};
-  \node[lbl, align=center] at (0,-1.95)
-     {TLB entries tagged by \textbf{ASID}\\(and \textbf{VMID} under virtualization)};
+  \node[el, fill=probe!14]  (el0) at (0,0)     {\textbf{EL0}\ \ {\scriptsize user applications}};
+  \node[el, fill=laneB!16]  (el1) at (0,1.1)   {\textbf{EL1}\ \ {\scriptsize OS kernel}};
+  \node[el, fill=laneA!16]  (el2) at (0,2.2)   {\textbf{EL2}\ \ {\scriptsize hypervisor (VHE)}};
+  \node[el, fill=culprit!12](el3) at (0,3.3)   {\textbf{EL3}\ \ {\scriptsize secure firmware}};
+  \draw[ar] (-2.45,-0.45) -- (-2.45,3.75)
+       node[lbl, rotate=90, anchor=south, pos=0.5, yshift=4pt]{increasing privilege};
+
   % right: 64-bit address space, the two VA ranges
-  \def\rx{5.6}
-  \node[reg, fill=laneA!14, minimum height=11mm, anchor=south] (hi) at (\rx,2.55)
-     {\textbf{\texttt{TTBR1}} range (high)\\{\scriptsize top bits all \textbf{1} $\Rightarrow$ kernel}};
-  \node[reg, fill=black!8, minimum height=13mm, anchor=south] (hole) at (\rx,0.75)
-     {\emph{non-canonical hole}\\{\scriptsize any other top bits}\\{\scriptsize $\Rightarrow$ translation fault}};
+  \def\rx{6.0}
+  \node[reg, fill=laneA!14, minimum height=11mm, anchor=south] (hi) at (\rx,2.4)
+     {\textbf{\texttt{TTBR1}} range (high)\\{\scriptsize top bits all \textbf{1}, kernel}};
+  \node[reg, fill=black!8, minimum height=12mm, anchor=south] (hole) at (\rx,0.7)
+     {\emph{non-canonical hole}\\{\scriptsize any other top bits, faults}};
   \node[reg, fill=probe!14, minimum height=11mm, anchor=south] (lo) at (\rx,-1.0)
-     {\textbf{\texttt{TTBR0}} range (low)\\{\scriptsize top bits all \textbf{0} $\Rightarrow$ user}};
-  \node[lbl, anchor=west] at ({\rx+1.85},3.5)  {\texttt{0xFFFF\_FFFF\_FFFF\_FFFF}};
-  \node[lbl, anchor=west] at ({\rx+1.85},-0.95) {\texttt{0x0000\_0000\_0000\_0000}};
-  \draw[ar] (el0.east) to[bend right=8] node[lbl, above, pos=0.55]{issues VA} (lo.west);
-  \node[lbl, align=center, text=black!70] at (\rx,-2.1)
-     {the top address bits select the regime;\\ canonicality $=$ those bits all-0 or all-1};
+     {\textbf{\texttt{TTBR0}} range (low)\\{\scriptsize top bits all \textbf{0}, user}};
+  \node[lbl, anchor=west] at ({\rx+2.0},3.3)  {\texttt{0xFFFF\_FFFF\_FFFF\_FFFF}};
+  \node[lbl, anchor=west] at ({\rx+2.0},-0.95){\texttt{0x0000\_0000\_0000\_0000}};
+  \draw[ar] (el0.east) to[bend right=10]
+       node[lbl, above=4pt, pos=0.5]{issues VA} (lo.west);
+
+  % bottom: how the microarchitecture is (only partially) isolated across privilege
+  \node[draw=black!45, rounded corners=3pt, fill=black!2, inner sep=6pt,
+        anchor=north] (tbl) at (3.0,-1.95) {%
+    \begin{tabular}{@{}l@{\hspace{7mm}}l@{}}
+    \multicolumn{2}{@{}l@{}}{\textbf{\footnotesize microarchitectural isolation across privilege}}\\[3pt]
+    caches (L1, L2) & shared \\
+    TLB            & tagged by \reg{ASID} (and \reg{VMID}) \\
+    BTB            & physically split \\
+    \end{tabular}};
 \end{tikzpicture}
