@@ -143,11 +143,21 @@ canaries, both explicit anti-ROP mitigations, has its overflow drive a chain bui
 gadgets inside the OpenSSL library itself, which opens a Spectre-v4 window and transmits over the
 BTB channel read with the rootless \reg{cntvct\_el0} timer. Because the read primitive walks
 OpenSSL's own heap, it recovers a complete in-use RSA-2048 private key, at a campaign setting of
-\reg{--samples 1500} (about $5.5$~hours). We additionally demonstrate \textbf{blind stack-canary}
-recovery: an attacker recovers the victim's own stack canary with no prior knowledge, from a
-two-dimensional-array gadget driven the three independent ways of \autoref{sec:canon-windows}, a
-mistrained bounds check (Spectre-v1), a store-bypassed bound (Spectre-v4), and a return shadow
-(Spectre-RSB), recovering the full \reg{[55:0]} pointer value.
+\reg{--samples 1500} (about $5.5$~hours).
+
+\paragraph{Blind stack-canary recovery.}
+A separate demonstration recovers a victim's own stack canary with no prior knowledge of its value,
+from a two-dimensional-array gadget driven the three independent ways of \autoref{sec:canon-windows},
+a mistrained bounds check (Spectre-v1), a store-bypassed bound (Spectre-v4), and a return shadow
+(Spectre-RSB), recovering the full \reg{[55:0]} pointer value. The proof of concept isolates the
+channel rather than packaging a complete exploit, and it assumes that every page its probe reaches
+is mapped, so the program lays out a finite scaffold of pages its own accesses can land on and reads
+cache residency over them. A fully mapped user address space is a laboratory convenience, not a
+mitigation. Paging is a memory-management mechanism and not a confidentiality boundary, so a
+target's pages usually being unmapped should not be relied on as a defense. The Flush+Reload
+read-out, the performance-counter timing, and positioning the watched page from the known canary
+serve only to reduce noise, and the other demonstrations read the same oracle rootlessly and over
+Prime+Probe.
 
 \section{Covert-channel analysis}
 \label{sec:eval-covert}
