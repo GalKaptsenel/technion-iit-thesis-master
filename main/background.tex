@@ -568,7 +568,7 @@ traces class by class.}
 \label{fig:bg-revizor}
 \end{figure}
 
-\paragraph{Measuring traces, context, and priming.}
+\paragraph{Measuring traces and context.}
 Measuring the full hardware trace of Equation~\eqref{eq:bg-htrace} on a black-box CPU is
 infeasible. It would mean reading the state after every instruction, which perturbs that very
 state, and it would require access to every microarchitectural structure, many of which are
@@ -578,7 +578,10 @@ tests the contract with respect to an \emph{L1D observer}: effects in other stru
 the hardware trace only once they propagate into the L1D. Because the context of a black-box CPU
 cannot be set directly, \revizor{} sets it indirectly, running the inputs back to back with only a
 partial reset between them~\cite{revizor,hide_seek}, so each input's context is the state its
-predecessors left. A candidate violation is then a pair of contract-equivalent inputs, at
+predecessors left.
+
+\paragraph{Priming.}
+A candidate violation is then a pair of contract-equivalent inputs, at
 positions $i<j$, whose L1D traces differ. Since the two traces are measured in different contexts,
 the difference may stem from the contexts rather than the inputs. \emph{Priming} closes this gap by
 re-running the sequence with the two inputs swapped into each other's position, so each input is
