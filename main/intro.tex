@@ -27,6 +27,32 @@ speculation barrier and index masking at every bounds check~\cite{spectre}. New
 instructions and optimization techniques keep emerging. Each one can open new, sometimes
 unique and unexpected, transient paths and side channels.
 
+\section{What is speculative leakage}
+\label{sec:intro-leakage}
+
+A speculative leak is the core of these attacks. It happens when the microarchitectural
+trace of a program depends on a secret, while its architectural result does not. The
+program stays correct. The trace still carries the secret to anyone who can measure it.
+
+To search for such leaks we need a precise notion of one, and the intuition behind it is a
+controlled comparison. We fix the microarchitecture. We fix the program under test. We vary
+only its input. We then run the program and watch its microarchitectural trace, meaning
+what an attacker could observe through a side channel.
+
+Holding the first two fixed is what makes a difference meaningful. A change in the trace
+points to a leak only when the input is the one thing that could have caused it. The same
+microarchitecture rules out the hardware as the cause. The same program rules out the code
+as the cause. Only the input is left. So when two inputs that should look the same to an
+attacker still produce different traces, the program has leaked something about the input
+through the hardware.
+
+Priming is what makes this comparison trustworthy. State left in the microarchitecture by
+earlier runs is noise, and it can either hide a real difference or manufacture a false one.
+Priming controls that state before each measurement, so a difference in the trace reflects
+the inputs rather than the history. \autoref{chap:background} makes contracts, traces, and
+priming precise, and \autoref{chap:priming} strengthens priming so that it can detect leaks
+beyond the L1 data cache.
+
 \section{Automated leak discovery}
 \label{sec:intro-automated}
 
@@ -72,28 +98,6 @@ This thesis                                  & MRT and precondition fuzzing&    
 \bottomrule
 \end{tabular}
 \end{table}
-
-\section{What counts as a leak}
-\label{sec:intro-leak}
-
-The search needs a precise notion of a leak, and the intuition behind it is a controlled
-comparison. We fix the microarchitecture. We fix the program under test. We vary only its
-input. We then run the program and watch its microarchitectural trace, meaning what an
-attacker could observe through a side channel.
-
-Holding the first two fixed is what makes a difference meaningful. A change in the trace
-points to a leak only when the input is the one thing that could have caused it. The same
-microarchitecture rules out the hardware as the cause. The same program rules out the code
-as the cause. Only the input is left. So when two inputs that the contract calls
-indistinguishable still produce different traces, the program has leaked something about
-the input through the hardware.
-
-Priming is what makes this comparison trustworthy. State left in the microarchitecture by
-earlier runs is noise, and it can either hide a real difference or manufacture a false one.
-Priming controls that state before each measurement, so a difference in the trace reflects
-the inputs rather than the history. \autoref{chap:background} makes the contract, the
-traces, and priming precise, and \autoref{chap:priming} strengthens priming so that it can
-detect leaks beyond the L1 data cache.
 
 \section{The Arm blind spot}
 \label{sec:intro-arm}
