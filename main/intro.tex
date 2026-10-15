@@ -130,7 +130,7 @@ A single pattern underlies a great many of these leaks: instructions impose
 \emph{preconditions} on their operands. A tagged load requires its pointer's \gls{mte} tag to
 match the tag of the memory it addresses, and using an authenticated pointer requires that
 pointer to carry a valid \gls{pac}. Other limitations exist too. Every memory access, for
-example, requires its address to be canonical, in range for the active translation regime, and
+example, requires its address to be canonical, within the active address range, and
 correctly aligned. Architecturally, a violated precondition can raise a fault, so the
 offending instruction traps instead of completing and the attempt is exposed. Speculation,
 however, offers a rare opportunity for a silent leak. The same checks still run, but they

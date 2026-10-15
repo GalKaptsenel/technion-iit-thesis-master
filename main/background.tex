@@ -347,27 +347,44 @@ thesis depends on: the privilege boundaries, the shared microarchitecture across
 of a virtual address, and the two security extensions whose operand checks the precondition
 fuzzing of \autoref{chap:precond} targets.
 
-\paragraph{Exception levels and translation regimes.}
+\paragraph{Exception levels and the virtual address space.}
 AArch64 separates software by privilege into \emph{exception levels}: EL0 for user applications,
 EL1 for operating-system kernels, EL2 for hypervisors, and EL3 for secure
-firmware~\cite{arm_exception_levels} (\autoref{fig:bg-elmap}). A virtual address is translated
-through one of two regimes, selected by its top bits: the low range translates through \reg{TTBR0}
-and the high range through \reg{TTBR1}~\cite{arm64pagetables}. These boundaries isolate
+firmware~\cite{arm_exception_levels} (\autoref{fig:bg-elmap}). AArch64 splits the virtual address
+space at its midpoint by the top bit of the address, and two base registers tell the MMU where to
+start the page-table walk for each half~\cite{arm64pagetables} (\autoref{tab:bg-ttbr}). These boundaries isolate
 architectural state, but the microarchitecture is only partially isolated. TLB entries are
 typically tagged with an address-space identifier (ASID) and, under virtualization, a
 virtual-machine identifier (VMID), so one domain cannot \emph{use} another's entries. The branch
 predictors are not specified by the architecture~\cite{chen2024dissectingconditionalbranchpredictors,jia_cbp},
 though cores implementing FEAT\_CSV2 prevent branch targets trained in one context from steering
-speculation in another. Tagging and context isolation prevent one domain from using another's
-state, but unless a structure is partitioned the domains still compete for its capacity, so
-activity in one domain can change state that another domain can measure.
+speculation in another. Tagging and context isolation keep one domain from using another's
+state, but unless a structure's entries are physically partitioned by privilege domain, the domains
+still compete for its capacity. Activity in one domain can then change state that another domain
+measures, for example through a Prime+Probe variant (\autoref{sec:bg-sidechannels}) on the shared
+structure.
+
+\begin{table}[h]
+\centering\small
+\caption{The two AArch64 translation base registers and the halves of the virtual address space
+they map. \reg{VA\_BITS} is the configured virtual-address width.}
+\label{tab:bg-ttbr}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Register & Address range & Used for \\
+\midrule
+\reg{TTBR0\_EL1} & $[0,\ 2^{\mathrm{VA\_BITS}})$, low addresses  & user space (per process) \\
+\reg{TTBR1\_EL1} & $[2^{64}-2^{\mathrm{VA\_BITS}},\ 2^{64})$, high addresses & kernel (global) \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \begin{figure}[t]
 \centering
 \fitwidth{\input{fig/bg-elmap}}
-\caption{AArch64 exception levels (left) and the two translation regimes (right). Architectural
-state is isolated per level. Microarchitectural structures are shared or merely tagged. The top
-address bits select the regime, and canonicality requires those bits to be uniformly zero
+\caption{AArch64 exception levels (left) and the two halves of the virtual address space (right).
+Architectural state is isolated per level. Microarchitectural structures are shared or merely
+tagged. The top address bits select the half, and canonicality requires those bits to be uniformly zero
 (\reg{TTBR0}) or one (\reg{TTBR1}). Any other value is out of range and faults.}
 \label{fig:bg-elmap}
 \end{figure}
@@ -375,7 +392,7 @@ address bits select the regime, and canonicality requires those bits to be unifo
 \subsection{Virtual addressing, canonicality, and the top byte}
 \label{sec:bg-canon}
 
-An address is \emph{canonical} when the bits above the configured input-address size are all zero,
+An address is \emph{canonical} when the bits above the configured virtual-address size are all zero,
 selecting the \reg{TTBR0} range, or all one, selecting the \reg{TTBR1} range. Any other value is
 out of range and raises an address-size or translation fault. Arm does not use the x86 term
 ``canonical'' for this condition, but the requirement is its analogue and we use the term
@@ -388,7 +405,7 @@ layout for a 48-bit virtual address.
 \fitwidth{\input{fig/bg-ptrlayout}}
 \caption{Layout of a 64-bit AArch64 pointer with a 48-bit virtual address. The low bits hold the
 address. The upper bits are shared among canonicality, the ignored top byte, the MTE logical tag,
-and the PAC field. Bit~55 selects the translation regime and is the effective sign bit when Top
+and the PAC field. Bit~55 selects the address range and is the effective sign bit when Top
 Byte Ignore is enabled (bit~63 when it is not). It is excluded from the PAC field.}
 \label{fig:bg-ptrlayout}
 \end{figure}
@@ -399,13 +416,13 @@ does not participate in the canonicality check, so software may store metadata t
 hardware strips it before translating~\cite{arm_tbi}. The effective sign bit that must be
 replicated to stay canonical then drops to bit~55. With TBI disabled the top byte participates and
 the sign bit is bit~63. This TBI-dependence of the effective sign bit recurs in
-\autoref{chap:precond} and \autoref{chap:canon}, where a primitive must flip the regime-correct
+\autoref{chap:precond} and \autoref{chap:canon}, where a primitive must flip the range-selecting
 bit.
 
 \paragraph{Pointer Authentication (PAuth).}
 Introduced in Armv8.3-A, PAuth protects pointer integrity by storing a pointer authentication code
-(PAC) in a pointer's otherwise unused upper bits, excluding bit~55, which selects the translation
-regime~\cite{arm_pac,pac_whitepaper}. The PAC width therefore depends on the virtual-address size
+(PAC) in a pointer's otherwise unused upper bits, excluding bit~55, which selects the address
+range~\cite{arm_pac,pac_whitepaper}. The PAC width therefore depends on the virtual-address size
 and the TBI configuration (\autoref{fig:bg-ptrlayout}). The code is computed from the pointer, a
 64-bit modifier, and a secret key, using the QARMA block cipher. The \reg{PAC*} instructions
 compute and insert it. The \reg{AUT*} instructions verify it, and on success restore the upper bits
