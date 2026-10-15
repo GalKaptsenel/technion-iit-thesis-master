@@ -1,0 +1,186 @@
+\chapter{Porting Revizor to AArch64}
+\label{chap:port}
+
+This chapter describes the first contribution: bringing model-based relational testing to
+AArch64. \revizor{}'s pipeline is ISA-independent, so the structure is kept and the
+ISA-specific backends are rebuilt for AArch64, with new support for the Arm security
+extensions and for fuzzing physically remote cores. \autoref{sec:port-overview} gives the
+overall shape, \autoref{sec:port-components} the native-execution architecture,
+\autoref{sec:port-isa} how the instruction set is derived from Arm's specification,
+\autoref{sec:port-ce} the contract executor, \autoref{sec:port-features} the modeling of
+Pointer Authentication and Memory Tagging, \autoref{sec:port-driving} the executor and the
+input format, and \autoref{sec:port-remote} remote fuzzing.
+
+\section{Overview}
+\label{sec:port-overview}
+
+\revizor{}~\cite{revizor} is organized as a pipeline---a generator, a model, an executor,
+and an analyzer---in which the analyzer compares the model's contract trace against the
+executor's hardware trace (\autoref{sec:bg-mrt}). This structure is independent of the
+instruction set, so we keep it and rebuild the three ISA-specific backends for AArch64, the
+64-bit execution state introduced in Armv8-A. We additionally model the Pointer
+Authentication and Memory Tagging extensions, which x86 \revizor{} has no analogue for and
+which are the subject of the precondition primitives of \autoref{chap:precond}. The port is
+evaluated on Armv9.2-A cores in \autoref{chap:eval}.
+
+\section{Native execution on the real core}
+\label{sec:port-components}
+
+Mainline \revizor{} runs as a single process, with the model on an in-process software
+emulator of the contract. Faithfully emulating a modern AArch64 core in software is both
+laborious and a source of divergence from real silicon. We therefore run the model as a
+separate process that executes the test case \emph{natively} on a real core. The fuzzer then
+coordinates two external components, each over its own channel (\autoref{fig:port-components}).
+The \emph{contract executor}
+(CE) produces the contract trace. A Linux \emph{kernel module}, reached through a
+\reg{/dev/executor} character device, runs the test case on the CPU under test and measures
+its microarchitectural footprint. The fuzzer generates programs and inputs, drives the CE
+and the kernel module, and compares the traces they return. Because the kernel module is the
+only component that must sit on the silicon under test, it can run on a different machine
+from the rest of the fuzzer, which is what makes remote fuzzing (\autoref{sec:port-remote})
+possible.
+
+\begin{figure}[t]
+\centering
+\fitwidth{\input{fig/components}}
+\caption{Component map. The fuzzer coordinates the contract executor and the kernel module,
+each over its own channel: the CE returns the contract trace, and the kernel module runs the
+test case on the CPU under test and returns the hardware trace. Only the kernel module must
+sit on the silicon under test, so it may run on a remote target device.}
+\label{fig:port-components}
+\end{figure}
+
+\section{Deriving the instruction set from the Arm specification}
+\label{sec:port-isa}
+
+The generator needs a precise model of every instruction it may emit: its encoding,
+operands, the registers and memory it reads and writes, and the legal domains of its
+immediates. Mainline \revizor{} reads this table from a prebuilt file. We instead derive it
+directly from Arm's machine-readable specification, taking each instruction's encoding,
+operand roles, register and memory access roles, and immediate domains from its Architecture
+Specification Language (ASL) definition. Encodings we cannot fully recover from the
+specification are reported and excluded rather than approximated, so the generator emits only
+instructions that have a complete, validated model. Pinning the specification release keeps
+the instruction set reproducible across fuzzing campaigns.
+
+\section{The contract executor: native single-stepping}
+\label{sec:port-ce}
+
+Rather than emulate AArch64, the CE runs the test case on the real core and observes it one
+instruction at a time (\autoref{fig:port-trampoline}). It is a user-space process that loads the
+program into an executable
+mapping and single-steps it. The single-stepping exploits the fixed-width A64 encoding: every
+instruction is 32 bits wide, and so is a \reg{BL} (branch-with-link). The CE replaces an
+instruction word in place with a \reg{BL} to a trampoline, and restores the original word
+afterwards. A \reg{BL} does not modify the condition flags, so the \reg{NZCV} state carries
+across the interposed branch into the next test instruction. To run one instruction the CE
+restores it at the program counter while every other instruction still holds its trampoline
+branch. The core executes that one instruction natively, then takes the following word, now a
+\reg{BL}, into the trampoline, where a hook records the architectural state. The CE repeats
+this for each instruction of the test case.
+
+Running on the CPU under test avoids the emulation inconsistencies we observed in common
+emulators such as Unicorn~\cite{unicorn}. It also strikes a middle ground between full
+emulation and purely local execution. A complete emulator can model a feature the host lacks,
+but risks fidelity gaps. Purely native execution is faithful, but needs the feature present on
+the local machine. The CE takes the middle path: it runs base instructions natively and
+models, on request, the extensions in software. For example, we fuzzed MTE on a Google
+Pixel~8, which implements the extension, while generating and modeling on a host that does
+not.
+
+\begin{figure}[t]
+\centering
+\fitwidth{\input{fig/trampoline}}
+\caption{The CE single-steps the test case. Each step restores one original instruction word,
+which the core runs natively; the next word is a \reg{BL} into the trampoline, where a hook
+records the architectural state and drives speculation before advancing to the following
+instruction.}
+\label{fig:port-trampoline}
+\end{figure}
+
+\paragraph{The execution clause and the speculation stack.}
+A contract's execution clause specifies what speculation the CE must model, and the CE
+realizes it with a \emph{speculation stack} (\autoref{fig:port-specstack}). At a speculation
+point---a mispredicted branch,
+a bypassed store---the CE pushes a checkpoint: a snapshot of the registers, the simulated
+memory, the MTE tag memory, and the architectural call stack. It then redirects execution
+onto the speculative path. When that path ends or exhausts its per-window instruction budget,
+the CE pops the checkpoint, restores the snapshot, and resumes at the recorded address.
+Windows may nest to a configured depth, and the checkpoints form a last-in-first-out stack, so
+an inner window unwinds before the one enclosing it. The clause decides where a window opens,
+and its logic runs in the CE's embedded Python interpreter, so a new contract plugs in without
+touching the C engine.
+
+\begin{figure}[t]
+\centering
+\fitwidth{\input{fig/specstack}}
+\caption{Execution forks at each speculation point into a speculative window (dashed) and the
+continuation. Windows nest to deeper levels and unwind innermost first, so the checkpoints form
+a last-in-first-out stack.}
+\label{fig:port-specstack}
+\end{figure}
+
+\section{Modeling the Arm security extensions}
+\label{sec:port-features}
+
+The precondition primitives of \autoref{chap:precond} need the model to reproduce the operand
+checks of Pointer Authentication and Memory Tagging faithfully, even on a host that does not
+implement them. Pointer Authentication is modeled in software from the configuration the core
+exposes---the active key configuration and the identification registers that fix the QARMA
+variant and the PAC field layout---so the CE can compute and verify a PAC the way the target
+core would. Memory Tagging is modeled over a simulated tag memory that the speculation-stack
+checkpoints snapshot and restore alongside the data memory, so a transiently executed tagged
+access sees, and can violate, the correct allocation tag. Both extensions are supplied with
+per-input state---custom PAC keys and an initial tag memory---through the input file described
+next, which lets a single test case be exercised under many keys and tag layouts.
+
+\section{Driving the executor and the input format}
+\label{sec:port-driving}
+
+Control of the kernel module is a small \reg{ioctl} state machine (\autoref{fig:port-execfsm}).
+A test case and its inputs
+load independently, a run is possible only once both are present, and a traced state holds the
+per-input measurements, which a re-run reproduces deterministically. A run reports, per input,
+the L1 data-cache sets the execution touched---the hardware trace of \autoref{sec:bg-mrt},
+read through a cache side channel. Further knobs, exposed through \reg{sysfs}, select the
+measurement method (Prime+Probe or Flush+Reload), the pinned core, the enabled mitigations,
+and the remaining configuration.
+
+\begin{figure}[t]
+\centering
+\fitwidth{\input{fig/execfsm}}
+\caption{The kernel module's \reg{ioctl} state machine. A test case and inputs load
+independently; a run is possible only in \textsc{Ready}; and \textsc{Traced} holds the per-input
+measurements, which a re-run reproduces.}
+\label{fig:port-execfsm}
+\end{figure}
+
+An input is a self-describing \emph{Revizor Extensible Input File} (\reg{.reif}): a header
+followed by a table of typed sections that the kernel module locates by section type, so new
+per-input state can be added without breaking the layout. The required sections hold the
+input's initial architectural state---the initial register values and the sandbox memory
+contents. Optional sections carry further initial state, such as custom PAC keys and the
+initial MTE tag memory. This extensibility is what later lets precondition fuzzing attach a
+\emph{relocation} section to an input (\autoref{chap:precond}) without changing the file
+format.
+
+\section{Remote and headless fuzzing}
+\label{sec:port-remote}
+
+Arm cores commonly ship integrated into phones and embedded devices rather than as parts one
+can place in a workstation, so the target is reached over a link. Running the whole fuzzer on
+the device is impractical: generating and analyzing large campaigns needs compute, memory, and
+a software stack those devices lack. We therefore keep generation, contract modeling, and
+analysis on a capable host, and leave on the device hosting the CPU under test only the
+execution and measurement that need the silicon. A small on-device helper forwards requests to
+the kernel module, so a single host can drive many heterogeneous targets without modification.
+Because a network round trip per measurement would dominate the run, a campaign window
+aggregates many test cases and their inputs into one streamed super-batch, and the device
+returns all traces in a single response.
+
+\medskip
+The port reproduces x86 \revizor{}'s methodology on AArch64 and extends it to the Arm security
+extensions, but it inherits two limitations of that methodology. Its validation step can
+discard genuine leakage that reaches the L1 data cache only indirectly, and its generator
+cannot produce the precondition violations behind attacks such as PACMAN and TikTag. The next
+two chapters remove these limitations in turn.
