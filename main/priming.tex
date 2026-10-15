@@ -209,16 +209,30 @@ there through the same L1D observer.
 \label{sec:priming-lanes}
 
 Detecting an extended contract violation requires a follow-up program $Q$ to run after the victim.
-We obtain it by arranging \revizor{}'s inputs into \emph{lanes} rather than one flat sequence. An
-\emph{initialization sequence} $\IS$ drives the microarchitectural state to one reproducible value,
-and we write $\batch{I_0,\dots,I_n}$ for the batch that runs $\IS$ and then those inputs. A
-\emph{lane} is a sequence of $k+1$ inputs run as its own batch. \emph{Lane boosting} derives each
-further lane from the first by boosting every entry, so position $m$ of two lanes holds distinct
-inputs of the same class, which we call class $m$. Stacking the lanes gives a matrix whose rows are
-lanes (and batches) and whose columns are classes (\autoref{fig:priming-lanes}). \revizor{} flags
-a candidate when two lanes
-differ in their L1D trace at the same column. Without loss of generality the flag sits at the last
-class $k$, the \emph{probe}.
+\revizor{} obtains one by arranging its inputs into \emph{lanes} rather than one flat sequence
+(\autoref{fig:priming-lanes}). The construction rests on a few notions, which we define in turn.
+
+\begin{definition}[Initialization sequence and batch]
+\label{def:batch}
+An \emph{initialization sequence} $\IS$ drives the microarchitectural state to one reproducible
+value. We write $\batch{I_0,\dots,I_n}$ for the batch that runs $\IS$ and then the inputs
+$I_0,\dots,I_n$ in order.
+\end{definition}
+
+\begin{definition}[Lane]
+\label{def:lane}
+A \emph{lane} is a sequence of $k+1$ inputs run as its own batch.
+\end{definition}
+
+\begin{definition}[Lane boosting and classes]
+\label{def:lane-boost}
+\emph{Lane boosting} derives each further lane from the first by boosting every entry, so position
+$m$ of two lanes holds distinct inputs of the same class, which we call \emph{class} $m$. Stacking
+the lanes gives a matrix whose rows are lanes (and batches) and whose columns are classes.
+\end{definition}
+
+\revizor{} flags a candidate when two lanes differ in their L1D trace at the same column. Without
+loss of generality the flag sits at the last class $k$, the \emph{probe}.
 
 \begin{figure}[t]
 \centering
@@ -229,16 +243,19 @@ the probe (class $k$) is where the suspected leak is read.}
 \label{fig:priming-lanes}
 \end{figure}
 
-\begin{definition}[Splice and splice measurement]
+\begin{definition}[Splice]
 \label{def:splice}
 For two lanes $a,b$ and a split $t\in\{0,\dots,k+1\}$, the \emph{splice} $\spl{t}$ takes columns
 before $t$ from lane $a$ and columns from $t$ on from lane $b$, run as its own batch. The endpoints
 recover the lanes, $\spl{0}=\lane{b}$ and $\spl{k+1}=\lane{a}$, and neighbouring splices $\spl{t}$
-and $\spl{t+1}$ differ in column $t$ alone (\autoref{fig:priming-splice}). The \emph{splice
-measurement} $r(t)=\Al(P,c_t,\mu_t)$
-is the L1D trace of the probe run of $\batch{\spl{t}}$, where $c_t$ is the probe input and $\mu_t$
-the context the preceding inputs leave. Since $r(0)$ and $r(k+1)$ are the readings of the two
-flagged lanes, $r(0)\neq r(k+1)$.
+and $\spl{t+1}$ differ in column $t$ alone (\autoref{fig:priming-splice}).
+\end{definition}
+
+\begin{definition}[Splice measurement]
+\label{def:splice-measurement}
+The \emph{splice measurement} $r(t)=\Al(P,c_t,\mu_t)$ is the L1D trace of the probe run of
+$\batch{\spl{t}}$, where $c_t$ is the probe input and $\mu_t$ the context the preceding inputs
+leave. Since $r(0)$ and $r(k+1)$ are the readings of the two flagged lanes, $r(0)\neq r(k+1)$.
 \end{definition}
 
 \begin{figure}[t]
