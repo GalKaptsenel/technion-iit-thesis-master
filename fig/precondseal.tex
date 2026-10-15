@@ -16,26 +16,26 @@
   \draw[black!75,thick] (0.08,-0.85) rectangle (0.82,-1.25);
   \node[lbl, rotate=90] at (-0.3,-1.3) {test case};
   \node[lbl, align=center] at (0.45,1.0) {one sealing\\ point};
-  % zoom: the site window
+  % zoom: the site window, with its caption above the box
+  \node[nt, align=center] at (4.0,0.72) {guarded access through \texttt{x0}};
   \node[line] (ctx) at (4.0,-0.15) {MOV\ \ x0, <ptr>};
   \node[slot] (slot) at (4.0,-1.05) {\emph{sealing}};
   \node[line] (acc) at (4.0,-1.95) {LDR\ \ x2, [x0]};
-  \node[nt, align=center] at (4.0,-2.62) {guarded access through \texttt{x0}};
-  \draw[black!45] (0.82,-0.85) -- (2.3,0.6);
-  \draw[black!45] (0.82,-1.25) -- (2.3,-2.85);
-  \draw[black!30, rounded corners=3pt] (2.3,0.6) rectangle (5.7,-2.85);
+  \draw[black!45] (0.82,-0.85) -- (2.3,0.35);
+  \draw[black!45] (0.82,-1.25) -- (2.3,-2.35);
+  \draw[black!30, rounded corners=3pt] (2.3,0.35) rectangle (5.7,-2.35);
   % the slot filled three ways
-  \node[fillcard] (ph) at (10.25,0.25)
+  \node[fillcard] (ph) at (11.0,0.25)
      {\textbf{placeholder}\quad\texttt{UDF}\\[1pt]\textcolor{black!55}{\itshape\scriptsize unfilled sealing, traps if executed}};
-  \node[fillcard, draw=blue!55!black, fill=blue!12] (ge) at (10.25,-1.05)
+  \node[fillcard, draw=blue!55!black, fill=blue!12] (ge) at (11.0,-1.05)
      {\textbf{genuine}\quad\texttt{MOVK x0,\#k}\,;~\texttt{AUTDA x0,x1}\\[1pt]\textcolor{black!60}{\itshape\scriptsize correct signature $\to$ authentication succeeds}};
-  \node[fillcard, draw=culprit, fill=culprit!10] (de) at (10.25,-2.35)
+  \node[fillcard, draw=culprit, fill=culprit!10] (de) at (11.0,-2.35)
      {\textbf{decoy}\quad\texttt{MOVK x0,\#k$'$}\,;~\texttt{AUTDA x0,x1}\\[1pt]\textcolor{black!60}{\itshape\scriptsize incorrect signature $\to$ \texttt{AUT} fails, fault (squashed)}};
-  \coordinate (j) at (6.45,-1.05);
+  \coordinate (j) at (7.0,-1.05);
   \draw[thick,draw=black!70] (slot.east) -- (j);
   \fill[black!70] (j) circle (0.045);
   \draw[ar] (j) |- (ph.west);
   \draw[ar] (j) |- (ge.west);
   \draw[ar] (j) |- (de.west);
-  \node[lbl, align=center] at (6.06,-0.67) {fill per\\ input};
+  \node[lbl, align=center, fill=white, inner sep=1.5pt] at (6.2,-0.72) {fill per\\ input};
 \end{tikzpicture}
