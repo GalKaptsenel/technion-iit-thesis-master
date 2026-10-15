@@ -31,10 +31,10 @@
        node[midway, above=20pt, lbl, text=laneB!55!black]{\reg{MTE} logical\\ tag $[59{:}56]$};
   % labels below
   \node[lbl, text=culprit, anchor=north, align=center] at ($(b55.south)+(0,-0.12)$)
-     {bit $55$: regime select\\(\texttt{TTBR0}/\texttt{TTBR1});\\ effective sign bit under \texttt{TBI}};
+     {bit $55$: regime select\\(\texttt{TTBR0}/\texttt{TTBR1})\\ effective sign bit under \texttt{TBI}};
   \draw[br, decoration={mirror}] ($(b6360.south west)+(0,-1.55)$) -- ($(b5448.south east)+(0,-1.55)$) ;
   \node[lbl, text=laneA!55!black, anchor=north, align=center] at ({8*\u},-2.35)
-     {\reg{PAC} field: the unused upper bits (bit $55$ excluded)\\{\scriptsize width set by the VA size and \texttt{TBI}: $[63{:}56]\cup[54{:}48]$ with \texttt{TBI} off, only $[54{:}48]$ with \texttt{TBI} on}};
+     {\reg{PAC} field: the spare upper bits, excluding bit $55$\\{\scriptsize bits $[54{:}48]$, plus the top byte $[63{:}56]$ when \texttt{TBI} is off}};
   % bit ruler ticks
   \foreach \b/\x in {63/0, 56/{8*\u}, 55/{9*\u}, 48/{16*\u}}
      \node[tk, anchor=south] at ({\x},{\h+0.02}) {};
