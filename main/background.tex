@@ -188,9 +188,11 @@ the array and finding the single fast line recovers the secret byte. This $256$-
 standard transmitter at the end of a transient-execution attack.
 
 \paragraph{Leaks as a cascade.}
-It is useful to view a leak as a cascade. A secret-dependent operation changes the state of some
-\emph{carrier} structure. That change may propagate through further carriers until it reaches an
-\emph{observation medium} the attacker monitors directly. The carrier and the medium need not
+It is useful to view a leak as a cascade. A \emph{carrier} is any microarchitectural structure whose
+state a secret-dependent operation can change, for instance a data cache, a TLB, the branch-target
+buffer, or a prefetcher. The leaking operation changes the state of some carrier, and that change
+may propagate through further carriers until it reaches an \emph{observation medium} the attacker
+monitors directly. The carrier and the medium need not
 coincide: a victim's secret-dependent footprint may first land in the branch-target buffer and
 reach the attacker-monitored L1 data cache only later, possibly in a subsequent execution. This
 distinction, between where a leak is first written and where it is finally read, is central to

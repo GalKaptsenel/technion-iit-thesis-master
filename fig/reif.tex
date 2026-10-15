@@ -42,16 +42,13 @@
     {\bfseries section types}\quad{\scriptsize\textcolor{probe!55!black}{req}uired / \textcolor{black!50}{opt}ional}\\[3pt]
     \scriptsize
     \begin{tabular}{@{}r@{\ \ }l@{\ \ }l@{\ \ }l@{}}
-    \ttfamily 0x01 & \ttfamily MEMORY\_MAIN   & \textcolor{probe!55!black}{req} & sandbox main region\\[1pt]
-    \ttfamily 0x02 & \ttfamily MEMORY\_FAULTY & \textcolor{probe!55!black}{req} & sandbox faulty region\\[1pt]
-    \ttfamily 0x03 & \ttfamily GPR           & \textcolor{probe!55!black}{req} & \texttt{x0..x5}, \reg{PSTATE} flags, \texttt{sp}\\[1pt]
-    \ttfamily 0x04 & \ttfamily SIMD          & \textcolor{black!50}{opt} & \texttt{v0..v7} (reserved)\\[1pt]
-    \ttfamily 0x05 & \ttfamily PAC\_KEYS      & \textcolor{black!50}{opt} & per-input \reg{PAC} keys\\[1pt]
-    \ttfamily 0x06 & \ttfamily MTE\_TAGS      & \textcolor{black!50}{opt} & one 4-bit tag per 16-byte granule\\[1pt]
-    \ttfamily 0x07 & \ttfamily CODE\_RELOC    & \textcolor{black!50}{opt} & word splices into the test body (sealing)\\[1pt]
-    \ttfamily 0x09 & \ttfamily PTE\_SETTINGS  & \textcolor{black!50}{opt} & per-page descriptor overrides\\
+    \ttfamily 0x01 & \ttfamily MEMORY\_MAIN   & \textcolor{probe!55!black}{req} & main data region\\[1pt]
+    \ttfamily 0x02 & \ttfamily MEMORY\_FAULTY & \textcolor{probe!55!black}{req} & faulty data region\\[1pt]
+    \ttfamily 0x03 & \ttfamily GPR           & \textcolor{probe!55!black}{req} & initial registers (\texttt{x0..x5}, flags, \texttt{sp})\\[1pt]
+    \ttfamily 0x04 & \ttfamily SIMD          & \textcolor{black!50}{opt} & vector registers \texttt{v0..v7}\\[1pt]
+    \ttfamily 0x05 & \ttfamily PAC\_KEYS      & \textcolor{black!50}{opt} & this input's \reg{PAC} keys\\[1pt]
+    \ttfamily 0x06 & \ttfamily MTE\_TAGS      & \textcolor{black!50}{opt} & memory tags, one per 16-byte granule\\[1pt]
+    \ttfamily 0x07 & \ttfamily CODE\_RELOC    & \textcolor{black!50}{opt} & per-input patches to the code\\[1pt]
+    \ttfamily 0x09 & \ttfamily PTE\_SETTINGS  & \textcolor{black!50}{opt} & page-table overrides\\
     \end{tabular}};
-  % the descriptor's type names one catalog row
-  \draw[ar] (d.north east) to[out=20,in=180] ($(c.west)+(0,-0.15)$);
-  \node[sz, anchor=south west] at ($(d.north east)+(0.1,0.02)$) {\texttt{type} selects};
 \end{tikzpicture}

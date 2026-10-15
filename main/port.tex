@@ -178,8 +178,9 @@ a table of typed section descriptors, and the section payloads (\autoref{fig:por
 reader locates each section by its type through the descriptor table rather than by a fixed
 offset, so new per-input state can be added without breaking the layout, and an unknown section
 type is skipped. The required sections hold the sandbox memory contents and the initial register
-values. Optional sections carry further initial state, such as custom PAC keys, an initial MTE tag
-memory, and per-page page-table overrides. This extensibility is what later lets precondition
+values, including the PSTATE condition flags, whose four NZCV bits the fuzzer varies independently.
+Optional sections carry further initial state, such as custom PAC keys, an initial MTE tag memory,
+and per-page page-table overrides. This extensibility is what later lets precondition
 fuzzing attach a \emph{relocation} (code-sealing) section to an input (\autoref{chap:precond})
 without changing the file format.
 
