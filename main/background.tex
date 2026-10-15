@@ -539,13 +539,15 @@ $\mathit{CTrace}$ does not.
 
 \paragraph{Model-based relational testing.}
 Model-based relational testing (MRT) searches for violations by sampling. It generates a program
-$P$ and a set of inputs, computes contract traces on a model of $\mathcal{C}$ to partition the
-inputs into \emph{contract-equivalence classes}, measures hardware traces on the CPU under test,
-and reports a \emph{candidate violation} when two inputs of one class produce different hardware
-traces. A differing trace is not by itself evidence of a leak:
-Equation~\eqref{eq:bg-violation} requires both inputs to run from the same context, and on a real
-CPU the context cannot be set directly, so each candidate must be validated to show the difference
-is caused by the inputs rather than by their differing contexts.
+$P$ together with a set of inputs, and runs a model of $\mathcal{C}$ to compute each input's
+contract trace. Inputs that share a contract trace form a \emph{contract-equivalence class}. MRT
+then measures the hardware trace of each input on the CPU under test. When two inputs of one class
+produce different hardware traces, it reports a \emph{candidate violation}. A differing trace is not
+by itself evidence of a leak. Equation~\eqref{eq:bg-violation} requires both inputs to run from the
+same context, but on a real CPU the context cannot be set directly. Each candidate must therefore be
+validated, to confirm the difference comes from the inputs and not from their differing contexts.
+This validation is done by \emph{priming}~\cite{revizor}, explained below and developed in full in
+\autoref{chap:priming}.
 
 \paragraph{The Revizor pipeline.}
 \revizor{}~\cite{revizor} implements MRT as four components followed by a validation
