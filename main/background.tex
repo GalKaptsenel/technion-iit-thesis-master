@@ -61,8 +61,9 @@ out of bounds. The predictor still guesses ``taken,'' so the core speculatively 
 \reg{a[i]} for the illegal index and issues the load, reading whatever lies past the array, before
 the comparison \reg{i < n} resolves. When it resolves false, the load and everything after it are
 squashed and \reg{t} is never written. Architecturally nothing happened. But the out-of-bounds
-line \reg{a[i]} was brought into the cache and remains there, and the rest of this chapter is
-about turning that residue into a readable signal.
+line \reg{a[i]} was brought into the cache and remains there. On its own this residue exposes
+nothing, but by combining the behavior just described with a timing attack
+(\autoref{sec:bg-sidechannels}), an attacker can extract sensitive information.
 
 \subsection{Branch predictors and indirect branches}
 \label{sec:bg-predictors}
