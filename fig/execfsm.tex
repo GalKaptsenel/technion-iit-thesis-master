@@ -10,7 +10,7 @@
   \node[st]  (lt)  at (4.0,1.7)  {\textsc{loaded test}\\{\scriptsize test only}};
   \node[st]  (li)  at (4.0,-1.7) {\textsc{loaded inputs}\\{\scriptsize inputs only}};
   \node[st]  (rdy) at (8.0,0)    {\textsc{ready}\\{\scriptsize test + inputs}};
-  \node[fin] (tr)  at (11.2,0)   {\textsc{traced}\\{\scriptsize measured}};
+  \node[fin] (tr)  at (12.8,0)   {\textsc{traced}\\{\scriptsize measured}};
   \draw[ed] (cfg) to[bend left=12]  node[lbl,above left=-3pt]{write test}   (lt);
   \draw[ed] (lt)  to[bend left=12]  node[lbl,below right=-3pt]{unload test} (cfg);
   \draw[ed] (cfg) to[bend right=12] node[lbl,below left=-3pt]{write input}  (li);
