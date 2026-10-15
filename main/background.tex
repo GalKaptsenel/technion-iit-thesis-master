@@ -415,9 +415,7 @@ When TBI is enabled, the top byte of a pointer, bits [63:56], is excluded from t
 does not participate in the canonicality check, so software may store metadata there and the
 hardware strips it before translating~\cite{arm_tbi}. The effective sign bit that must be
 replicated to stay canonical then drops to bit~55. With TBI disabled the top byte participates and
-the sign bit is bit~63. This TBI-dependence of the effective sign bit recurs in
-\autoref{chap:precond} and \autoref{chap:canon}, where a primitive must flip the range-selecting
-bit.
+the sign bit is bit~63.
 
 \paragraph{Pointer Authentication (PAuth).}
 Introduced in Armv8.3-A, PAuth protects pointer integrity by storing a pointer authentication code
