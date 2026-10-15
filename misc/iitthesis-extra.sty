@@ -92,6 +92,11 @@
 % this defines algorithmic-like statement commands
 \RequirePackage{algcompatible}
 
+% algcompatible sets inline comments to {braces} (the old algorithmic look).
+% Restore the algorithmicx default that the companion paper uses through
+% algpseudocode: a small right-pointing triangle, set flush right.
+\algrenewcomment[1]{\hfill\(\triangleright\)\ #1}
+
 % both algorithmic and algorithmicx are used in conjunction with the
 % algorithm package, which is used for the outer float environment
 % {algorithm}, which has the caption and delimiting rules
