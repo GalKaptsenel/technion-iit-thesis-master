@@ -115,16 +115,6 @@ its own accesses to it. Because the shared structure is finite and its state is 
 timing, one party's activity is measurable by the other even when the architecture forbids them
 from reading each other's data.
 
-Before turning to specific channels, recall how a cache is addressed. A cache is
-\emph{set-associative}: an address maps to one \emph{set}, selected by a field of its bits called
-the \emph{index}, and may occupy any of that set's \emph{ways}, the fixed number of line slots the
-set provides. The high-order \emph{tag} bits of the address are stored next to the line and
-compared on each lookup to decide which way, if any, holds it. A lookup that finds the line is a
-\emph{cache hit} and returns in a few cycles, while a \emph{cache miss} must fetch the line from a
-slower level. Because the index fixes the set,
-addresses that share an index contend for the same ways and can evict one another, and that forced
-eviction is the signal the channels below read.
-
 \subsection{The cache and TLB hierarchy}
 \label{sec:bg-hierarchy}
 
