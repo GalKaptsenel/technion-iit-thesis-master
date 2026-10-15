@@ -70,7 +70,7 @@ nothing, but by combining the behavior just described with a timing attack
 
 Speculation past a branch needs two guesses: whether a conditional branch is \emph{taken}, and, for
 an \emph{indirect} branch, where it goes. An indirect branch takes its target from a register or
-from memory, as a function pointer, a C++ virtual call, a jump table, or a return, so the target is
+from memory. As for example in C++ virtual call, a jump table, or a return.  Thus the target is
 not encoded in the instruction and must be predicted. Separate structures supply these guesses
 (\autoref{fig:bg-predictors}), and each is a shared, finite table an attacker can train or probe.
 
@@ -85,9 +85,8 @@ trainable table.}
 \end{figure}
 
 \paragraph{Direction.} The simplest direction predictor is a table of \emph{saturating counters}:
-each branch indexes a small (typically two-bit) counter, incremented when the branch is taken and
-decremented when it is not, whose top bit gives the prediction, so a stable branch must mispredict
-twice to flip. Accuracy improves by conditioning on \emph{history}. A \emph{pattern history
+each branch indexes a small counter, incremented when the branch is taken and
+decremented when it is not, whose top bit gives the prediction. Accuracy improves by conditioning on \emph{history}. A \emph{pattern history
 register} (PHR) shifts in the outcomes of the most recent branches, and the predictor indexes its
 tables with a hash of the branch address and the PHR. Modern cores use \emph{TAGE}, which keeps
 several tagged tables indexed with \emph{geometrically} increasing history lengths and predicts from
