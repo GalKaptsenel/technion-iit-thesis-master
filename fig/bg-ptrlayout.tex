@@ -12,7 +12,7 @@
 ]
   \def\u{0.52}            % cm per bit (upper 16 bits, to scale)
   \def\h{0.8}             % box height in cm
-  % ---- upper 16 bits [63:48], MSB on the left ----
+  % upper 16 bits [63:48], MSB on the left
   % MTE/top byte: bits 63..56 => x in [0, 8u]; split [63:60] and [59:56]
   \node[tbi, minimum width={4*\u cm}, anchor=south west] (b6360) at (0,0) {\scriptsize$63{:}60$};
   \node[mte, minimum width={4*\u cm}, anchor=south west] (b5956) at ({4*\u},0) {\scriptsize$59{:}56$};
@@ -21,9 +21,9 @@
   % break marker (two short slashes)
   \draw[black!45,line width=0.8pt] (8.46,-0.08) -- (8.62,0.88);
   \draw[black!45,line width=0.8pt] (8.60,-0.08) -- (8.76,0.88);
-  % ---- VA [47:0], not to scale ----
+  % VA [47:0], not to scale
   \node[va, minimum width=5.6cm, minimum height={\h cm}, anchor=south west] (bva) at ({16*\u+0.46},0)
-     {bits $[47{:}0]$ \;---\; virtual address (48-bit VA)};
+     {bits $[47{:}0]$, the virtual address (48-bit VA)};
   % field braces/labels above
   \draw[br] (b6360.north west) -- (b5956.north east)
        node[midway, above=5pt, lbl, text=black!70]{top byte $[63{:}56]$\\{\scriptsize ignored by translation when \texttt{TBI}=1}};

@@ -1,0 +1,27 @@
+\begin{tikzpicture}[
+  font=\footnotesize,
+  box/.style={draw=black!40, fill=black!3, rounded corners=3pt, align=left,
+              inner sep=6pt, font=\ttfamily\scriptsize, text width=60mm},
+  hdr/.style={font=\footnotesize\bfseries, text=culprit!70!black, anchor=base west},
+]
+  % PACMAN
+  \node[hdr] at (0,0) {PACMAN (PAC)};
+  \node[box, anchor=north west] (pm) at (0,-0.25) {%
+    // ptr holds a guessed PAC\\
+    if (x < n) \{\ \ \ \ \ // mistrained (transient)\\
+    \ \ \ \ p = AUTIA(ptr, mod)\\
+    \ \ \ \ y = *p\ \ \ \ \ \ \ \ // footprint iff guess right\\
+    \}\\
+    // probe (TLB): hit => PAC guess correct%
+  };
+  % TikTag
+  \node[hdr] at (6.7,0) {TikTag (MTE)};
+  \node[box, anchor=north west] (tt) at (6.7,-0.25) {%
+    // ptr carries a logical tag\\
+    if (x < n) \{\ \ \ \ \ // mistrained (transient)\\
+    \ \ \ \ y = *ptr\ \ \ \ \ \ // tagged access\\
+    \ \ \ \ \ \ \ \ \ \ \ \ \ // footprint iff tag matches\\
+    \}\\
+    // probe (L1D): hit => tags matched%
+  };
+\end{tikzpicture}

@@ -6,7 +6,7 @@
   lbl/.style={font=\scriptsize, text=black!65, align=center},
   ar/.style={-{Stealth[length=2mm]}, thick, draw=black!70},
 ]
-  % ---- left: exception-level stack (EL0 bottom .. EL3 top) ----
+  % left: exception-level stack (EL0 bottom .. EL3 top)
   \node[el, fill=probe!14]  (el0) at (0,0)     {\textbf{EL0}\\{\scriptsize user applications}};
   \node[el, fill=laneB!16]  (el1) at (0,1.15)  {\textbf{EL1}\\{\scriptsize OS kernel}};
   \node[el, fill=laneA!16]  (el2) at (0,2.30)  {\textbf{EL2}\\{\scriptsize hypervisor (VHE)}};
@@ -16,7 +16,7 @@
      {architectural state isolated per level;\\ microarchitecture only \emph{partially} so};
   \node[lbl, align=center] at (0,-1.95)
      {TLB entries tagged by \textbf{ASID}\\(and \textbf{VMID} under virtualization)};
-  % ---- right: 64-bit address space, two translation regimes ----
+  % right: 64-bit address space, the two VA ranges
   \def\rx{5.6}
   \node[reg, fill=laneA!14, minimum height=11mm, anchor=south] (hi) at (\rx,2.55)
      {\textbf{\texttt{TTBR1}} range (high)\\{\scriptsize top bits all \textbf{1} $\Rightarrow$ kernel}};

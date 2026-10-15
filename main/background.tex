@@ -432,12 +432,23 @@ or faults immediately on cores implementing FEAT\_FPAC and FEAT\_FPACCOMBINE.
 Introduced in Armv8.5-A, MTE associates a 4-bit \emph{allocation tag} with every 16-byte tag
 granule of physical memory~\cite{arm_mte,mte_whitepaper}, while a pointer carries a 4-bit
 \emph{logical tag} in bits [59:56], inside the top byte that TBI excludes from translation
-(\autoref{fig:bg-ptrlayout}). The allocation tags live in a separate tag memory, accessed with
+(\autoref{fig:bg-ptrlayout}). The allocation tags live in a separate \emph{tag memory}, accessed with
 dedicated instructions such as \reg{LDG} and \reg{STG}. On each access to tagged normal memory the
 processor compares the pointer's logical tag against the memory's allocation tag. A mismatch raises
 a synchronous or asynchronous tag-check fault, or is ignored, depending on configuration. MTE is a
 probabilistic defense against spatial and temporal memory-safety errors: an out-of-bounds or
-use-after-free access is likely to carry the wrong tag and be caught.
+use-after-free access is likely to carry the wrong tag and be caught. \autoref{fig:bg-pacmte}
+summarizes where the PAC and MTE checks happen in code.
+
+\begin{figure}[h]
+\centering
+\fitwidth{\input{fig/bg-pacmte}}
+\caption{Where the PAC and MTE checks happen. \reg{AUT*} verifies a pointer's signature against its
+64-bit modifier, and every tagged access compares the pointer's logical tag with the granule's
+allocation tag. A mismatch faults architecturally, but on a transient path it does not, which is the
+opening \autoref{sec:bg-arm-attacks} exploits.}
+\label{fig:bg-pacmte}
+\end{figure}
 
 \section{Arm-specific speculative attacks}
 \label{sec:bg-arm-attacks}
@@ -449,8 +460,7 @@ PACMAN~\cite{pacman} bypasses PAuth by testing PAC guesses during transient exec
 guess authenticates and the pointer is used speculatively, leaving a microarchitectural footprint.
 An incorrect guess fails authentication, which does not fault on the transient path but does
 suppress the footprint. The presence or absence of the footprint is thus an oracle on whether a PAC
-guess was correct, which removes the architectural crash that would otherwise make brute-forcing a
-PAC infeasible.
+guess was correct.
 
 TikTag~\cite{tiktag} does the analogous thing for MTE: it leaks allocation tags by observing
 tag-check outcomes during transient execution, where a mismatch does not architecturally fault. A
@@ -458,13 +468,23 @@ speculative access with a matching logical tag proceeds and leaves a footprint. 
 suppressed, and the footprint difference reveals the granule's allocation tag, defeating the
 randomness MTE relies on.
 
-PACMAN and TikTag share a structure this thesis generalizes. Each targets a \emph{precondition}
+\begin{figure}[h]
+\centering
+\fitwidth{\input{fig/bg-vuln}}
+\caption{The pattern both attacks share, as pseudo-code. A mispredicted branch opens a transient
+window, and inside it the instruction's precondition (a valid PAC, a matching tag) is checked. A
+satisfied precondition lets the dependent access proceed and leave a microarchitectural footprint,
+while a violation is suppressed instead of faulting. Probing the footprint afterwards reveals the
+outcome of the check.}
+\label{fig:bg-vuln}
+\end{figure}
+
+PACMAN and TikTag share a structure this thesis generalizes (\autoref{fig:bg-vuln}). Each targets a \emph{precondition}
 that an instruction places on its operand (a valid PAC, a matching MTE tag), and each observes,
 through a side channel, the outcome of the precondition check on a transient path where its
 violation does not fault. Both were built by hand, for one precondition each. The methodology of
 \autoref{chap:precond} fuzzes preconditions of this kind systematically, and \autoref{chap:canon}
-applies it to a precondition (address canonicality and alignment) that is not a defensive
-extension at all but a basic property of address translation.
+applies it to a precondition (address canonicality and alignment).
 
 \section{Speculation contracts and model-based relational testing}
 \label{sec:bg-mrt}
@@ -474,7 +494,7 @@ precise, implementation-independent statement of what a CPU is \emph{allowed} to
 to test a black-box CPU against it. Speculation contracts provide the specification, and
 model-based relational testing provides the search.
 
-\paragraph{Speculation contracts.}
+\paragraph{Speculation contracts and contract traces.}
 A speculation contract~\cite{contracts} specifies what a CPU may leak without modeling its
 implementation. It has an \emph{execution clause}, specifying which instructions may trigger
 speculation and how (for example, that conditional branches may be mispredicted), and an
@@ -483,8 +503,7 @@ addresses of its loads and stores)~\cite{revizor}. Executing a program $P$ on an
 contract $\mathcal{C}$ yields a \emph{contract trace} $\mathit{CTrace}=\mathcal{C}(P,I)$. The
 baseline contract used throughout this thesis is \textsc{CT-SEQ}, under which $\mathcal{C}(P,I)$ is
 the sequence of memory addresses and control-flow targets of the in-order, non-speculative
-execution. Intuitively, \textsc{CT-SEQ} permits a constant-time program's ordinary address trace
-and forbids any leak that appears only under speculation.
+execution.
 
 \paragraph{Hardware traces.}
 On the CPU, the same execution starts from a microarchitectural context $\mathit{Ctx}$ (the

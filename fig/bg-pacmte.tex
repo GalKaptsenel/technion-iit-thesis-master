@@ -1,0 +1,28 @@
+\begin{tikzpicture}[
+  font=\footnotesize,
+  ln/.style={font=\ttfamily\footnotesize, anchor=base west, inner sep=1.5pt},
+  chk/.style={ln, draw=culprit!65, fill=culprit!8, rounded corners=1.5pt,
+              inner xsep=3pt, inner ysep=2.5pt},
+  hdr/.style={font=\small\bfseries, text=black!75, anchor=base west},
+  ann/.style={-{Stealth[length=1.6mm]}, semithick, draw=culprit!75},
+  lbl/.style={font=\scriptsize, text=culprit!72!black, align=left},
+]
+  % Pointer Authentication
+  \node[hdr] at (0,3.1) {Pointer Authentication};
+  \node[ln]  (p1) at (0.2,2.5) {PACIA x0, \textcolor{laneB!55!black}{x2}\ \ \ // sign, modifier \textcolor{laneB!55!black}{x2}};
+  \node[ln]  (p2) at (0.2,2.0) {\ \ \dots};
+  \node[chk] (p3) at (0.2,1.5) {AUTIA x0, \textcolor{laneB!55!black}{x2}\ \ \ // authenticate};
+  \node[ln]  (p4) at (0.2,1.0) {LDR\ \ x1, [x0]};
+  \node[lbl, anchor=west] (pl) at (6.8,1.5)
+     {PAC checked here.\\ A wrong signature faults\\ (FEAT\_FPAC) or returns\\ a corrupt pointer};
+  \draw[ann] (pl.west) -- (p3.east);
+  % Memory Tagging
+  \node[hdr] at (0,0.0) {Memory Tagging};
+  \node[ln]  (m1) at (0.2,-0.6) {IRG x0, x0\ \ \ \ // random logical tag};
+  \node[ln]  (m2) at (0.2,-1.1) {STG x0, [x0]\ \ \ // set allocation tag};
+  \node[ln]  (m3) at (0.2,-1.6) {\ \ \dots};
+  \node[chk] (m4) at (0.2,-2.1) {LDR x1, [x0]\ \ \ // tagged access};
+  \node[lbl, anchor=west] (ml) at (6.8,-2.1)
+     {tag checked here.\\ A logical vs allocation\\ tag mismatch faults};
+  \draw[ann] (ml.west) -- (m4.east);
+\end{tikzpicture}
