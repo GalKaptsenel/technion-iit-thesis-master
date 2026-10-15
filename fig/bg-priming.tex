@@ -1,0 +1,31 @@
+\begin{tikzpicture}[
+  font=\footnotesize,
+  sq/.style={draw=black!40, minimum size=6mm, inner sep=0pt},
+  ain/.style={sq, fill=laneA!25, draw=laneA!60!black, thick},
+  bin/.style={sq, fill=laneB!22, draw=laneB!65!black, thick},
+  lbl/.style={font=\scriptsize, text=black!65, align=center},
+  cmpbox/.style={draw=probe!55!black, dashed, thick, rounded corners=2pt, inner sep=2.5pt},
+]
+  \def\dx{0.7}
+  % original run: a at position i, b at position j
+  \node[lbl, anchor=east] at (-0.3,1.6) {original\\ sequence};
+  \foreach \k in {0,...,6}{%
+    \ifnum\k=2 \node[ain] (a1) at ({\k*\dx},1.6) {$a$};%
+    \else\ifnum\k=5 \node[bin] (b1) at ({\k*\dx},1.6) {$b$};%
+    \else \node[sq] at ({\k*\dx},1.6) {};\fi\fi}
+  \node[lbl, anchor=west, text=culprit!75!black] at ({6*\dx+0.45},1.6)
+     {$a$ and $b$ are contract-\\ equivalent, yet their L1D\\ traces differ: a candidate};
+  % primed run: a and b swapped
+  \node[lbl, anchor=east] at (-0.3,0) {primed run\\ ($a$, $b$ swapped)};
+  \foreach \k in {0,...,6}{%
+    \ifnum\k=2 \node[bin] (b2) at ({\k*\dx},0) {$b$};%
+    \else\ifnum\k=5 \node[ain] (a2) at ({\k*\dx},0) {$a$};%
+    \else \node[sq] at ({\k*\dx},0) {};\fi\fi}
+  % each column is one fixed context: compare a and b inside it
+  \node[cmpbox, fit=(a1)(b2)] {};
+  \node[cmpbox, fit=(b1)(a2)] {};
+  \node[lbl, text=probe!45!black] at ({2*\dx},-0.72) {context $i$:\\ compare $a$, $b$};
+  \node[lbl, text=probe!45!black] at ({5*\dx},-0.72) {context $j$:\\ compare $a$, $b$};
+  \node[lbl, anchor=west] at ({6*\dx+0.45},-0.2)
+     {agree in both contexts:\\ false positive.\\ differ in either: violation};
+\end{tikzpicture}

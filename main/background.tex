@@ -585,9 +585,20 @@ A candidate violation is then a pair of contract-equivalent inputs, at
 positions $i<j$, whose L1D traces differ. Since the two traces are measured in different contexts,
 the difference may stem from the contexts rather than the inputs. \emph{Priming} closes this gap by
 re-running the sequence with the two inputs swapped into each other's position, so each input is
-measured in both contexts. The candidate is a false positive when both swapped comparisons agree,
+measured in both contexts (\autoref{fig:bg-priming}). The candidate is a false positive when both swapped comparisons agree,
 and a violation otherwise. \autoref{chap:priming} shows that this rule, while sound, is incomplete,
 and replaces it with a provably stronger one.
+
+\begin{figure}[h]
+\centering
+\fitwidth{\input{fig/bg-priming}}
+\caption{Priming validates a candidate. In the original sequence the two suspected inputs $a$ and
+$b$ run at positions $i$ and $j$, in different contexts, and their L1D traces differ. Priming
+re-runs the sequence with $a$ and $b$ swapped, so each input is also measured in the other's
+context. Within each context $a$ and $b$ are then compared. If they agree in both contexts the
+candidate is a false positive, and if they differ in either it is a real violation.}
+\label{fig:bg-priming}
+\end{figure}
 
 \paragraph{Boosting.}
 Two inputs are \emph{contract-equivalent}, or in the same \emph{class}, for a program $P$ when they
