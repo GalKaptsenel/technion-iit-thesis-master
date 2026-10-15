@@ -387,11 +387,16 @@ layout for a 48-bit virtual address.
 
 \begin{figure}[t]
 \centering
-\fitwidth{\input{fig/bg-ptrlayout}}
+{\footnotesize with Memory Tagging (\reg{TBI} enabled)}\par\smallskip
+\fitwidth{\input{fig/bg-ptrlayout}}\par\medskip
+{\footnotesize without Memory Tagging (\reg{TBI} disabled)}\par\smallskip
+\fitwidth{\input{fig/bg-ptrlayout-nomte}}
 \caption{Layout of a 64-bit AArch64 pointer with a 48-bit virtual address. The low bits hold the
 address. The upper bits are shared among canonicality, the ignored top byte, the MTE logical tag,
 and the PAC field. Bit~55 selects the address range and is the effective sign bit when Top
-Byte Ignore is enabled (bit~63 when it is not). It is excluded from the PAC field.}
+Byte Ignore is enabled (bit~63 when it is not), and it is excluded from the PAC field. With Memory
+Tagging the top byte carries the logical tag and the PAC field occupies bits $[54{:}48]$. Without
+it, the top byte joins the PAC field, which bit~55 splits in two.}
 \label{fig:bg-ptrlayout}
 \end{figure}
 
