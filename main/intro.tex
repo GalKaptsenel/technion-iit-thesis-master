@@ -2,7 +2,7 @@
 \label{chap:intro}
 
 Modern high-performance processors owe much of their performance to optimizations the
-programmer never sees. They execute instructions out of order~\cite{hennessy_patterson},
+programmer never sees. They execute instructions out of order~\cite{tomasulo,hennessy_patterson},
 speculate past unresolved control flow~\cite{smith_bpred}, predict branch directions and
 even the outcomes of computations, and prefetch data and instructions into the caches ahead
 of demand. The implementation details of these mechanisms are largely undocumented, and it
@@ -163,7 +163,7 @@ these claims in the order the thesis develops them.
 \item \textbf{The canonicality and alignment leak (\autoref{chap:canon}).} Using the
   machinery above, we uncover a previously unknown leak that arises from the canonicality and
   alignment checks the CPU performs on loads, stores, and indirect branches. We demonstrate it
-  on the Arm Neoverse~N3 and the Cortex~A715, which together span server-class and mobile Arm
+  on the Arm Neoverse~N3 and the Cortex-A715, which together span server-class and mobile Arm
   cores, and we show that it crosses both privilege boundaries (EL0-attacker to EL2-victim) and
   the virtualization boundary (attacker-VM to victim-host). We then weaponize it in two ways.
   First, we use it to leak a victim's stack canary. Second, we build a return-oriented-programming
@@ -189,7 +189,9 @@ never modelled.
 \paragraph{Attacks on Arm's defensive extensions.}
 PACMAN~\cite{pacman} and TikTag~\cite{tiktag} are hand-crafted counterparts of the
 precondition gates that this thesis fuzzes automatically. Where they construct a single gadget
-by hand, we discover and classify such gadgets systematically.
+by hand, we discover and classify such gadgets systematically. Our Pointer Authentication
+result also differs in kind, in that it leaks the sign bit of a failed authentication rather
+than probing the signature itself.
 
 \paragraph{Microarchitectural side channels.}
 The leaks we find are read out using the standard cache attacks, namely
