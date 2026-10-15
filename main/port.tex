@@ -14,8 +14,8 @@ input format, and \autoref{sec:port-remote} remote fuzzing.
 \section{Overview}
 \label{sec:port-overview}
 
-\revizor{}~\cite{revizor} is organized as a pipeline---a generator, a model, an executor,
-and an analyzer---in which the analyzer compares the model's contract trace against the
+\revizor{}~\cite{revizor} is organized as a pipeline (a generator, a model, an executor,
+and an analyzer) in which the analyzer compares the model's contract trace against the
 executor's hardware trace (\autoref{sec:bg-mrt}). This structure is independent of the
 instruction set, so we keep it and rebuild the three ISA-specific backends for AArch64, the
 64-bit execution state introduced in Armv8-A. We additionally model the Pointer
@@ -92,7 +92,7 @@ not.
 \centering
 \fitwidth{\input{fig/trampoline}}
 \caption{The CE single-steps the test case. Each step restores one original instruction word,
-which the core runs natively; the next word is a \reg{BL} into the trampoline, where a hook
+which the core runs natively. The next word is a \reg{BL} into the trampoline, where a hook
 records the architectural state and drives speculation before advancing to the following
 instruction.}
 \label{fig:port-trampoline}
@@ -101,8 +101,7 @@ instruction.}
 \paragraph{The execution clause and the speculation stack.}
 A contract's execution clause specifies what speculation the CE must model, and the CE
 realizes it with a \emph{speculation stack} (\autoref{fig:port-specstack}). At a speculation
-point---a mispredicted branch,
-a bypassed store---the CE pushes a checkpoint: a snapshot of the registers, the simulated
+point (a mispredicted branch, a bypassed store), the CE pushes a checkpoint: a snapshot of the registers, the simulated
 memory, the MTE tag memory, and the architectural call stack. It then redirects execution
 onto the speculative path. When that path ends or exhausts its per-window instruction budget,
 the CE pops the checkpoint, restores the snapshot, and resumes at the recorded address.
@@ -126,12 +125,12 @@ a last-in-first-out stack.}
 The precondition primitives of \autoref{chap:precond} need the model to reproduce the operand
 checks of Pointer Authentication and Memory Tagging faithfully, even on a host that does not
 implement them. Pointer Authentication is modeled in software from the configuration the core
-exposes---the active key configuration and the identification registers that fix the QARMA
-variant and the PAC field layout---so the CE can compute and verify a PAC the way the target
+exposes (the active key configuration and the identification registers that fix the QARMA
+variant and the PAC field layout), so the CE can compute and verify a PAC the way the target
 core would. Memory Tagging is modeled over a simulated tag memory that the speculation-stack
 checkpoints snapshot and restore alongside the data memory, so a transiently executed tagged
 access sees, and can violate, the correct allocation tag. Both extensions are supplied with
-per-input state---custom PAC keys and an initial tag memory---through the input file described
+per-input state (custom PAC keys and an initial tag memory) through the input file described
 next, which lets a single test case be exercised under many keys and tag layouts.
 
 \section{Driving the executor and the input format}
@@ -141,7 +140,7 @@ Control of the kernel module is a small \reg{ioctl} state machine (\autoref{fig:
 A test case and its inputs
 load independently, a run is possible only once both are present, and a traced state holds the
 per-input measurements, which a re-run reproduces deterministically. A run reports, per input,
-the L1 data-cache sets the execution touched---the hardware trace of \autoref{sec:bg-mrt},
+the L1 data-cache sets the execution touched (the hardware trace of \autoref{sec:bg-mrt}),
 read through a cache side channel. Further knobs, exposed through \reg{sysfs}, select the
 measurement method (Prime+Probe or Flush+Reload), the pinned core, the enabled mitigations,
 and the remaining configuration.
@@ -150,7 +149,7 @@ and the remaining configuration.
 \centering
 \fitwidth{\input{fig/execfsm}}
 \caption{The kernel module's \reg{ioctl} state machine. A test case and inputs load
-independently; a run is possible only in \textsc{Ready}; and \textsc{Traced} holds the per-input
+independently. A run is possible only in \textsc{Ready}. And \textsc{Traced} holds the per-input
 measurements, which a re-run reproduces.}
 \label{fig:port-execfsm}
 \end{figure}
@@ -158,7 +157,7 @@ measurements, which a re-run reproduces.}
 An input is a self-describing \emph{Revizor Extensible Input File} (\reg{.reif}): a header
 followed by a table of typed sections that the kernel module locates by section type, so new
 per-input state can be added without breaking the layout. The required sections hold the
-input's initial architectural state---the initial register values and the sandbox memory
+input's initial architectural state, the initial register values and the sandbox memory
 contents. Optional sections carry further initial state, such as custom PAC keys and the
 initial MTE tag memory. This extensibility is what later lets precondition fuzzing attach a
 \emph{relocation} section to an input (\autoref{chap:precond}) without changing the file

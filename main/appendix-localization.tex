@@ -3,10 +3,10 @@
 
 This appendix gives the full cost analysis behind the two localizers of
 \autoref{sec:priming-localizers}. Both run splices $\batch{\spl{t}}$ and read the probe reading
-$r(t)$ of \autoref{def:splice}; the cost of a localizer is the number of interior splices
+$r(t)$ of \autoref{def:splice}. The cost of a localizer is the number of interior splices
 ($1\le t\le k$) it runs, since the end readings $r(0)$ and $r(k+1)$ are known from the flagged
 violation. We count one direction and one repetition. Soundness of every reported pair is
-\autoref{lem:prime-genuine}; here we bound the number of runs. Throughout, a split $t$ with
+\autoref{lem:prime-genuine}. Here we bound the number of runs. Throughout, a split $t$ with
 $r(t)\neq r(t+1)$ is a \emph{boundary}, and $\tmax=\max\{t:r(t)\neq r(t+1)\}$ is the largest one.
 
 \section{Linear scan}
@@ -30,7 +30,7 @@ The matching lower bound shows no localizer that must return the largest boundar
 The argument rests on one observation: a deterministic localizer only knows what it has measured,
 so if two hardware behaviours agree at every splice it runs, it returns the same answer on both. A
 hardware behaviour is, for the localizer, just the list of readings $(r(0),\dots,r(k+1))$ with
-$r(0)\neq r(k+1)$; only equalities among readings matter, so we name readings by symbols. Fixing
+$r(0)\neq r(k+1)$. Only equalities among readings matter, so we name readings by symbols. Fixing
 two distinct readings $\rho_a\neq\rho_b$, the \emph{step sequence} $S_j$ reads $\rho_b$ for $t\le j$
 and $\rho_a$ for $t>j$, which is what a single leaking class $j$ produces: its only boundary is $j$.
 
@@ -46,7 +46,7 @@ reports $j$. Suppose it skipped some split $u$ with $j<u\le k$. Consider $S'$, i
 except that split $u$ reads a third value $\gamma\notin\{\rho_a,\rho_b\}$. The localizer never ran
 $u$, so every reading it saw is the same in $S_j$ and $S'$, and it reports $j$ on $S'$ too. But in
 $S'$ the reading changes between $u$ and $u+1$, so $u$ is a boundary of $S'$ larger than $j$, and
-the report is wrong. Hence no split between $j+1$ and $k$ can be skipped; for $j=0$ these are all
+the report is wrong. Hence no split between $j+1$ and $k$ can be skipped. For $j=0$ these are all
 $k$ splits.
 \end{proof}
 
@@ -78,7 +78,7 @@ locating the boundary in four runs.
 \centering
 \fitwidth{\input{fig/binsearch}}
 \caption{Binary search on $12$ inputs with the leak at class~$4$. Each iteration runs one midpoint
-splice $\batch{\spl{m}}$ and compares its probe reading against a known end; the red frame marks the
+splice $\batch{\spl{m}}$ and compares its probe reading against a known end. The red frame marks the
 window $[\ell,h]$, i.e.\ columns $\ell,\dots,h-1$. The search converges to $h=\ell+1$, where the two
 remaining splices differ in column~$4$ alone, certifying class~$4$ as the leaking class after four
 runs.}
@@ -94,9 +94,9 @@ some step sequence, so binary search is optimal.
 \begin{proof}
 In $S_j$ split $t$ reads $\rho_b$ if $t\le j$ and $\rho_a$ otherwise. Rather than fix $j$ in
 advance, we answer each query as the localizer makes it and track the \emph{candidates}, the $j$
-whose $S_j$ agrees with every reading so far; initially all $k+1$ are candidates. A run at split $t$
+whose $S_j$ agrees with every reading so far. Initially all $k+1$ are candidates. A run at split $t$
 splits the candidates into those with $j\ge t$ (which read $\rho_b$ at $t$) and those with $j<t$
-(which read $\rho_a$); we return the reading of the larger group, discarding at most half the
+(which read $\rho_a$). We return the reading of the larger group, discarding at most half the
 candidates. The localizer cannot stop with two candidates $j_1\neq j_2$ left, since both $S_{j_1}$
 and $S_{j_2}$ agree with everything seen yet have different boundaries. Reaching one candidate
 therefore takes at least $\lceil\log_2(k+1)\rceil$ runs, and on that candidate's step sequence the
@@ -107,10 +107,10 @@ localizer makes exactly these runs.
 \label{app:loc-compare}
 
 Both localizers use the same splices, the same probe, and the same soundness argument
-(\autoref{lem:prime-genuine}); they differ only in what they return and in cost.
+(\autoref{lem:prime-genuine}). They differ only in what they return and in cost.
 \autoref{tab:loc-compare} summarizes them. Runs are per direction, to be doubled for both
 directions and multiplied by the repetition count used to suppress measurement noise. The linear
-scan is the choice when every leaking class is wanted; binary search when one suffices.
+scan is the choice when every leaking class is wanted. Binary search when one suffices.
 
 \begin{table}[t]\centering\small
 \setlength{\tabcolsep}{8pt}
@@ -122,9 +122,9 @@ scan is the choice when every leaking class is wanted; binary search when one su
 \midrule
 Runs (worst case) & $k$ & $\lceil\log_2(k+1)\rceil$ \\
 Lower bound       & $k$ (\autoref{thm:lb-scan}) & $\lceil\log_2(k+1)\rceil$ (\autoref{thm:lb-bsearch}) \\
-Returns           & $\tmax$; all classes if continued & one leaking class \\
+Returns           & $\tmax$. All classes if continued & one leaking class \\
 Soundness         & every pair genuine & every pair genuine \\
-Completeness      & every leaking class & one; may miss others \\
+Completeness      & every leaking class & one. May miss others \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -8,8 +8,8 @@ This thesis brought automated, contract-based leak discovery to AArch64 and used
 weaponize a new class of Arm leaks. We ported \revizor{}'s model-based relational testing to
 AArch64 with a native-execution contract executor, added headless fuzzing of remote cores, and
 modeled the Pointer Authentication and Memory Tagging extensions
-(\autoref{chap:port}). We showed that \revizor{}'s priming step is incomplete---it cannot report a
-leak whose only effect on its own run lies outside the L1 data cache---and replaced it with a
+(\autoref{chap:port}). We showed that \revizor{}'s priming step is incomplete (it cannot report a
+leak whose only effect on its own run lies outside the L1 data cache), and replaced it with a
 generalized rule that keeps the contract-violation definition unchanged, provably detects strictly
 more, and localizes each report to a genuine violation with two optimal localizers
 (\autoref{chap:priming}). We introduced precondition fuzzing, which seals the precondition sites of
@@ -26,9 +26,9 @@ complete RSA-2048 private key through OpenSSL (\autoref{chap:eval}).
 \paragraph{Active page-steering instead of refusal.}
 The port keeps architectural accesses out of speculative-only pages by \emph{refusing} and
 discarding any test case whose architectural accesses could reach such a page. A more complete
-design would make page selection a sealing primitive---clamping architectural reach to a single
+design would make page selection a sealing primitive, clamping architectural reach to a single
 page and flipping the page-selecting address bit with a self-inverse operation only on
-speculative-only decoys---so that no test case is discarded for page reachability. Wiring the
+speculative-only decoys, so that no test case is discarded for page reachability. Wiring the
 corresponding size clamp for wide (SIMD) accesses is part of the same change.
 
 \paragraph{The unexplained prefetcher effect.}
@@ -44,7 +44,7 @@ trusted-execution vehicle we did not have, remains open.
 
 \paragraph{The sign bit and TBI, and a mitigation.}
 The exact effective sign bit for the sign-extension primitive depends on the Top Byte Ignore
-configuration---bit 55 when TBI is enabled, bit 63 otherwise---and pinning this down per regime is
+configuration (bit 55 when TBI is enabled, bit 63 otherwise), and pinning this down per regime is
 a small but necessary refinement. More broadly, the leak admits a direct mitigation: the
 speculative treatment of in-range and out-of-range (and of correctly and incorrectly aligned)
 targets should be made indistinguishable, so that a speculative access to an illegal target either

@@ -70,22 +70,23 @@ nothing, but by combining the behavior just described with a timing attack
 
 Speculation past a branch needs two guesses: whether a conditional branch is \emph{taken}, and, for
 an \emph{indirect} branch, where it goes. An indirect branch takes its target from a register or
-from memory. As for example in C++ virtual call, a jump table, or a return.  Thus the target is
-not encoded in the instruction and must be predicted. Separate structures supply these guesses
-(\autoref{fig:bg-predictors}), and each is a shared, finite table an attacker can train or probe.
+from memory, as in a C++ virtual call, a jump table, or a return. The target is therefore not
+encoded in the instruction and must be predicted. Separate structures supply these guesses
+(\autoref{fig:bg-predictors}), and each is a shared, finite table an attacker can train or
+probe~\cite{aciicmez_btb,branchscope}.
 
 \begin{figure}[t]
 \centering
 \fitwidth{\input{fig/bg-predictors}}
 \caption{The branch-prediction structures. A pattern history register (PHR) feeds TAGE for the
-taken or not-taken direction, the branch-target buffer (BTB) and ITTAGE supply indirect-branch
-targets, and the return stack buffer (RSB) supplies return targets. Each is a per-core, finite,
-trainable table.}
+taken or not-taken direction and ITTAGE for indirect-branch targets. The branch-target buffer
+(BTB) also supplies indirect-branch targets, and the return stack buffer (RSB) supplies return
+targets. Each is a per-core, finite, trainable table.}
 \label{fig:bg-predictors}
 \end{figure}
 
 \paragraph{Direction.} The simplest direction predictor is a table of \emph{saturating counters}:
-each branch indexes a small counter, incremented when the branch is taken and
+each branch's address in memory indexes a small counter, incremented when the branch is taken and
 decremented when it is not, whose top bit gives the prediction. Accuracy improves by adding \emph{history}. A \emph{pattern history
 register} (PHR) shifts in the outcomes of the most recent branches, and the predictor indexes its
 tables with a hash of the branch address and the PHR. Modern cores use \emph{TAGE}, which keeps
@@ -101,8 +102,9 @@ per-core and are not, in general, partitioned by security domain, so they can be
 boundaries of \autoref{sec:bg-aarch64}.
 
 \paragraph{Memory order.} A load whose address is not yet resolved may alias an older, in-flight
-store. Rather than stall, the core predicts independence and lets the load execute. a
+store. Rather than stall, the core predicts independence and lets the load execute, a
 \emph{store-load reordering} governed by a memory-dependence predictor.
+
 \section{Microarchitectural side channels}
 \label{sec:bg-sidechannels}
 
@@ -112,6 +114,16 @@ structure with the victim and infers the victim's effect on that structure from 
 its own accesses to it. Because the shared structure is finite and its state is visible through
 timing, one party's activity is measurable by the other even when the architecture forbids them
 from reading each other's data.
+
+Before turning to specific channels, recall how a cache is addressed. A cache is
+\emph{set-associative}: an address maps to one \emph{set}, selected by a field of its bits called
+the \emph{index}, and may occupy any of that set's \emph{ways}, the fixed number of line slots the
+set provides. The high-order \emph{tag} bits of the address are stored next to the line and
+compared on each lookup to decide which way, if any, holds it. A lookup that finds the line is a
+\emph{cache hit} and returns in a few cycles, while a \emph{cache miss} must fetch the line from a
+slower level. Because the index fixes the set,
+addresses that share an index contend for the same ways and can evict one another, and that forced
+eviction is the signal the channels below read.
 
 \subsection{The cache and TLB hierarchy}
 \label{sec:bg-hierarchy}
@@ -144,7 +156,7 @@ The best-known carriers are the data caches. Two complementary techniques domina
     memory shared with the victim, only a shared cache.
   \item[Flush+Reload~\cite{flushreload}.] The attacker flushes a line it shares with the victim
     (for instance a line of a shared library or a shared read-only page), lets the victim run, and
-    times a reload. A \emph{fast} reload means the victim re-fetched the line; a \emph{slow} reload
+    times a reload. A \emph{fast} reload means the victim re-fetched the line. A \emph{slow} reload
     means it did not (\autoref{fig:bg-flushreload}). It is more precise than Prime+Probe, resolving
     a single line, but requires shared memory.
 \end{description}
@@ -157,20 +169,35 @@ occupancy left by one is a timing signal to the other.
 \centering
 \fitwidth{\input{fig/bg-flushreload}}
 \caption{Flush+Reload. The attacker evicts a line it shares with the victim, lets the victim run,
-and then times a reload. A fast reload (cache hit) means the victim accessed the line; a slow
+and then times a reload. A fast reload (cache hit) means the victim accessed the line. A slow
 reload (miss) means it did not. Comparing the latency against a threshold recovers one secret-%
 dependent bit.}
 \label{fig:bg-flushreload}
 \end{figure}
 
 \paragraph{Encoding a secret into the cache.}
-A single shared line carries one bit---touched or not. To carry a whole byte, an attacker uses a
-\emph{probe array} of $256$ lines, one per possible value, each on its own cache line so that
-touching one does not disturb the others. Code of the form \reg{t = probe[secret * 64];} brings in
-exactly the line indexed by \reg{secret}; the attacker then Flush+Reloads all $256$ lines and the
-one that reloads fast names the byte. This $256$-way encoding is the standard transmitter at the
-end of a transient-execution attack, and the stride (here $64$ bytes, a typical line size) keeps
-each value on a distinct line and defeats adjacent-line prefetching.
+A single shared line carries one bit, touched or not. To leak a whole byte, the transmitter spreads
+the $256$ possible values across a \emph{probe array} of $256$ cache lines and touches only the one
+the secret selects:
+\begin{quote}\ttfamily
+uint8\_t probe[256 * 64];\\
+t = probe[secret * 64];
+\end{quote}
+The stride of $64$ bytes (a typical line size) puts each value on its own line, so Flush+Reloading
+the array and finding the single fast line recovers the secret byte. This $256$-way encoding is the
+standard transmitter at the end of a transient-execution attack.
+
+\begin{figure}[ht]
+\centering
+\fitwidth{\input{fig/bg-spectrev1}}
+\caption{A worked Spectre-v1. The attacker first trains the branch by calling the gadget a few
+times with \texttt{x < len}, then calls it once with \texttt{x} out of bounds. The predictor still
+takes the branch, so the core speculatively reads the secret byte $s$ and caches
+\reg{arr2[}$s\cdot 64$\reg{]} before the bound check resolves and squashes the transient path. The
+two calls differ only in $s$ and leave identical architectural state, yet the footprint of $s$
+survives in the cache and a Flush+Reload of \reg{arr2} reads it out.}
+\label{fig:bg-spectrev1}
+\end{figure}
 
 \paragraph{Leaks as a cascade.}
 It is useful to view a leak as a cascade. A secret-dependent operation changes the state of some
@@ -178,7 +205,7 @@ It is useful to view a leak as a cascade. A secret-dependent operation changes t
 \emph{observation medium} the attacker monitors directly. The carrier and the medium need not
 coincide: a victim's secret-dependent footprint may first land in the branch-target buffer and
 reach the attacker-monitored L1 data cache only later, possibly in a subsequent execution. This
-distinction---between where a leak is first written and where it is finally read---is central to
+distinction, between where a leak is first written and where it is finally read, is central to
 \autoref{chap:priming} and \autoref{chap:canon}, where the carrier is a structure other than the
 monitored cache and the signal surfaces only on a later run.
 
@@ -193,11 +220,11 @@ The \emph{performance monitoring unit} (PMU) is much finer. It provides a cycle 
 event counters that can be told to count events such as L1D refills, TLB refills, or mispredicted
 branches, all per core and at cycle granularity. That precision makes the PMU the sharpest
 instrument, but user-space access is disabled by default and must be enabled by the kernel, so an
-unprivileged attacker usually falls back to the generic timer. The attacks of \autoref{chap:eval}
-are shown both ways, with the PMU where it is available and with the rootless generic timer
-otherwise, to confirm the leak does not depend on special privilege.
+unprivileged attacker usually falls back to the generic timer. We run every attack of
+\autoref{chap:eval} with both measurement sources, the PMU and the rootless generic timer, to show
+that our leaks surface with either.
 
-\begin{table}[t]
+\begin{table}[h]
 \centering\small
 \caption{AArch64 measurement sources used in this thesis.}
 \label{tab:bg-counters}
@@ -218,8 +245,8 @@ Event counter & \reg{PMEVCNTR\_EL0} & kernel must enable & one event \\
 Spectre~\cite{spectre} and Meltdown~\cite{meltdown} were the first attacks to combine transient
 execution with a side channel to cross a security boundary. They split into two families by what
 makes the offending instruction transient. \emph{Spectre}-type attacks steer a victim's own
-speculation down a path that accesses secret data and transmits it through a carrier; the victim
-executes the leak itself, on a mispredicted path. \emph{Meltdown}-type attacks exploit transient
+speculation down a path that accesses secret data and transmits it through a carrier, and the
+victim executes the leak itself on a mispredicted path. \emph{Meltdown}-type attacks exploit transient
 execution past a fault, reading data a permission check would forbid in the brief window before
 the fault is delivered.
 
@@ -233,24 +260,12 @@ The attacker first trains the branch taken by calling the gadget many times with
 \reg{x}, then flushes \reg{len} and the \reg{arr2} probe array and calls it once with \reg{x} far
 out of bounds. The predictor guesses ``taken,'' so on the transient path the core reads the secret
 byte $s=\reg{arr1[x]}$ from out of bounds, then reads \reg{arr2[}$s\cdot 64$\reg{]}, bringing probe
-line $s$ into the cache. The comparison then resolves false and the whole path is squashed---%
-architecturally \reg{y} is never written---but probe line $s$ stays cached, and a Flush+Reload
+line $s$ into the cache. The comparison then resolves false and the whole path is squashed (architecturally \reg{y} is never written), but probe line $s$ stays cached. A Flush+Reload
 sweep of \reg{arr2} reads out $s$. Sweeping \reg{x} peels the victim's memory one byte at a time.
 
-\begin{figure}[t]
-\centering
-\fitwidth{\input{fig/bg-spectrev1}}
-\caption{A worked Spectre-v1. A mistrained bounds check leaves a secret-dependent load on the
-transient path. The transient \reg{arr2} access caches a line indexed by the secret byte $s$;
-after the misprediction is squashed, the attacker recovers $s$ by Flush+Reloading \reg{arr2}.
-Architecturally the two calls that differ only in the secret are identical---the signal lives
-entirely in the surviving cache state.}
-\label{fig:bg-spectrev1}
-\end{figure}
-
 The example previews the relational view of \autoref{sec:bg-mrt}: two victim runs that differ only
-in a secret the program never reveals architecturally---here two values of the out-of-bounds
-byte---produce identical architectural behavior yet different cache footprints. That gap between
+in a secret the program never reveals architecturally (here, two values of the out-of-bounds
+byte) produce identical architectural behavior yet different cache footprints. That gap between
 ``architecturally indistinguishable'' and ``distinguishable through the microarchitecture'' is
 exactly what a contract violation will formalize.
 
@@ -260,10 +275,10 @@ The family is distinguished by the speculation primitive it abuses.
   \item \textbf{Spectre-v1} (bounds-check bypass) mistrains a conditional branch so a bounds check
     is bypassed on the transient path, as above.
   \item \textbf{Spectre-v2} (branch-target injection) poisons an indirect branch's predicted
-    target so the victim speculatively executes an attacker-chosen gadget. Two sub-cases matter
-    for this thesis: the gadget's transient memory accesses leave a footprint in the \emph{L1 data
-    cache}, the channel standard tooling already probes; or the poisoned prediction itself leaves
-    its mark only in the \emph{branch-target buffer}, a channel that surfaces only on re-execution
+    target so the victim speculatively executes an attacker-chosen gadget. Two cases matter here.
+    In one, the gadget's transient memory accesses leave a footprint in the \emph{L1 data cache},
+    the channel existing tools already probe. In the other, the poisoned prediction leaves its mark
+    only in the \emph{branch-target buffer}, a channel that surfaces only on a later run
     (\autoref{chap:priming}, \autoref{chap:canon}).
   \item \textbf{Spectre-v4} (speculative store bypass) exploits memory disambiguation: a load is
     speculatively forwarded stale data because the aliasing store has not yet resolved, running a
@@ -272,8 +287,8 @@ The family is distinguished by the speculation primitive it abuses.
     along a stale predicted target.
 \end{itemize}
 \autoref{chap:canon} uses Spectre-v1, Spectre-v4, and Spectre-RSB interchangeably as windows that
-reach the same precondition check transiently, which is what makes the leak it studies robust to
-the particular primitive a target exposes.
+reach the same precondition check transiently, which is what makes the leak it studies robust and
+agnostic to the particular speculative primitive a target exposes.
 
 \section{Stack canaries and return-oriented programming}
 \label{sec:bg-exploitation}
@@ -283,8 +298,8 @@ which brings in two classical exploitation ideas (\autoref{fig:bg-ropstack}).
 
 A \emph{stack canary} is a per-process random value the compiler places between a function's local
 buffers and its saved return address. The function re-checks the canary just before returning and
-aborts if it changed, so a linear buffer overflow that reaches the return address is caught, because
-it has to overwrite the canary on the way. Defeating the protection therefore means first learning
+aborts if it changed. A linear buffer overflow that reaches the return address is therefore caught
+with high probability, because it has to overwrite the random canary value on the way. Defeating the protection therefore means first learning
 the canary value, after which the overflow can be written with the canary left intact.
 
 \emph{Return-oriented programming} (ROP) then turns the overflow into computation without injecting
@@ -332,9 +347,9 @@ activity in one domain can change state that another domain can measure.
 \centering
 \fitwidth{\input{fig/bg-elmap}}
 \caption{AArch64 exception levels (left) and the two translation regimes (right). Architectural
-state is isolated per level; microarchitectural structures are shared or merely tagged. The top
+state is isolated per level. Microarchitectural structures are shared or merely tagged. The top
 address bits select the regime, and canonicality requires those bits to be uniformly zero
-(\reg{TTBR0}) or one (\reg{TTBR1}); any other value is out of range and faults.}
+(\reg{TTBR0}) or one (\reg{TTBR1}). Any other value is out of range and faults.}
 \label{fig:bg-elmap}
 \end{figure}
 
@@ -353,9 +368,9 @@ layout for a 48-bit virtual address.
 \centering
 \fitwidth{\input{fig/bg-ptrlayout}}
 \caption{Layout of a 64-bit AArch64 pointer with a 48-bit virtual address. The low bits hold the
-address; the upper bits are shared among canonicality, the ignored top byte, the MTE logical tag,
+address. The upper bits are shared among canonicality, the ignored top byte, the MTE logical tag,
 and the PAC field. Bit~55 selects the translation regime and is the effective sign bit when Top
-Byte Ignore is enabled (bit~63 when it is not); it is excluded from the PAC field.}
+Byte Ignore is enabled (bit~63 when it is not). It is excluded from the PAC field.}
 \label{fig:bg-ptrlayout}
 \end{figure}
 
@@ -363,7 +378,7 @@ Byte Ignore is enabled (bit~63 when it is not); it is excluded from the PAC fiel
 When TBI is enabled, the top byte of a pointer, bits [63:56], is excluded from translation and
 does not participate in the canonicality check, so software may store metadata there and the
 hardware strips it before translating~\cite{arm_tbi}. The effective sign bit that must be
-replicated to stay canonical then drops to bit~55; with TBI disabled the top byte participates and
+replicated to stay canonical then drops to bit~55. With TBI disabled the top byte participates and
 the sign bit is bit~63. This TBI-dependence of the effective sign bit recurs in
 \autoref{chap:precond} and \autoref{chap:canon}, where a primitive must flip the regime-correct
 bit.
@@ -374,7 +389,7 @@ Introduced in Armv8.3-A, PAuth protects pointer integrity by storing a pointer a
 regime~\cite{arm_pac,pac_whitepaper}. The PAC width therefore depends on the virtual-address size
 and the TBI configuration (\autoref{fig:bg-ptrlayout}). The code is computed from the pointer, a
 64-bit modifier, and a secret key, using the QARMA block cipher. The \reg{PAC*} instructions
-compute and insert it; the \reg{AUT*} instructions verify it, and on success restore the upper bits
+compute and insert it. The \reg{AUT*} instructions verify it, and on success restore the upper bits
 to the sign extension of bit~55. Combined instructions such as \reg{RETAA} authenticate and branch
 in one step. A failed authentication yields a corrupted, non-canonical pointer that faults on use,
 or faults immediately on cores implementing FEAT\_FPAC and FEAT\_FPACCOMBINE.
@@ -385,7 +400,7 @@ granule of physical memory~\cite{arm_mte,mte_whitepaper}, while a pointer carrie
 \emph{logical tag} in bits [59:56], inside the top byte that TBI excludes from translation
 (\autoref{fig:bg-ptrlayout}). The allocation tags live in a separate tag memory, accessed with
 dedicated instructions such as \reg{LDG} and \reg{STG}. On each access to tagged normal memory the
-processor compares the pointer's logical tag against the memory's allocation tag; a mismatch raises
+processor compares the pointer's logical tag against the memory's allocation tag. A mismatch raises
 a synchronous or asynchronous tag-check fault, or is ignored, depending on configuration. MTE is a
 probabilistic defense against spatial and temporal memory-safety errors: an out-of-bounds or
 use-after-free access is likely to carry the wrong tag and be caught.
@@ -397,24 +412,24 @@ Two published attacks turn these extensions against themselves by checking their
 transient path, where a failed check does not architecturally fault.
 
 PACMAN~\cite{pacman} bypasses PAuth by testing PAC guesses during transient execution. A correct
-guess authenticates and the pointer is used speculatively, leaving a microarchitectural footprint;
-an incorrect guess fails authentication, which does not fault on the transient path but does
+guess authenticates and the pointer is used speculatively, leaving a microarchitectural footprint.
+An incorrect guess fails authentication, which does not fault on the transient path but does
 suppress the footprint. The presence or absence of the footprint is thus an oracle on whether a PAC
 guess was correct, which removes the architectural crash that would otherwise make brute-forcing a
 PAC infeasible.
 
 TikTag~\cite{tiktag} does the analogous thing for MTE: it leaks allocation tags by observing
 tag-check outcomes during transient execution, where a mismatch does not architecturally fault. A
-speculative access with a matching logical tag proceeds and leaves a footprint; a mismatch is
+speculative access with a matching logical tag proceeds and leaves a footprint. A mismatch is
 suppressed, and the footprint difference reveals the granule's allocation tag, defeating the
 randomness MTE relies on.
 
 PACMAN and TikTag share a structure this thesis generalizes. Each targets a \emph{precondition}
-that an instruction places on its operand---a valid PAC, a matching MTE tag---and each observes,
+that an instruction places on its operand (a valid PAC, a matching MTE tag), and each observes,
 through a side channel, the outcome of the precondition check on a transient path where its
 violation does not fault. Both were built by hand, for one precondition each. The methodology of
 \autoref{chap:precond} fuzzes preconditions of this kind systematically, and \autoref{chap:canon}
-applies it to a precondition---address canonicality and alignment---that is not a defensive
+applies it to a precondition (address canonicality and alignment) that is not a defensive
 extension at all but a basic property of address translation.
 
 \section{Speculation contracts and model-based relational testing}
@@ -438,10 +453,10 @@ execution. Intuitively, \textsc{CT-SEQ} permits a constant-time program's ordina
 and forbids any leak that appears only under speculation.
 
 \paragraph{Hardware traces.}
-On the CPU, the same execution starts from a microarchitectural context $\mathit{Ctx}$---the
-initial state of the caches, buffers, and predictors---and passes through a sequence of
+On the CPU, the same execution starts from a microarchitectural context $\mathit{Ctx}$ (the
+initial state of the caches, buffers, and predictors) and passes through a sequence of
 microarchitectural states $\mu_0(=\mathit{Ctx}),\mu_1,\dots,\mu_n$. An attacker cannot read these
-states; it observes them only through a side channel, modeled as an observation function $O$ that
+states. It observes them only through a side channel, modeled as an observation function $O$ that
 projects a state onto its attacker-visible part~\cite{contracts}. The \emph{hardware trace} is the
 sequence of these observations~\cite{revizor}:
 \begin{equation}
@@ -491,7 +506,7 @@ re-executes inputs to decide whether each candidate is a true violation or a fal
 \centering
 \fitwidth{\input{fig/bg-revizor}}
 \caption{\revizor{}'s testing pipeline: four components (solid) and the priming validation step
-(dashed). The model and the executor run the same programs and inputs; the analyzer compares their
+(dashed). The model and the executor run the same programs and inputs. The analyzer compares their
 traces class by class.}
 \label{fig:bg-revizor}
 \end{figure}
@@ -515,7 +530,7 @@ and replaces it with a provably stronger one.
 \paragraph{Boosting.}
 Two inputs are \emph{contract-equivalent}, or in the same \emph{class}, for a program $P$ when they
 share a contract trace. To \emph{boost} an input $I$, \revizor{} generates further inputs of the
-same class---distinct inputs with an identical contract trace~\cite{revizor,hide_seek}---by running
+same class (distinct inputs with an identical contract trace~\cite{revizor,hide_seek}) by running
 the contract model on $I$, keeping the input components the trace depends on, and re-randomizing the
 rest. Boosting populates the equivalence classes that both priming and its generalization
 (\autoref{chap:priming}) compare across.

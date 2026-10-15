@@ -15,12 +15,13 @@
   % fetch / next-PC (right)
   \node[fe] (fe) at (4.6, 0) {Fetch\\ \textbf{predicted}\\ \textbf{next PC}};
   \draw[ar] (phr) -- (tage);
+  \draw[ar] (phr.west) -- ++(-0.45,0) |- (btb.west);
   \draw[ar] (tage.east) -- (fe.west);
   \draw[ar] (btb.east)  -- (fe.west);
   \draw[ar] (rsb.east)  -- (fe.west);
   \node[fe, draw=probe!60!black, fill=probe!12, minimum height=8mm] (spec) at (9.0,0)
      {speculative\\ execution};
-  \draw[ar] (fe) -- node[lbl, above]{fetch past} (spec);
+  \draw[ar] (fe) -- node[lbl, above]{fetched\\instruction} (spec);
   \node[lbl, align=center, text=black!60] at (4.6,-2.2)
      {each table is per-core, finite,\\ and trainable across domains};
 \end{tikzpicture}

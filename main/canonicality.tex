@@ -22,8 +22,8 @@ does not use the x86 term \emph{canonical} for this condition, but the requireme
 analogue of x86 canonicality, and we use the term for it throughout.
 
 On the Neoverse~N3 and the Cortex-A715, a speculative access to an \emph{in-range} target
-allocates microarchitectural state as usual---a line in the L1 data cache, an entry in the
-data or instruction TLB, a way in the branch-target buffer, and more---whereas a speculative
+allocates microarchitectural state as usual (a line in the L1 data cache, an entry in the
+data or instruction TLB, a way in the branch-target buffer, and more) whereas a speculative
 access to an \emph{out-of-range} target is fast-rejected before it allocates anything and
 leaves no footprint, even when it would have faulted only after retirement. The presence or
 absence of that footprint is thus a one-bit oracle on the canonicality of the accessed pointer
@@ -33,7 +33,7 @@ absence of that footprint is thus a one-bit oracle on the canonicality of the ac
 \centering
 \fitwidth{\input{fig/canonoracle}}
 \caption{The canonicality oracle. A speculative access to an in-range pointer allocates
-microarchitectural state (a line, a TLB entry, a BTB way); an out-of-range access is fast-rejected
+microarchitectural state (a line, a TLB entry, a BTB way). An out-of-range access is fast-rejected
 before it allocates anything. Making a target's legality depend on a secret bit turns the presence
 or absence of that footprint into a one-bit read of the secret, and the illegal access only ever
 happens on a squashed path, so the procedure never faults.}
@@ -43,7 +43,7 @@ happens on a squashed path, so the procedure never faults.}
 We weaponize the oracle by making the legality of a speculative target depend on a secret the
 victim holds, so that one footprint measurement answers one yes/no question about the secret.
 Sweeping the construction peels a multi-bit secret out one bit at a time. For a field in the
-out-of-range high bits---a \reg{PAC} field, or the top of any pointer---an additive sweep finds
+out-of-range high bits (a \reg{PAC} field, or the top of any pointer), an additive sweep finds
 the unique constant whose two's-complement carry rolls the field back into range, the carry
 absorbed by the Top Byte Ignore (TBI) top byte, which pins the whole field at once. For the low
 address bits, a top-down carry-leak recovers each bit by choosing a constant so that a one in
@@ -57,8 +57,8 @@ disabled those bits participate and leak through the same oracle~\cite{arm_tbi}.
 \label{sec:canon-alignment}
 
 The same fast-reject applies beyond canonicality. A speculative access that is misaligned for
-its access type is rejected the same way---an SP-relative access must be 16-byte aligned and a
-PC-relative target, such as an indirect branch, 4-byte aligned---and a violation allocates no
+its access type is rejected the same way (an SP-relative access must be 16-byte aligned and a
+PC-relative target, such as an indirect branch, 4-byte aligned), and a violation allocates no
 footprint. The oracle therefore also reports whether a computed address carries the correct low
 alignment bits, a finer-grained variant of the same allocate-or-not decision.
 
@@ -66,10 +66,10 @@ alignment bits, a finer-grained variant of the same allocate-or-not decision.
 \label{sec:canon-transmitters}
 
 Because the gate is a property of the address, it fires on every speculative operation that
-consumes one. We verified three transmitters: the \emph{load} (\reg{LDR}; an L1D or dTLB
-refill), the \emph{store} (\reg{STR}; an L1D fill of the target), and the \emph{indirect
-branch} (\reg{BLR} or \reg{BR}; a BTB allocation). Several load and store variants---\reg{LDR},
-\reg{LDRB}, \reg{LDP}, \reg{LDAR}, \reg{STR}, \reg{STRB}, \reg{STP}---all leaked, whereas a
+consumes one. We verified three transmitters: the \emph{load} (\reg{LDR}. An L1D or dTLB
+refill), the \emph{store} (\reg{STR}. An L1D fill of the target), and the \emph{indirect
+branch} (\reg{BLR} or \reg{BR}. A BTB allocation). Several load and store variants (\reg{LDR},
+\reg{LDRB}, \reg{LDP}, \reg{LDAR}, \reg{STR}, \reg{STRB}, \reg{STP}) all leaked, whereas a
 software prefetch (\reg{PRFM}) did not. The indirect-branch transmitter is the most dangerous,
 for the reason developed in \autoref{sec:canon-l1d}.
 
@@ -90,14 +90,14 @@ target resolves.
 
 The indirect-branch transmitter reads the oracle through the branch-target buffer, and this
 channel has a property that makes it both dangerous and hard to detect. When the leak rides the
-BTB---when what we read is the canonicality of an indirect-branch pointer---the BTB allocation
+BTB, when what we read is the canonicality of an indirect-branch pointer, the BTB allocation
 \emph{is} the leakage. There is no separate footprint to probe within the same run: to learn
 whether the speculative branch allocated an entry, one must execute an indirect branch to the
 \emph{same} program counter again and observe whether its prediction was primed. That second
 execution cannot happen inside a single loop-free test-case run, so detecting the leak requires
 re-executing the test case. This is exactly the noncache violation of \autoref{chap:priming}:
 the leak leaves no mark on its own run's L1D trace, survives only in the carried-over BTB state,
-and surfaces in a later run---so \revizor{}'s original priming discards it, and only the
+and surfaces in a later run, so \revizor{}'s original priming discards it, and only the
 generalized detection of \autoref{chap:priming} reports it.
 
 \section{Channels and portability}
@@ -110,4 +110,4 @@ reproduces on the Neoverse~N3 and the Pixel~8's Cortex-A715 core but \emph{not} 
 nor on the same SoC's Cortex-X3 prime core, where we observed no in-range versus out-of-range
 distinction in speculative BTB allocation. The leak is therefore a property of the specific
 microarchitecture rather than of the SoC or the vendor, and the one channel that survives a
-context switch---the BTB---is exactly the Arm-specific one.
+context switch, the BTB, is exactly the Arm-specific one.

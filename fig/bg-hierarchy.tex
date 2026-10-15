@@ -32,10 +32,12 @@
   \node[tlb] (dtlb) at (0,-1.9) {dTLB};
   \draw[ar] (core.north) -- (itlb.south);
   \draw[ar] (core.south) -- (dtlb.north);
-  % prefetcher
-  \node[pf] (pf) at (5.0,-2.1) {prefetcher};
+  % prefetcher: fills the L1 caches and L2 ahead of use
+  \node[pf] (pf) at (5.0,-2.2) {prefetcher};
   \draw[-{Stealth[length=1.6mm]}, thick, draw=culprit!70] (pf.north) -- (l2.south);
-  \node[lbl, anchor=west] at (5.9,-2.1) {pulls in lines ahead of use};
+  \draw[-{Stealth[length=1.6mm]}, thick, draw=culprit!70] (pf) -- (l1d.south east);
+  \draw[-{Stealth[length=1.6mm]}, thick, draw=culprit!70] (pf) to[out=150,in=-75] (l1i.south east);
+  \node[lbl, anchor=west] at (5.9,-2.2) {pulls in lines ahead of use};
   % latency scale (raised to clear the iTLB box)
   \node[lbl] at (2.6,3.05) {few cycles};
   \node[lbl] at (7.6,3.05) {tens};

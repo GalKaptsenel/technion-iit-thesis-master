@@ -24,7 +24,7 @@ before the first detected violation on the Neoverse~N3.
 The fuzzer runs in two configurations. In \emph{local} execution the generator, the contract
 executor, and the hardware executor all run on the N3. In \emph{remote} execution a controller
 generates and models test cases while a thin agent on each device only executes them and returns
-hardware traces, which lets one controller drive devices---such as the Pixel~8---that cannot host
+hardware traces, which lets one controller drive devices, such as the Pixel~8, that cannot host
 the full toolchain (\autoref{sec:port-remote}). \autoref{tab:eval-throughput} reports both.
 
 \begin{table}[t]\centering\small
@@ -47,7 +47,7 @@ Executions / second & \rv{?} & \rv{?} \\
 
 \autoref{tab:eval-violations} lists the violations the fuzzer finds, their time to detection on
 the N3, and whether each reproduces on the N3, the Pixel~8 (Cortex-A715), and the Alder Lake
-baseline. Spectre-v1 and Spectre-v4 are not a contribution of this work; we reproduce them as a
+baseline. Spectre-v1 and Spectre-v4 are not a contribution of this work. We reproduce them as a
 sanity check. For Spectre-v2 we report two detection paths: through the L1D it is the standard
 \revizor{} style, while through the BTB it has the code structure that standard priming cannot
 catch and that the generalized priming of \autoref{chap:priming} detects. Our own findings are
@@ -83,8 +83,8 @@ L1D IP prefetcher (unexplained) & L1D       & ---    & \xmark & \xmark & \cmark 
 The \texttt{AUT*} instruction family leaks the pointer's \emph{sign bit}, not its signature. After
 PACMAN~\cite{pacman}, Arm introduced a mitigation that makes speculative authentication behave
 identically whether or not the signature is correct, so that the correctness of the \texttt{PAC}
-signature is itself indistinguishable under speculation---the speculative path always proceeds as
-if the signature were correct. As the architecture dictates, when an authentication instruction
+signature is itself indistinguishable under speculation (the speculative path always proceeds as
+if the signature were correct). As the architecture dictates, when an authentication instruction
 executes, the effective sign bit is sign-extended into the bits that the \texttt{PAC} field
 occupied, just before the access. The fuzzer flagged that when that sign bit is corrupted, there
 is no effect on the L1D, and further investigation showed no effect on the instruction or data
@@ -98,10 +98,10 @@ signature forgery: no signature is recovered, guessed, or installed.
 
 Once a violation is detected, the generalized priming localizes the responsible class boundary
 among the $k$ equivalence classes of a priming batch (\autoref{sec:priming-localizers}). The
-linear scan runs at most $k$ hardware executions and returns the largest leaking class; the binary
+linear scan runs at most $k$ hardware executions and returns the largest leaking class. The binary
 search runs only $\lceil\log_2(k+1)\rceil$ and returns one. The saving is exponential, and it
 matters because every execution is a full prime-and-measure cycle on the device.
-\autoref{tab:eval-localize} gives the counts for representative batch sizes; the optimality of both
+\autoref{tab:eval-localize} gives the counts for representative batch sizes. The optimality of both
 is proved in \autoref{appendix:localization}.
 
 \begin{table}[t]\centering\small
@@ -124,8 +124,8 @@ Measured avg.\ (binary)  & \rv{?} & \rv{?} & \rv{?} \\
 \label{sec:eval-exploit}
 
 \paragraph{Reach across isolation boundaries.}
-A single binary recovers a victim's secret high-pointer bits---a fresh random \texttt{PAC} field
-the attacker does not know in advance---across three boundaries, without the victim's key and
+A single binary recovers a victim's secret high-pointer bits, a fresh random \texttt{PAC} field
+the attacker does not know in advance, across three boundaries, without the victim's key and
 without the victim disclosing the pointer. \textbf{Cross-process} (EL0 to EL0) rides the shared
 per-core BTB, with the victim branching once per measurement: $100\%$ recovery over the PMU
 read-out at about $65$~bit/s, or $90$--$100\%$ with a rootless \reg{cntvct\_el0} timer at about
@@ -139,15 +139,15 @@ We weaponize the leak with two return-oriented-programming chains, built from \t
 OpenSSL, each delivering the oracle through a real binary with only a simple memory-copy buffer
 overflow and no attacker code in the victim. Both achieve arbitrary reads from the victim's
 address space. The \textbf{OpenSSL} target, compiled without Pointer Authentication or stack
-canaries---both explicit anti-ROP mitigations---has its overflow drive a chain built entirely from
+canaries, both explicit anti-ROP mitigations, has its overflow drive a chain built entirely from
 gadgets inside the OpenSSL library itself, which opens a Spectre-v4 window and transmits over the
 BTB channel read with the rootless \reg{cntvct\_el0} timer. Because the read primitive walks
 OpenSSL's own heap, it recovers a complete in-use RSA-2048 private key, at a campaign setting of
 \reg{--samples 1500} (about $5.5$~hours). We additionally demonstrate \textbf{blind stack-canary}
 recovery: an attacker recovers the victim's own stack canary with no prior knowledge, from a
-two-dimensional-array gadget driven the three independent ways of \autoref{sec:canon-windows}---a
+two-dimensional-array gadget driven the three independent ways of \autoref{sec:canon-windows}, a
 mistrained bounds check (Spectre-v1), a store-bypassed bound (Spectre-v4), and a return shadow
-(Spectre-RSB)---recovering the full \reg{[55:0]} pointer value.
+(Spectre-RSB), recovering the full \reg{[55:0]} pointer value.
 
 \section{Covert-channel analysis}
 \label{sec:eval-covert}
@@ -155,7 +155,7 @@ mistrained bounds check (Spectre-v1), a store-bypassed bound (Spectre-v4), and a
 The bit rates above bound the channel's capacity, and they differ by carrier for a structural
 reason. A transient L1D fill is same-thread-bound and is discarded on a context switch, so it
 cannot carry a leak across a boundary. The cross-domain variants therefore ride a per-core
-structure that survives the switch---the BTB, or the data TLB where the BTB is split across the
-boundary---which trades bandwidth for persistence. This \emph{context-switch wall} is why the
+structure that survives the switch (the BTB, or the data TLB where the BTB is split across the
+boundary), which trades bandwidth for persistence. This \emph{context-switch wall} is why the
 EL2-to-EL0 leak, carried by the shared data TLB, runs an order of magnitude faster than the
 BTB-carried cross-process leak.
