@@ -23,6 +23,13 @@ complete RSA-2048 private key through OpenSSL (\autoref{chap:eval}).
 \section{Open questions}
 \label{sec:concl-open}
 
+\paragraph{Detection for a general follow-up program.}
+The extended contract violation of \autoref{chap:priming} is defined against an arbitrary follow-up
+program $Q$, yet the detection construction realizes $Q$ only as the victim program $P$ replayed
+over a static set of inputs, arranged into lanes. Generalizing the construction to an arbitrary
+observing program $Q$, while keeping its logarithmic localization cost, would widen the class of
+cascaded leaks the method can reach. How to do so efficiently remains open.
+
 \paragraph{The unexplained prefetcher effect.}
 The L1D instruction-pointer prefetcher violation observed on the Alder Lake baseline is
 deterministic in the prefetcher-control bit but not yet root-caused. Explaining it, and
