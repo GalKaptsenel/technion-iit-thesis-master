@@ -30,7 +30,7 @@
 \newacronym[category=notation-category]{mte}{MTE}{Memory Tagging Extension}
 \newacronym[category=notation-category]{qarma}{QARMA}{the tweakable block cipher used to compute pointer authentication codes}
 \newacronym[category=notation-category]{csv2}{FEAT\_CSV2}{An AArch64 CPU hardware feature which guarantees that branch predictions trained in one execution context cannot steer speculative execution in another, closing the cross-context branch-target-injection channel known as Spectre v2}
-\newacronym[category=notation-category]{fpac}{FEAT\_FPAC}{An AArch64 CPU hardware feature which makes a failed pointer authentication fault precisely at the authentication instruction, instead of deferring the fault to a later use of the stripped pointer}
+\newacronym[category=notation-category]{fpac}{FEAT\_FPAC}{An AArch64 CPU hardware feature which makes a failed pointer authentication fault precisely at the authentication instruction, instead of deferring the fault to a later use of the mangled pointer}
 \newacronym[category=notation-category]{nzcv}{NZCV}{negative, zero, carry, and overflow condition flags, the AArch64 counterpart of the x86 FLAGS register}
 \newacronym[category=notation-category]{smc}{SMC}{Secure Monitor Call}
 \newacronym[category=notation-category]{soc}{SoC}{system on chip}
@@ -87,13 +87,13 @@
 % =====================================================================
 
 \newglossaryentry{instr-pacstar}{type=notation, category=notation-category,
-  name={\texttt{PAC*}}, sort={PAC instr},
+  name={PAC*}, sort={PAC instr},
   description={the instructions that sign a pointer with a PAC, such as \texttt{PACIA} and \texttt{PACDA}}}
 \newglossaryentry{instr-autstar}{type=notation, category=notation-category,
-  name={\texttt{AUT*}}, sort={AUT instr},
+  name={AUT*}, sort={AUT instr},
   description={the instructions that verify a pointer's PAC, such as \texttt{AUTIA} and \texttt{AUTDA}}}
 \newglossaryentry{instr-udf}{type=notation, category=notation-category,
-  name={\texttt{UDF}}, sort={UDF instr},
+  name={UDF}, sort={UDF instr},
   description={the permanently-undefined A64 encoding}}
 
 % --------------------------------

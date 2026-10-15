@@ -69,25 +69,27 @@
 % shows its description. Guarded so a noabbrevs build (macro undefined) stays safe.
 \makeatletter
 \@ifundefined{formatglossarydescription}{}{%
+  % Show each meaning once, with its first letter capitalised in the list.
   \renewcommand*{\formatglossarydescription}[1]{%
     \ifglsfieldeq{#1}{long}{}{%
-      \glossentrydesc{#1}%
+      \Glossentrydesc{#1}%
     }{%
-      \glsentrylong{#1}%
+      \Glsentrylong{#1}%
     }%
   }%
   % Widen the name column so a multi-word term such as "speculation contract"
-  % stays on one line instead of wrapping into "speculation" / "contract".
+  % stays on one line, and drop the page-number column (a page reference showed
+  % only against the few abbreviations referenced in the body).
   \renewglossarystyle{iitthesis}{%
     \renewenvironment{theglossary}%
-      {\begin{longtable}{p{4cm}@{\quad}p{\textwidth - 4cm - \glspagelistwidth}p{\glspagelistwidth}}}%
+      {\begin{longtable}{@{}p{4cm}@{\quad}p{\textwidth - 4cm - 1em}@{}}}%
       {\end{longtable}}%
     \renewcommand*{\glossaryheader}{}%
     \renewcommand*{\glsgroupheading}[1]{}%
     \renewcommand*{\glossentry}[2]{%
       \textbf{\glstarget{##1}{\glossentryname{##1}}}%
       & \formatglossarydescription{##1}%
-      & ##2 \tabularnewline%
+      \tabularnewline%
     }%
     \renewcommand*{\glsgroupskip}{}%
   }%
