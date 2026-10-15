@@ -21,9 +21,20 @@ in \autoref{appendix:localization}.
 Recall that \revizor{} runs the inputs of one test case as a back-to-back series and reads a single
 L1D trace per input, at the end of that input's own run (\autoref{sec:bg-mrt}). Priming assumes that
 an input's leakage appears in that trace. It fails when the leakage is written to a carrier structure
-other than the L1D and is not reset between inputs, so it surfaces only in a later input's trace. Two examples
-make this concrete (\autoref{fig:priming-miss}), and both are observable in the L1D (they lie
-within \revizor{}'s own threat model), yet priming discards them.
+other than the L1D and is not reset between inputs, so it surfaces only in a later input's trace
+(\autoref{fig:priming-shape}). Two examples make this concrete (\autoref{fig:priming-miss}), and
+both are observable in the L1D (they lie within \revizor{}'s own threat model), yet priming discards
+them.
+
+\begin{figure}[t]
+\centering
+\fitwidth{\input{fig/priming-shape}}
+\caption{The shape both dropped leaks share. An earlier run writes a resource $X$ other than the
+monitored L1D, so nothing shows in that run's own L1D trace. A later run reads $X$ back, and only
+then does the difference surface in the L1D. Priming removes carried-over state, so it discards this
+evidence together with the noise.}
+\label{fig:priming-shape}
+\end{figure}
 
 \begin{figure}[t]
 \centering
@@ -125,22 +136,12 @@ $I_C$ (stride $F$) & $\{0,F,2F,S,2S\}$ & $\{0,F,2F\}^\star$ \\
 \section{Formally}
 \label{sec:priming-model}
 
-Both leaks share a shape (\autoref{fig:priming-shape}): the secret is written to a structure other than the monitored L1D, and
-it reaches the L1D only through a later run. We make the limitation precise. Write
-$\runf(P,I,\mu)$ for the microarchitectural state left by running $P$ on input $I$ from state
-$\mu$. We treat it as deterministic, since replaying a sequence reproduces its states and
+Both leaks share a shape (\autoref{fig:priming-shape}): the secret is written to a structure other
+than the monitored L1D, and it reaches the L1D only through a later run. We make the limitation
+precise. Write $\runf(P,I,\mu)$ for the microarchitectural state left by running $P$ on input $I$
+from state $\mu$. We treat it as deterministic, since replaying a sequence reproduces its states and
 repeated measurement filters noise. The L1D attacker is then a projection,
 $\Al(P,I,\mathit{Ctx})=O_{\mathrm{L1D}}(\runf(P,I,\mathit{Ctx}))$.
-
-\begin{figure}[t]
-\centering
-\fitwidth{\input{fig/priming-shape}}
-\caption{The shape both dropped leaks share. An earlier run writes a resource $X$ other than the
-monitored L1D, so nothing shows in that run's own L1D trace. A later run reads $X$ back, and only
-then does the difference surface in the L1D. Priming removes carried-over state, so it discards this
-evidence together with the noise.}
-\label{fig:priming-shape}
-\end{figure}
 
 \begin{definition}[Non-L1D-cache violation]
 \label{def:prime-ncv}
@@ -378,7 +379,7 @@ Both keep every leak the current priming rule keeps. Where the linear scan repor
 asymptotically faster (\autoref{tab:loc-compare}). The generalization therefore certifies a non-L1D-cache
 violation that current priming cannot report, as a genuine extended contract violation.
 
-\begin{table}[t]\centering\small
+\begin{table}[!ht]\centering\small
 \setlength{\tabcolsep}{8pt}
 \caption{The two localizers.}
 \label{tab:loc-compare}
