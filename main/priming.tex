@@ -212,11 +212,16 @@ Detecting an extended contract violation requires a follow-up program $Q$ to run
 \revizor{} obtains one by arranging its inputs into \emph{lanes} rather than one flat sequence
 (\autoref{fig:priming-lanes}). The construction rests on a few notions, which we define in turn.
 
-\begin{definition}[Initialization sequence and batch]
-\label{def:batch}
+\begin{definition}[Initialization sequence]
+\label{def:is}
 An \emph{initialization sequence} $\IS$ drives the microarchitectural state to one reproducible
-value. We write $\batch{I_0,\dots,I_n}$ for the batch that runs $\IS$ and then the inputs
-$I_0,\dots,I_n$ in order.
+value.
+\end{definition}
+
+\begin{definition}[Batch]
+\label{def:batch}
+We write $\batch{I_0,\dots,I_n}$ for the batch that runs $\IS$ and then the inputs $I_0,\dots,I_n$
+in order.
 \end{definition}
 
 \begin{definition}[Lane]
@@ -232,7 +237,10 @@ the lanes gives a matrix whose rows are lanes (and batches) and whose columns ar
 \end{definition}
 
 \revizor{} flags a candidate when two lanes differ in their L1D trace at the same column. Without
-loss of generality the flag sits at the last class $k$, the \emph{probe}.
+loss of generality the flag sits at the last class $k$: if it instead sat at a class $\dprobe<k$,
+the classes $\dprobe+1,\dots,k$ run after it in the same batch and cannot influence $\dprobe$'s
+measurement, so dropping them makes $\dprobe$ the last class. We call class $k$ the \emph{probe},
+and the input measured there the \emph{probe input}.
 
 \begin{figure}[t]
 \centering
@@ -296,13 +304,13 @@ The two splices around $t$ reach the same context $\nu_t$ (same $\IS$ and prefix
 $\inp{t}{a}$ or $\inp{t}{b}$, and then the \emph{same} fixed continuation $Q$ ending at the probe.
 Reading the probe is therefore the $Q$-hardware trace of \autoref{def:prime-qtrace}:
 $r(t+1)=\AQ{O_{\mathrm{L1D}}}(P,\inp{t}{a},\nu_t)$ and $r(t)=\AQ{O_{\mathrm{L1D}}}(P,\inp{t}{b},\nu_t)$.
-Since $\runf$ is deterministic, the two readings can differ only through which input
+Since $\runf$ is approximately deterministic (noise reduced by repetition), the two readings can differ only through which input
 ran, and a boundary means they differ. The two inputs share column $t$, hence a class, and are
 distinct, so the tuple meets \autoref{def:prime-extviolation}. When $t=k$ the continuation is
 empty and the reading is the probe's own L1D trace, the direct case.
 \end{proof}
 
-When the boundary pair additionally leaves the same L1D trace from every state, it is a
+When additionally the input pair $\inp{t}{a}$ and $\inp{t}{b}$ leaves the same L1D trace from every microarchitectural state, it is a
 non-L1D-cache violation (\autoref{def:prime-ncv}), the class priming always discards
 (\autoref{thm:prime-miss}). The construction thus detects exactly the leaks priming drops,
 whenever they cascade through the microarchitecture and eventually reach the L1D.
