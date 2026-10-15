@@ -1,29 +1,36 @@
 \chapter{Introduction}
 \label{chap:intro}
 
-Modern high-performance processors owe much of their performance to optimization techniques the programmer is unaware of. They execute instructions
-out of order[add cite], speculate past unresolved control flow[add cite], predict branch directions and
-the outcomes of complex computations, and prefetch data and instructions into caches ahead of
-demand. It is all but certain that further unknown structures and features exists we are even unware of their existance. Thus, the implementation details of those features remain largely undocumented. When the CPU makes a prediction, it starts immidiately executing instructions based on it. When the correct outcome surfaces, the CPU checks whether the prediction was correct. If it was, the CPU contnues execution gaining performance boots. If a prediction turns out to be wrong, the processor squashes the instructions
-it executed transiently and restores the architectural state, so that correctness is never
-compromised. While executing instrucitons transiently, it could effect the microarchitectural state, and when the architectural roll back takes place, those microarchitectural effects are not
-rolled back with it. A cache line that was filled stays resident, a translation that was
-made through a page walke remains in the TLB, and the predictors and prefetchers retain the imprint of the
-work that was discarded. It is this asymmetry, between an architectural state that is
-restored and a microarchitectural state that persists, that makes the transient-execution
+Modern high-performance processors owe much of their performance to optimizations the
+programmer never sees. They execute instructions out of order~\cite{tomasulo}, speculate
+past unresolved control flow~\cite{smith_bpred}, predict branch directions and even the
+outcomes of computations, and prefetch data and instructions into the caches ahead of
+demand. The implementation details of these mechanisms are largely undocumented, and it is
+all but certain that further structures exist whose very existence is not publicly known.
+On a prediction the processor immediately executes the instructions that follow from it,
+and once the true outcome is known it keeps that work if the guess was right. If the guess
+was wrong, it squashes the transiently executed instructions and restores the architectural
+state, so correctness is never compromised. The microarchitectural state those instructions
+touched, however, is not restored with it. A cache line that was filled stays resident, a
+translation produced by a page walk remains in the TLB, and the predictors and prefetchers
+keep the imprint of the discarded work. It is this asymmetry, between an architectural state
+that is restored and a microarchitectural state that persists, that makes transient-execution
 attacks possible.
 
-The disclosure of Spectre~\cite{spectre} and Meltdown~\cite{meltdown} showed the privacy costs of this asymmetry. Many of the structures that retain this residual state are shared
-across processes, privilege levels, and virtual machines. Thus an attacker who can both steer
-speculation and measure the residue it leaves is able to recover secrets from a context
-that the architecture was meant to keep isolated. The years since have brought uncovered new variants and techniques to leak information. consequently, a layer of hardware and software mitigations were introduced, but those were partial.
-Some of the underlying optimizations can be turned off
-outright through an architectural control, as speculative store bypass (SSBS bit~\cite{arm_ssbs}). Most forms of speculation, however, cannot be disabled at
-all, since the prediction they depend on is far too valuable to performance to surrender. The architecture leaves the defence to
-software at each individual site that is at risk. Spectre~v1 for exaple, is mitigated not by any architectural control but by a speculation barrier and explicit index
-masking~\cite{spectre}. New instructions and new
-optimizations continue to appear. Each of them is capable of opening fresh, and
-occasionally quite unexpected, transient paths and side channels.
+The disclosure of Spectre~\cite{spectre} and Meltdown~\cite{meltdown} showed the security
+cost of this asymmetry. Many of the structures that hold this residual state are shared
+across processes, privilege levels, and virtual machines, so an attacker who can steer
+speculation and then measure the residue it leaves can recover secrets from a context the
+architecture was meant to isolate. The years since have uncovered new variants and new
+techniques for leaking information, and in response a layer of hardware and software
+mitigations was introduced, though it remains partial. A few optimizations can be disabled
+outright through an architectural control, as speculative store bypass is through the SSBS
+bit~\cite{arm_ssbs}. Most speculation cannot be disabled at all, since the prediction it
+depends on is far too valuable to performance to surrender, so the architecture leaves the
+defence to software at each vulnerable site. Spectre~v1, for example, is mitigated not by an
+architectural control but by a speculation barrier and explicit index masking~\cite{spectre}.
+New instructions and optimizations keep appearing, and each can open fresh, sometimes
+unexpected, transient paths and side channels.
 
 \section{What is speculative leakage}
 \label{sec:intro-leakage}

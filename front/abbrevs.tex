@@ -7,6 +7,11 @@
 % appear, whether or not it is \gls-referenced in the body. Requires
 % glossaries-extra (loaded unless the noabbrevs option).
 %
+% Acronym expansions are written in title case (e.g. "Branch Target Buffer").
+% Entries whose "meaning" is a descriptive phrase rather than a word-for-word
+% expansion (AArch64, QARMA, FEAT_CSV2, FEAT_FPAC, CT-SEQ, the trace terms) stay
+% in sentence case; the list style capitalises their first letter.
+%
 % The formal mathematical notation (P, I, C, HTrace, O, Attack_O, run, Q,
 % HTrace^Q, IS, lanes, splice, r(t), t_max, etc.) is intentionally NOT listed
 % here: each symbol is defined in place where it is introduced in the body.
@@ -16,48 +21,48 @@
 % =====================================================================
 
 \newacronym[category=notation-category]{aarch64}{AArch64}{the 64-bit version of the Arm architecture family}
-\newacronym[category=notation-category]{isa}{ISA}{instruction set architecture}
+\newacronym[category=notation-category]{isa}{ISA}{Instruction Set Architecture}
 \newacronym[category=notation-category]{asl}{ASL}{Arm Architecture Specification Language}
-\newacronym[category=notation-category]{el}{EL}{exception level}
+\newacronym[category=notation-category]{el}{EL}{Exception Level}
 \newacronym[category=notation-category]{vhe}{VHE}{Virtualization Host Extensions}
-\newacronym[category=notation-category]{va}{VA}{virtual address}
-\newacronym[category=notation-category]{ttbr}{TTBR}{translation table base register}
-\newacronym[category=notation-category]{asid}{ASID}{address space identifier}
-\newacronym[category=notation-category]{vmid}{VMID}{virtual machine identifier}
+\newacronym[category=notation-category]{va}{VA}{Virtual Address}
+\newacronym[category=notation-category]{ttbr}{TTBR}{Translation Table Base Register}
+\newacronym[category=notation-category]{asid}{ASID}{Address Space Identifier}
+\newacronym[category=notation-category]{vmid}{VMID}{Virtual Machine Identifier}
 \newacronym[category=notation-category]{tbi}{TBI}{Top Byte Ignore}
 \newacronym[category=notation-category]{pauth}{PAuth}{Pointer Authentication}
-\newacronym[category=notation-category]{pac}{PAC}{pointer authentication code}
+\newacronym[category=notation-category]{pac}{PAC}{Pointer Authentication Code}
 \newacronym[category=notation-category]{mte}{MTE}{Memory Tagging Extension}
 \newacronym[category=notation-category]{qarma}{QARMA}{the tweakable block cipher used to compute pointer authentication codes}
 \newacronym[category=notation-category]{csv2}{FEAT\_CSV2}{An AArch64 CPU hardware feature which guarantees that branch predictions trained in one execution context cannot steer speculative execution in another, closing the cross-context branch-target-injection channel known as Spectre v2}
 \newacronym[category=notation-category]{fpac}{FEAT\_FPAC}{An AArch64 CPU hardware feature which makes a failed pointer authentication fault precisely at the authentication instruction, instead of deferring the fault to a later use of the mangled pointer}
-\newacronym[category=notation-category]{nzcv}{NZCV}{negative, zero, carry, and overflow condition flags, the AArch64 counterpart of the x86 FLAGS register}
+\newacronym[category=notation-category]{nzcv}{NZCV}{Negative, Zero, Carry, and Overflow condition flags, the AArch64 counterpart of the x86 FLAGS register}
 \newacronym[category=notation-category]{smc}{SMC}{Secure Monitor Call}
-\newacronym[category=notation-category]{soc}{SoC}{system on chip}
+\newacronym[category=notation-category]{soc}{SoC}{System on Chip}
 
 % =====================================================================
 %  Microarchitecture
 % =====================================================================
 
-\newacronym[category=notation-category]{l1d}{L1D}{level-1 data cache}
-\newacronym[category=notation-category]{l1i}{L1I}{level-1 instruction cache}
-\newacronym[category=notation-category]{l2}{L2}{level-2 cache}
-\newacronym[category=notation-category]{llc}{LLC}{last-level cache}
-\newacronym[category=notation-category]{tlb}{TLB}{translation lookaside buffer}
-\newacronym[category=notation-category]{dtlb}{dTLB}{data translation lookaside buffer}
-\newacronym[category=notation-category]{itlb}{iTLB}{instruction translation lookaside buffer}
-\newacronym[category=notation-category]{btb}{BTB}{branch target buffer}
-\newacronym[category=notation-category]{phr}{PHR}{pattern history register}
-\newacronym[category=notation-category]{tage}{TAGE}{TAgged GEometric history length branch predictor}
+\newacronym[category=notation-category]{l1d}{L1D}{Level-1 Data Cache}
+\newacronym[category=notation-category]{l1i}{L1I}{Level-1 Instruction Cache}
+\newacronym[category=notation-category]{l2}{L2}{Level-2 Cache}
+\newacronym[category=notation-category]{llc}{LLC}{Last-Level Cache}
+\newacronym[category=notation-category]{tlb}{TLB}{Translation Lookaside Buffer}
+\newacronym[category=notation-category]{dtlb}{dTLB}{Data Translation Lookaside Buffer}
+\newacronym[category=notation-category]{itlb}{iTLB}{Instruction Translation Lookaside Buffer}
+\newacronym[category=notation-category]{btb}{BTB}{Branch Target Buffer}
+\newacronym[category=notation-category]{phr}{PHR}{Pattern History Register}
+\newacronym[category=notation-category]{tage}{TAGE}{TAgged GEometric History Length Branch Predictor}
 \newacronym[category=notation-category]{ittage}{ITTAGE}{Indirect Target TAGE}
-\newacronym[category=notation-category]{rsb}{RSB}{return stack buffer}
-\newacronym[category=notation-category]{pmu}{PMU}{performance monitoring unit}
+\newacronym[category=notation-category]{rsb}{RSB}{Return Stack Buffer}
+\newacronym[category=notation-category]{pmu}{PMU}{Performance Monitoring Unit}
 
 % =====================================================================
 %  Method, framework, and this work
 % =====================================================================
 
-\newacronym[category=notation-category]{mrt}{MRT}{model-based relational testing}
+\newacronym[category=notation-category]{mrt}{MRT}{Model-Based Relational Testing}
 \newglossaryentry{speculationcontract}{type=notation, category=notation-category,
   name={speculation contract}, sort={speculation contract},
   description={a specification that fixes, for each program and input, which executions a CPU may make microarchitecturally distinguishable, and therefore what it is permitted to leak}}
@@ -68,19 +73,19 @@
   name={hardware trace}, sort={hardware trace},
   description={what an attacker actually observes when a program runs on the hardware, read through microarchitectural side channels}}
 \newacronym[category=notation-category]{ctseq}{CT-SEQ}{the constant-time, sequential contract}
-\newacronym[category=notation-category]{cut}{CUT}{CPU under test}
-\newacronym[category=notation-category]{ce}{CE}{contract executor}
+\newacronym[category=notation-category]{cut}{CUT}{CPU Under Test}
+\newacronym[category=notation-category]{ce}{CE}{Contract Executor}
 \newacronym[category=notation-category]{reif}{REIF}{Revizor Extensible Input File}
-\newacronym[category=notation-category]{ttd}{TTD}{time to first detection}
+\newacronym[category=notation-category]{ttd}{TTD}{Time to First Detection}
 
 % =====================================================================
 %  Exploitation and general
 % =====================================================================
 
-\newacronym[category=notation-category]{rop}{ROP}{return-oriented programming}
+\newacronym[category=notation-category]{rop}{ROP}{Return-Oriented Programming}
 \newacronym[category=notation-category]{rsa}{RSA}{Rivest-Shamir-Adleman public-key cryptosystem}
-\newacronym[category=notation-category]{poc}{PoC}{proof of concept}
-\newacronym[category=notation-category]{hpc}{HPC}{high-performance computing}
+\newacronym[category=notation-category]{poc}{PoC}{Proof of Concept}
+\newacronym[category=notation-category]{hpc}{HPC}{High-Performance Computing}
 
 % =====================================================================
 %  Instructions referenced as mechanisms
