@@ -312,7 +312,7 @@ empty and the reading is the probe's own L1D trace, the direct case.
 
 When additionally the input pair $\inp{t}{a}$ and $\inp{t}{b}$ leaves the same L1D trace from every microarchitectural state, it is a
 non-L1D-cache violation (\autoref{def:prime-ncv}), the class priming always discards
-(\autoref{thm:prime-miss}). The construction thus detects exactly the leaks priming drops,
+(\autoref{thm:prime-miss}). By finding a boundary, the construction detects exactly the leaks priming drops,
 whenever they cascade through the microarchitecture and eventually reach the L1D.
 
 \section{Localizing a boundary}
