@@ -470,7 +470,7 @@ randomness MTE relies on.
 \begin{figure}[h]
 \centering
 \fitwidth{\input{fig/bg-vuln}}
-\caption{The pattern both attacks share, as pseudo-code. A mispredicted branch opens a transient
+\caption{The pattern both attacks share. A mispredicted branch opens a transient
 window, and inside it the instruction's precondition (a valid PAC, a matching tag) is checked. A
 satisfied precondition lets the dependent access proceed and leave a microarchitectural footprint,
 while a violation is suppressed instead of faulting. Probing the footprint afterwards reveals the

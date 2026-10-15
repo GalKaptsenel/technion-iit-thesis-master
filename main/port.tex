@@ -135,24 +135,17 @@ next, which lets a single test case be exercised under many keys and tag layouts
 \section{Driving the executor}
 \label{sec:port-driving}
 
-Control of the kernel module is a small \reg{ioctl} state machine (\autoref{fig:port-execfsm}),
-built around a checkout model. The host \emph{checks out} the test region to load the body, and
-\emph{allocates} each input, where every allocation returns an input identifier (\emph{iid}) that
-names its state slot. Checking out an \emph{iid} makes that slot the active target, so the next
-write fills it, and many inputs can be prepared before a run. A \emph{trace} then runs the loaded
-test over all inputs, and a \emph{get-measurement} reads one input's result back by its \emph{iid}.
-A few further commands round out the same model (unloading, freeing, clearing, and querying), and a
-separate group exposes the PAC primitives (sign, authenticate, strip) that the contract model and
-the validation path use. A run is possible only once both a test and its inputs are present, and
-the traced state reproduces across re-runs. Each measurement reports, per input, the L1 data-cache
-sets the execution touched (the hardware trace of \autoref{sec:bg-mrt}), read through a cache side
-channel.
+Control of the kernel module is a small \reg{ioctl} state machine (\autoref{fig:port-execfsm}). To
+load an input, the user allocates one and receives an input identifier (\emph{iid}). With that iid
+the input can be written, removed, or have its measurements read back. To load a test case, the user
+checks out the test region and writes the test body. A \emph{trace} then runs the loaded test over
+all inputs, which is possible only once both a test and its inputs are present. Each measurement
+reports, per input, the L1 data-cache sets the execution touched (the hardware trace of
+\autoref{sec:bg-mrt}), read through a cache side channel.
 
-A second group of controls, exposed through \reg{sysfs}, configures how a run measures rather than
-what it runs. The knobs that matter in practice are the measurement method (Prime+Probe,
-Flush+Reload, or Prime+Reload), the pinned core, the warmup count, and a few toggles over
-the cache and branch-history state each run starts from, together with the speculative-store-bypass
-setting.
+A separate group of controls is exposed through \reg{sysfs}. Among these knobs are the measurement
+method (Prime+Probe or Flush+Reload), the core the run is pinned to, and the number of warmup
+rounds.
 
 \begin{figure}[t]
 \centering
@@ -180,11 +173,7 @@ without changing the file format.
 \begin{figure}[t]
 \centering
 \fitwidth{\input{fig/reif}}
-\caption{The REIF layout. A 48-byte header fixes the magic, version, section count, and total
-length, and is followed by one 32-byte descriptor per section, each giving a section's type, byte
-offset, and length. The reader finds a section by its type, so the payloads may appear in any
-order and an unknown type is skipped. The sandbox memory and the initial registers are required,
-and the rest are optional per-input state.}
+\caption{The REIF layout.}
 \label{fig:port-reif}
 \end{figure}
 
