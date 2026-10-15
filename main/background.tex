@@ -503,7 +503,9 @@ addresses of its loads and stores)~\cite{revizor}. Executing a program $P$ on an
 contract $\mathcal{C}$ yields a \emph{contract trace} $\mathit{CTrace}=\mathcal{C}(P,I)$. The
 baseline contract used throughout this thesis is \textsc{CT-SEQ}, under which $\mathcal{C}(P,I)$ is
 the sequence of memory addresses and control-flow targets of the in-order, non-speculative
-execution.
+execution. Stronger contracts permit specific speculation on top of this constant-time trace:
+\textsc{CT-COND} allows conditional-branch misprediction (Spectre-v1), \textsc{CT-BPAS} allows
+speculative store bypass (Spectre-v4), and \textsc{CT-COND-BPAS} allows both~\cite{revizor,contracts}.
 
 \paragraph{Hardware traces.}
 On the CPU, the same execution starts from a microarchitectural context $\mathit{Ctx}$ (the
@@ -564,7 +566,7 @@ traces class by class.}
 \label{fig:bg-revizor}
 \end{figure}
 
-\paragraph{Hardware traces, context, and priming.}
+\paragraph{Measuring traces, context, and priming.}
 Measuring the full hardware trace of Equation~\eqref{eq:bg-htrace} on a black-box CPU is
 infeasible, so \revizor{} measures a single structure, the L1 data cache, at the end of each
 input's execution, through a cache side channel such as Flush+Reload or Prime+Probe. It therefore
