@@ -34,7 +34,7 @@
   \draw[ar] ([yshift=-4mm]dev.west) -- node[lbl, below]{hardware traces\\ (one response)}
         ([yshift=-4mm]host.east);
 
-  % ===== the target device is physically an Arm phone, reached over the network =====
+  % ===== the target device is physically an Arm phone, reached over the link =====
   \begin{scope}[shift={(7.6,-3.25)}]
     \draw[thick, rounded corners=3.5pt, fill=black!3, draw=black!55] (-0.6,-1.2) rectangle (0.6,1.2);
     \draw[draw=black!20, fill=white] (-0.45,-0.82) rectangle (0.45,0.82);
@@ -47,5 +47,5 @@
   \node[font=\scriptsize, text=black!60, align=center] at (7.6,-4.78) {the target device\\ is an Arm phone};
   \draw[dashed, semithick, draw=black!55, -{Stealth[length=1.8mm,width=1.5mm]}]
      (host.south) .. controls +(0,-1.4) and +(-1.9,0.2) .. (6.95,-2.95);
-  \node[font=\scriptsize, text=black!60, fill=white, inner sep=1.5pt] at (3.3,-2.4) {network};
+  \node[font=\scriptsize, text=black!60, fill=white, inner sep=1.5pt] at (3.3,-2.4) {link};
 \end{tikzpicture}
