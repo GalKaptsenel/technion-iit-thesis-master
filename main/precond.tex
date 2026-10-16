@@ -6,8 +6,7 @@ attacks such as PACMAN and TikTag. This chapter closes that gap with a methodolo
 instruction preconditions directly. Such preconditions take several forms, for example the
 signature check of an \reg{AUT*} or the tag check of a tagged access. The idea is to reserve a small
 region of code just before each instruction whose precondition we want to fuzz, a region we call a
-\emph{seal}. We then fill each seal, per input, so that the precondition is deliberately satisfied
-or violated on a speculative-only path, without ever faulting the victim architecturally
+\emph{seal}. We then populate each seal for each input so that its precondition is satisfied on the architectural path but may be violated on a speculative path, without causing an architectural fault in the victim
 (\autoref{fig:precond-flow}). \autoref{sec:precond-gap} states the gap,
 \autoref{sec:precond-sealing}
 through \autoref{sec:precond-resolve} build the mechanism, \autoref{sec:precond-contract} fixes
@@ -18,23 +17,16 @@ the contract it tests against, \autoref{sec:precond-primitives} lists the primit
 \label{sec:precond-gap}
 
 A \emph{precondition} is a requirement an instruction places on its inputs for its intended,
-non-exceptional behavior: \reg{AUT*} expects a pointer whose authentication code verifies, a tagged
+non-exceptional behavior: \reg{AUT*} expects a pointer whose authentication code passes vreification, a tagged
 access expects a logical tag that matches the memory's allocation tag, and an ordinary load or store
-expects an address that is in range and correctly aligned. Violating a precondition does not always
-fault. A wrong signature makes \reg{AUT*} fault at the instruction only on cores with FEAT\_FPAC,
-and otherwise yields a corrupted pointer that faults, if at all, only on a later use, the behavior
-the original PACMAN attack exploited. What a violation reliably does is drive the core into a
-different microarchitectural state from the satisfied case, and that difference is what an attacker
-reads.
-
-A precondition must hold along the architectural flow, but nothing constrains the speculative
-paths. Random generation cannot target
+expects an address that is in range and correctly aligned.
+A valuable attack would require that the architectural flow of a victim program to stay intact, but nothing constrains the speculative
+paths. Attacks as PACMAN [cite] and TikTag used this to leak secutrity information about the victim program. Random generation cannot target
 this directly: whether an input makes a given instruction retire is an input-reachability
-question, intractable in general. To stay safe for every input, the generator instruments every
+question, intractable in general. Thus to stay safe for every input, the generator instruments every
 potentially faulting instruction (masking memory addresses into the sandbox, avoiding
 divide-by-zero, and so on) and so excludes the violation everywhere, transient paths included.
-Precondition violations are excluded by construction. Reaching them requires a way to install a
-violation that is guaranteed to be confined to a speculative-only path.
+Precondition violations are excluded by construction. 
 
 \section{Sealing a test case}
 \label{sec:precond-sealing}
