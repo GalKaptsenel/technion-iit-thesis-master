@@ -2,10 +2,11 @@
 \label{chap:precond}
 
 The port's generator, like x86 \revizor{}'s, cannot produce the precondition violations behind
-attacks such as PACMAN and TikTag. This chapter closes that gap with a methodology for
-fuzzing instruction preconditions directly. The idea is to reserve a small \emph{seal} in the code just before each instruction whose
-precondition we want to fuzz, such as the signature check of an \reg{AUT*} or the tag check of a
-tagged access, and to fill each seal, per input, so that the precondition is deliberately satisfied
+attacks such as PACMAN and TikTag. This chapter closes that gap with a methodology for fuzzing
+instruction preconditions directly. Such preconditions take several forms, for example the
+signature check of an \reg{AUT*} or the tag check of a tagged access. The idea is to reserve a small
+region of code just before each instruction whose precondition we want to fuzz, a region we call a
+\emph{seal}. We then fill each seal, per input, so that the precondition is deliberately satisfied
 or violated on a speculative-only path, without ever faulting the victim architecturally
 (\autoref{fig:precond-flow}). \autoref{sec:precond-gap} states the gap,
 \autoref{sec:precond-sealing}
@@ -42,7 +43,7 @@ violation that is guaranteed to be confined to a speculative-only path.
 \centering
 \fitwidth{\input{fig/flow}}
 \caption{The precondition-fuzzing pipeline. A test case is sealed and assembled into an object test
-case once. Then, per input, the sealings are resolved and filled by relocation into a genuine
+case once. Then, per input, the seals are resolved and filled by relocation into a genuine
 variant and one or more decoys, which are run and compared on hardware. A difference between the
 variants is a leak.}
 \label{fig:precond-flow}
@@ -50,28 +51,28 @@ variants is a leak.}
 
 We walk a freshly generated test case statically (\autoref{fig:precond-flow}). At each instruction
 whose operands we want to
-fuzz we reserve a \emph{sealing}: a short, fixed-width area immediately preceding the instruction
+fuzz we reserve a seal: a short, fixed-width area immediately preceding the instruction
 of interest, initialized to \reg{UDF}, the permanently undefined A64 encoding. Sealing every site
 yields the \emph{sealed test case}. Assembled once, it becomes an \emph{object test case}, a byte
-template shared by all inputs. The \reg{UDF} filler guarantees that an unfilled sealing traps if
-it is ever reached, so a sealing only ever executes once it has been deliberately filled.
+template shared by all inputs. The \reg{UDF} filler guarantees that an unfilled seal traps if
+it is ever reached, so a seal only ever executes once it has been deliberately filled.
 
-Per input, we fill each sealing with instructions that enforce or violate its precondition just
+Per input, we fill each seal with instructions that enforce or violate its precondition just
 before the guarded instruction (\autoref{fig:precond-seal}), for example, materializing the
 correct \reg{MTE} tag or \reg{PAC}
 signature to enforce the precondition, or an incorrect tag or signature to violate it. The fills
 are carried by a \emph{relocation} section added to the input's \reg{.reif} file
 (\autoref{sec:port-driving}). Just before the input runs, the loader applies the relocations and
-patches the sealings dynamically. An input that satisfies every precondition is the \emph{genuine}
-variant. An input with at least one unsatisfied, speculative-only sealing is a \emph{decoy}
+patches the seals dynamically. An input that satisfies every precondition is the \emph{genuine}
+variant. An input with at least one unsatisfied, speculative-only seal is a \emph{decoy}
 variant. The two variants are then run and compared on hardware.
 
 \begin{figure}[t]
 \centering
 \fitwidth{\input{fig/precondseal}}
-\caption{A single sealing point, zoomed in. Here a Pointer Authentication site guards a load
-through \reg{x0}. The fixed-width sealing is filled per input: the placeholder is the unfilled
-\reg{UDF} sealing, the genuine fill installs the correct signature so the committed \reg{AUT*}
+\caption{A single seal, zoomed in. Here a Pointer Authentication site guards a load
+through \reg{x0}. The fixed-width seal is filled per input: the placeholder is the unfilled
+\reg{UDF} seal, the genuine fill installs the correct signature so the committed \reg{AUT*}
 succeeds, and a decoy installs an incorrect signature so the \reg{AUT*} fails, but only on a
 squashed speculative path, never architecturally.}
 \label{fig:precond-seal}
@@ -80,10 +81,10 @@ squashed speculative path, never architecturally.}
 \section{The emulation table}
 \label{sec:precond-emul}
 
-Filling the genuine variant (and the architectural sealings of a decoy) requires values that
+Filling the genuine variant (and the architectural seals of a decoy) requires values that
 cannot be known statically, such as a pointer's \reg{PAC} signature or the allocation tag of the
 granule an \reg{MTE} access touches. We give the contract executor (\autoref{sec:port-ce}) an
-optional \emph{emulation table} whose rows bind each sealing to an \emph{op-emulator}. Each
+optional \emph{emulation table} whose rows bind each seal to an \emph{op-emulator}. Each
 op-emulator, in turn, dynamically patches the test case's instructions to satisfy the precondition
 for the live register state, as if the variant had been genuine from the beginning. Because the CE
 executes natively and models the extensions in software, it can compute these values even on a
@@ -92,9 +93,9 @@ host that does not implement the extension.
 \section{Resolving a test case}
 \label{sec:precond-resolve}
 
-A sealing resolves differently for each input, because inputs take different paths and carry
-different values. We recover what each sealing needs from a single CE trace of the object test
-case, driven by the emulation table. The trace reports, per sealing, the minimal speculation depth
+A seal resolves differently for each input, because inputs take different paths and carry
+different values. We recover what each seal needs from a single CE trace of the object test
+case, driven by the emulation table. The trace reports, per seal, the minimal speculation depth
 at which it is reached (depth zero means it retires, deeper means it is reached only
 speculatively), and the value it must carry. This sidesteps the static reachability problem: for a
 concrete input, the trace shows exactly which sites retire, so a violating fill can be placed only
@@ -104,9 +105,9 @@ where it is guaranteed to stay on a speculative-only path.
 \label{sec:precond-contract}
 
 The genuine and decoy variants run the \emph{exact same} input (the same data, \reg{PAC} keys,
-and \reg{MTE} tags) and the same code outside the sealings. We test against CT-SEQ, which exposes
+and \reg{MTE} tags) and the same code outside the seals. We test against CT-SEQ, which exposes
 only the load and store addresses and the control flow of the in-order, non-speculative run. Every
-violating sealing acts behind a speculative-only flow, so CT-SEQ requires it to leave the hardware
+violating seal acts behind a speculative-only flow, so CT-SEQ requires it to leave the hardware
 trace unchanged. Any divergence between the two variants is therefore a contract
 violation~\cite{contracts,revizor}.
 
@@ -155,13 +156,13 @@ memory-attribute index) while the genuine variant leaves every descriptor unchan
 \section{Discussion}
 \label{sec:precond-discussion}
 
-Every retiring sealing satisfies its precondition by construction, so a violation only ever falls
+Every retiring seal satisfies its precondition by construction, so a violation only ever falls
 on a speculative-only path and never crashes the test case. Each primitive also restores
 architectural state immediately after the sealed access (it strips the forged \reg{PAC} bits,
 retags to the real allocation tag, or undoes a pointer manipulation), so the genuine and decoy
 variants re-converge immediately past the site, and their architectural difference is contained to
 the single sealed instruction. The two variants are therefore not identical code: they differ
-exactly in the perturbed sealings. A hardware-trace divergence between them is thus localized to
-those sealings, and confirming a leak reduces to checking that the divergence reflects the
+exactly in the perturbed seals. A hardware-trace divergence between them is thus localized to
+those seals, and confirming a leak reduces to checking that the divergence reflects the
 precondition being violated speculatively rather than an artifact of the perturbed instructions
 themselves.
