@@ -98,8 +98,8 @@ branch last took, which predicts direct and stable indirect branches. For indire
 switch targets, \emph{ITTAGE} is the target-prediction analogue of TAGE, selecting the target from
 tagged, geometric-history-indexed tables. Function returns use a dedicated \emph{return stack
 buffer} (RSB), a small hardware stack pushed on a call and popped on a return. All three are
-per-core and are not, in general, partitioned by security domain, so they can be trained across the
-boundaries of \autoref{sec:bg-aarch64}.
+per-core. How far their state carries across the security boundaries of \autoref{sec:bg-aarch64}
+varies by structure.
 
 \paragraph{Memory order.} A load whose address is not yet resolved may alias an older, in-flight
 store. Rather than stall, the core predicts independence and lets the load execute, a
