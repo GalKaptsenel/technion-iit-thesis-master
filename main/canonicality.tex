@@ -40,19 +40,6 @@ happens on a squashed path, so the procedure never faults.}
 \label{fig:canon-oracle}
 \end{figure}
 
-We weaponize the oracle by making the legality of a speculative target depend on a secret the
-victim holds, so that one footprint measurement answers one yes/no question about the secret.
-Sweeping the construction peels a multi-bit secret out one bit at a time. For a field in the
-out-of-range high bits (a \reg{PAC} field, or the top of any pointer), an additive sweep finds
-the unique constant whose two's-complement carry rolls the field back into range, the carry
-absorbed by the Top Byte Ignore (TBI) top byte, which pins the whole field at once. For the low
-address bits, a top-down carry-leak recovers each bit by choosing a constant so that a one in
-the target bit ripples a carry out of range while a zero leaves the address in range. The whole
-procedure is crash-free, because the illegal access only ever happens on the squashed
-speculative path. TBI bounds what leaks: with TBI enabled the top byte is ignored by
-translation and does not participate in the check, so it does not leak, whereas with TBI
-disabled those bits participate and leak through the same oracle~\cite{arm_tbi}.
-
 \section{Alignment gates}
 \label{sec:canon-alignment}
 
@@ -60,7 +47,7 @@ The same fast-reject applies beyond canonicality. A speculative access that is m
 its access type is rejected the same way (an SP-relative access must be 16-byte aligned and a
 PC-relative target, such as an indirect branch, 4-byte aligned), and thus allocates no
 footprint. The oracle therefore also reports whether a computed address carries the correct low
-alignment bits, a finer-grained variant of the same allocate-or-not decision.
+alignment bits.
 
 \section{Transmitters}
 \label{sec:canon-transmitters}
