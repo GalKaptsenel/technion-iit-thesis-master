@@ -87,19 +87,17 @@ target resolves.
 \section{The branch-target channel evades nowadays priming}
 \label{sec:canon-l1d}
 
-The indirect-branch transmitter reads the oracle through the branch-target buffer. When the leak rides the
-BTB, and what we read is the canonicality of an indirect-branch pointer, the BTB allocation
-\emph{is} the leakage. There is no separate footprint to probe within the same run, and particularly, the L1D cache cannot capture this within the run that caused it: to learn
-whether the speculative branch allocated an entry, one must execute an indirect branch to the
+When the transmitter is an indirect-branch, and therefore the leak rides the BTB, we effectively
+read the canonicality of an indirect-branch target. The BTB allocation itself is the leakage. There is no separate footprint to probe within the same run, and particularly, the L1D cache cannot capture this within the run that caused it: to learn
+whether the speculative branch allocated an entry, one must execute an indirect branch with the
 \emph{same} program counter again and observe the BTB prediction. 
 \revizor{} generates loop-free test cases and therefore that second
-execution cannot happen inside a single input execution. This means detecting the leak requires
-re-executing the test case. This is exactly the noncache violation of \autoref{chap:priming}:
+execution cannot happen inside a single input execution. This is exactly the noncache violation of \autoref{chap:priming}:
 the leak leaves no mark on its own run's L1D trace, survives only in the carried-over BTB state,
 and surfaces in a later run, so \revizor{}'s original priming~\cite{revizor} discards it, while the
 generalized detection of \autoref{chap:priming} reports it.
 
-\emph{Two days of fuzzing under the original priming did not surface this leak, whereas the generalized detection flagged it within 30 seconds.}
+Two days of fuzzing under the original priming did not surface this leak, whereas the generalized detection flagged it within 30 seconds.
 
 \section{Channels and portability}
 \label{sec:canon-portability}

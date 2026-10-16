@@ -17,7 +17,7 @@
   \node[foot] (fin) at (7.0,1.1) {allocates a line\\ (L1D / TLB / BTB)};
   \node[lbl, anchor=west, text=probe!45!black] at (9.1,1.1) {footprint \textbf{present} $\Rightarrow$ oracle $=1$};
   \draw[ar] (pin) -- (ain);
-  \draw[ar] (ain) -- node[lbl, above]{translates} (fin);
+  \draw[ar] (ain) -- (fin);
   % out-of-range path (bottom)
   \node[ptr, fill=culprit!10] (pout) at (0,-1.1) {out-of-range\\ pointer};
   \node[acc] (aout) at (3.3,-1.1) {speculative\\ access};
