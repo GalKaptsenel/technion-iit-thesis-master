@@ -80,8 +80,8 @@ allocates on an in-range target. \cmark/\xmark: leaked / did not leak.}
 \toprule
 Class & Encodings & Footprint & Leaks \\
 \midrule
-Load            & \reg{LDR}, \reg{LDRB}, \reg{LDP}, \reg{LDAR} & L1D or dTLB refill & \cmark \\
-Store           & \reg{STR}, \reg{STRB}, \reg{STP}            & L1D fill           & \cmark \\
+Load            & \reg{LDR}, \reg{LDRB}, \reg{LDP}, \reg{LDAR} & L1D, dTLB refill & \cmark \\
+Store           & \reg{STR}, \reg{STRB}, \reg{STP}            & L1D, dTLB refill & \cmark \\
 Indirect branch & \reg{BLR}, \reg{BR}                         & BTB way, iTLB      & \cmark \\
 Prefetch        & \reg{PRFM}                                  & none               & \xmark \\
 \bottomrule
