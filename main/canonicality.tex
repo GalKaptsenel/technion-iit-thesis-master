@@ -7,7 +7,7 @@ of address translation: the CPU's canonicality and alignment checks on loads, st
 indirect branches. This chapter explains the mechanism. \autoref{sec:canon-oracle} describes
 the one-bit oracle, \autoref{sec:canon-alignment} its alignment variant,
 \autoref{sec:canon-transmitters} the instructions that carry it, \autoref{sec:canon-windows}
-the speculation windows that reach it, \autoref{sec:canon-l1d} why its evades detection on nowadays priming, and \autoref{sec:canon-portability} where it reproduces.
+the speculation windows that reach it, \autoref{sec:canon-l1d} why it evades nowadays priming, and \autoref{sec:canon-portability} where it reproduces.
 The quantitative reach across isolation boundaries and the end-to-end exploits are deferred to
 \autoref{chap:eval}.
 
@@ -20,7 +20,7 @@ range. Any other value is out of range and raises a fault. Arm
 does not use the x86 term \emph{canonical} for this condition, but the requirement is the
 analogue of x86 canonicality, and we use the term for it throughout.
 
-On the Neoverse~N3 and the Cortex-A715, a speculative access to an \emph{canonical} target
+On the Neoverse~N3 and the Cortex-A715, a speculative access to a \emph{canonical} target
 allocates microarchitectural state as usual (a line in the L1 data cache, an entry in the
 data or instruction TLB, a way in the branch-target buffer, and more) whereas a speculative
 access to an \emph{out-of-range} target is fast-rejected before it allocates anything and
@@ -58,7 +58,7 @@ disabled those bits participate and leak through the same oracle~\cite{arm_tbi}.
 
 The same fast-reject applies beyond canonicality. A speculative access that is misaligned for
 its access type is rejected the same way (an SP-relative access must be 16-byte aligned and a
-PC-relative target, such as an indirect branch, 4-byte aligned), thus allocates no
+PC-relative target, such as an indirect branch, 4-byte aligned), and thus allocates no
 footprint. The oracle therefore also reports whether a computed address carries the correct low
 alignment bits, a finer-grained variant of the same allocate-or-not decision.
 
@@ -66,11 +66,27 @@ alignment bits, a finer-grained variant of the same allocate-or-not decision.
 \label{sec:canon-transmitters}
 
 Because the gate is a property of the address, it fires on every speculative operation that
-consumes one. We verified three transmitters: the \emph{load} (\reg{LDR}. An L1D or dTLB
-refill), the \emph{store} (\reg{STR}. An L1D fill of the target), and the \emph{indirect
-branch} (\reg{BLR} or \reg{BR}. A BTB allocation and iTLB). Several load and store variants (\reg{LDR},
-\reg{LDRB}, \reg{LDP}, \reg{LDAR}, \reg{STR}, \reg{STRB}, \reg{STP}) all leaked, whereas a
-software prefetch (\reg{PRFM}) did not. [better to make a table].
+consumes one. We verified three transmitter classes, the load, the store, and the indirect branch.
+\autoref{tab:canon-transmitters} lists the encodings we tested and the microarchitectural state
+each allocates on an in-range target. Every load and store variant we tried leaked, whereas the
+software prefetch \reg{PRFM} did not.
+
+\begin{table}[t]\centering\small
+\setlength{\tabcolsep}{6pt}
+\caption{Transmitters for the canonicality oracle, with the microarchitectural state each
+allocates on an in-range target. \cmark/\xmark: leaked / did not leak.}
+\label{tab:canon-transmitters}
+\begin{tabular}{@{}l l l c@{}}
+\toprule
+Class & Encodings & Footprint & Leaks \\
+\midrule
+Load            & \reg{LDR}, \reg{LDRB}, \reg{LDP}, \reg{LDAR} & L1D or dTLB refill & \cmark \\
+Store           & \reg{STR}, \reg{STRB}, \reg{STP}            & L1D fill           & \cmark \\
+Indirect branch & \reg{BLR}, \reg{BR}                         & BTB way, iTLB      & \cmark \\
+Prefetch        & \reg{PRFM}                                  & none               & \xmark \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \section{Speculation windows}
 \label{sec:canon-windows}
@@ -81,29 +97,29 @@ branch so that a bounds check resolves late. A \emph{Spectre-v4} window uses a s
 target from a flushed stack slot and the return-stack prediction runs the shadow before the real
 target resolves.
 
-\section{The branch-target channel evades nowadays priming [reference to the chapter and to the paper presented it]}
+\section{The branch-target channel evades nowadays priming}
 \label{sec:canon-l1d}
 
 The indirect-branch transmitter reads the oracle through the branch-target buffer. When the leak rides the
 BTB, and what we read is the canonicality of an indirect-branch pointer, the BTB allocation
-\emph{is} the leakage. There is no separate footprint to probe within the same run, and particualrly, the L1D cache can not campture this within the run that caused it: to learn
+\emph{is} the leakage. There is no separate footprint to probe within the same run, and particularly, the L1D cache cannot capture this within the run that caused it: to learn
 whether the speculative branch allocated an entry, one must execute an indirect branch to the
 \emph{same} program counter again and observe the BTB prediction. 
-Revizor generates loop-free test-cases and therefore that second
-execution cannot happen inside a single input execution. Meaning detecting the leak requires
+\revizor{} generates loop-free test cases and therefore that second
+execution cannot happen inside a single input execution. This means detecting the leak requires
 re-executing the test case. This is exactly the noncache violation of \autoref{chap:priming}:
 the leak leaves no mark on its own run's L1D trace, survives only in the carried-over BTB state,
-and surfaces in a later run, so \revizor{}'s original priming discards it, while the
+and surfaces in a later run, so \revizor{}'s original priming~\cite{revizor} discards it, while the
 generalized detection of \autoref{chap:priming} reports it.
 
-[Add a sentance on a seprate line, emphasis it sligtly, that we run 2 days of fuzzing without the generalized approach, and could not detect it, while 30 seconds into the generlized appraoch detected it. Phrase it proffesional,y clearly, ceanly, succinctly]
+\emph{Two days of fuzzing under the original priming did not surface this leak, whereas the generalized detection flagged it within 30 seconds.}
 
 \section{Channels and portability}
 \label{sec:canon-portability}
 
-The cache and TLB channels follow from the generic [I am not sure what do you mean by generic here, better do not use this kind of phrases, explain what you mean clrearly, shortly] rule that a non-canonical access is squashed
-before it allocates, which is not Arm-specific, and they reproduce on all three platforms we
-tested, including the Intel Alder Lake baseline. The BTB-mediated channel, by contrast,
+The cache and TLB channels follow from a rule that is not specific to Arm: a non-canonical access
+is squashed before it allocates microarchitectural state. They therefore reproduce on all three
+platforms we tested, including the Intel Alder Lake baseline. The BTB-mediated channel, by contrast,
 reproduces on the Neoverse~N3 and the Pixel~8's Cortex-A715 core but \emph{not} on Alder Lake,
 nor on the same SoC's Cortex-X3 prime core, where we observed no in-range versus out-of-range
 distinction in speculative BTB allocation. The leak is therefore a property of the specific
