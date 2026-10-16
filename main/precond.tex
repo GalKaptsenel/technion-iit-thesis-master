@@ -110,14 +110,13 @@ violation~\cite{contracts,revizor}.
 \section{Sealing primitives}
 \label{sec:precond-primitives}
 
-\autoref{tab:precond-sealings} lists the primitives. Each perturbs one precondition on a
-speculative-only site, while the architectural path keeps the genuine fill. The Pointer
+\autoref{tab:precond-sealings} lists the primitives. Each perturbs a precondition on a
+speculative-only site, while the architectural path keeps the genuine fills. The Pointer
 Authentication and Memory Tagging primitives install a correct signature or tag in the genuine fill
-and, as in PACMAN and TikTag, an incorrect one in the decoy, so a transiently executed \reg{AUT*}
-or tagged access fails its check only on a squashed path. The canonicality and alignment primitives,
-which \autoref{chap:canon} studies in depth, make the guarded address in range and correctly aligned
+and an incorrect one in the decoy, so a transiently executed \reg{AUT*}
+or tagged access fails its check only on a squashed path. The canonicality and alignment primitives make the guarded address in range and correctly aligned
 in the genuine variant and out of range or misaligned in the decoy. The sign-extension primitive
-flips the range-selecting bit, which chooses between the \reg{TTBR0} and \reg{TTBR1} ranges
+flips the range-selecting bit, choosing between the \reg{TTBR0} and \reg{TTBR1} ranges
 (\autoref{sec:bg-canon}).
 
 \begin{table}[t]
