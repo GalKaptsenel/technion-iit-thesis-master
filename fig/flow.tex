@@ -10,9 +10,9 @@
   \fill[black!4, rounded corners=4pt] (-3.15,0.62) rectangle (2.95,-2*\gy-0.62);
   \fill[black!8, rounded corners=4pt] (-3.15,-3*\gy+0.62) rectangle (2.95,-4*\gy-0.62);
   \node[stage] (a) at (0,0)       {\textbf{test case} \\ {\scriptsize\color{black!55} randomly generated}};
-  \node[stage] (b) at (0,-\gy)    {\textbf{sealed test case} \\ {\scriptsize\color{black!55} placeholder sealings at the precondition sites}};
+  \node[stage] (b) at (0,-\gy)    {\textbf{sealed test case} \\ {\scriptsize\color{black!55} placeholder seals at the precondition sites}};
   \node[stage] (c) at (0,-2*\gy)  {\textbf{object test case} \\ {\scriptsize\color{black!55} assembled once; shared by all inputs}};
-  \node[stage] (d) at (0,-3*\gy)  {\textbf{genuine + decoy variants} \\ {\scriptsize\color{black!55} sealings filled by relocation}};
+  \node[stage] (d) at (0,-3*\gy)  {\textbf{genuine + decoy variants} \\ {\scriptsize\color{black!55} seals filled by relocation}};
   \node[stage] (e) at (0,-4*\gy)  {\textbf{hardware traces} \\ {\scriptsize\color{black!55} a difference is a leak}};
   \draw[ar] (a) -- (b) node[al,midway,xshift=2pt]{\textbf{(1)}~seal};
   \draw[ar] (b) -- (c) node[al,midway,xshift=2pt]{\textbf{(2)}~assemble};
