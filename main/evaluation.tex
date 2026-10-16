@@ -64,18 +64,18 @@ the Neoverse~N3, AL is Alder Lake).
 \cmark/\xmark: reproduced / not observed. \emph{n/a}: the underlying feature is absent on that
 platform. Red entries are not yet measured or confirmed.}
 \label{tab:eval-violations}
-\begin{tabular}{@{}l l c c c c@{}}
+\begin{tabular}{@{}l l c c c c c@{}}
 \toprule
-Violation & Channel & TTD & N3 & Pixel~8 & Alder Lake \\
+Violation & Channel & TTD & N3 & Cortex-A715 & Cortex-X3 & Alder Lake \\
 \midrule
-Spectre-v1 (conditional branch) & L1D       & N3:~\rv{?} & \rv{\cmark} & \rv{\cmark} & \cmark \\
-Spectre-v2 (indirect branch)    & L1D       & N3:~\rv{?} & \rv{\cmark} & \rv{\cmark} & \cmark \\
-Spectre-v2 (indirect branch)    & BTB       & N3:~\rv{?} & \rv{\cmark} & \rv{\cmark} & \cmark \\
-Spectre-v4 (store bypass)       & L1D       & N3:~\rv{?} & \rv{\cmark} & \rv{\cmark} & \cmark \\
-Canonicality                    & cache/TLB & N3:~\rv{?} & \cmark & \cmark & \cmark \\
-Canonicality                    & BTB       & N3:~\rv{?} & \cmark & \cmark & \xmark \\
-\texttt{AUT*} sign bit          & cache/TLB & N3:~\rv{?} & \cmark & \rv{?} & n/a \\
-L1D IP prefetcher (unexplained) & L1D       & AL:~\rv{?} & \xmark & \xmark & \cmark \\
+Spectre-v1 (conditional branch) & L1D       & N3:~\rv{?} & \rv{\cmark} & \rv{\cmark} & \rv{?} & \cmark \\
+Spectre-v2 (indirect branch)    & L1D       & N3:~\rv{?} & \rv{\cmark} & \rv{\cmark} & \rv{?} & \cmark \\
+Spectre-v2 (indirect branch)    & BTB       & N3:~\rv{?} & \rv{\cmark} & \rv{\cmark} & \rv{?} & \cmark \\
+Spectre-v4 (store bypass)       & L1D       & N3:~\rv{?} & \rv{\cmark} & \rv{\cmark} & \rv{?} & \cmark \\
+Canonicality                    & cache/TLB & N3:~\rv{?} & \cmark & \cmark & \rv{?} & \cmark \\
+Canonicality                    & BTB       & N3:~\rv{?} & \cmark & \cmark & \xmark & \xmark \\
+\texttt{AUT*} sign bit          & cache/TLB & N3:~\rv{?} & \cmark & \rv{?} & \rv{?} & n/a \\
+L1D IP prefetcher (unexplained) & L1D       & AL:~\rv{?} & \xmark & \xmark & \rv{?} & \cmark \\
 \bottomrule
 \end{tabular}
 \end{table}
