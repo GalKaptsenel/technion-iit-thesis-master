@@ -3,10 +3,11 @@
 
 The port's generator, like x86 \revizor{}'s, cannot produce the precondition violations behind
 attacks such as PACMAN and TikTag. This chapter closes that gap with a methodology for
-fuzzing instruction preconditions directly. The idea is to \emph{seal} the precondition sites
-of a test case and fill each seal, per input, so that the precondition is deliberately
-satisfied or violated on a speculative-only path, without ever faulting the victim
-architecturally (\autoref{fig:precond-flow}). \autoref{sec:precond-gap} states the gap,
+fuzzing instruction preconditions directly. The idea is to reserve a small \emph{seal} in the code just before each instruction whose
+precondition we want to fuzz, such as the signature check of an \reg{AUT*} or the tag check of a
+tagged access, and to fill each seal, per input, so that the precondition is deliberately satisfied
+or violated on a speculative-only path, without ever faulting the victim architecturally
+(\autoref{fig:precond-flow}). \autoref{sec:precond-gap} states the gap,
 \autoref{sec:precond-sealing}
 through \autoref{sec:precond-resolve} build the mechanism, \autoref{sec:precond-contract} fixes
 the contract it tests against, \autoref{sec:precond-primitives} lists the primitives, and
@@ -15,8 +16,18 @@ the contract it tests against, \autoref{sec:precond-primitives} lists the primit
 \section{The generation gap}
 \label{sec:precond-gap}
 
+A \emph{precondition} is a requirement an instruction places on its inputs for its intended,
+non-exceptional behavior: \reg{AUT*} expects a pointer whose authentication code verifies, a tagged
+access expects a logical tag that matches the memory's allocation tag, and an ordinary load or store
+expects an address that is in range and correctly aligned. Violating a precondition does not always
+fault. A wrong signature makes \reg{AUT*} fault at the instruction only on cores with FEAT\_FPAC,
+and otherwise yields a corrupted pointer that faults, if at all, only on a later use, the behavior
+the original PACMAN attack exploited. What a violation reliably does is drive the core into a
+different microarchitectural state from the satisfied case, and that difference is what an attacker
+reads.
+
 A precondition must hold along the architectural flow, but nothing constrains the speculative
-paths, where a violation can leak without faulting the program. Random generation cannot target
+paths. Random generation cannot target
 this directly: whether an input makes a given instruction retire is an input-reachability
 question, intractable in general. To stay safe for every input, the generator instruments every
 potentially faulting instruction (masking memory addresses into the sandbox, avoiding
