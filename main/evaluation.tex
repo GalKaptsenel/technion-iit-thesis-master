@@ -87,8 +87,7 @@ occupied, just before the access. The fuzzer flagged that when that sign bit is 
 is no effect on the L1D, and further investigation showed no effect on the instruction or data
 TLB either, unlike a correct sign bit, which does leave a footprint. This holds for both the
 \texttt{AUT*} and the combined authenticate-and-branch instructions, so an attacker can leak one
-bit at a time using the authentication instructions themselves as the leak primitive. It is not a
-signature forgery: no signature is recovered, guessed, or installed.
+bit at a time using the authentication instructions themselves as the leak primitive.
 
 \paragraph{The L1D IP-prefetcher leak.}
 On the Intel Alder Lake baseline we additionally observe a leak that no contract models, carried by
