@@ -220,8 +220,8 @@ never modelled.
 PACMAN~\cite{pacman} and TikTag~\cite{tiktag} are hand-crafted counterparts of the
 precondition gates that this thesis fuzzes automatically. Where they construct a single gadget
 by hand, we discover and classify such gadgets systematically. Our Pointer Authentication
-result also differs in kind, in that it leaks the sign bit of a failed authentication rather
-than probing the signature itself.
+result also differs in kind, in that it leaks bit~55 of the pointer, which the authentication instructions sign-extend whether or not the
+signature is correct, rather than probing the signature itself.
 
 \paragraph{Microarchitectural side channels.}
 The leaks we find are read out with the standard cache attacks Flush+Reload, Flush+Flush, and

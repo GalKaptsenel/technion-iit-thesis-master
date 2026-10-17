@@ -44,7 +44,7 @@ single vulnerable \texttt{memcpy} planted in it (\autoref{sec:eval-exploit}). A 
 stack-buffer overflow drives a return-oriented chain built entirely from gadgets found within the
 OpenSSL library itself, with no attacker code in the victim. The chain sets up and fires a
 Spectre-v4 window inside the real victim and transmits over the BTB channel, read with the rootless
-\reg{cntvct\_el0} timer~\cite{primeprobe}. Because the read primitive walks OpenSSL's own heap, it
+\reg{cntvct\_el0} timer. Because the read primitive walks OpenSSL's own heap, it
 recovers the bytes of an in-use RSA-2048 private key.
 
 \section{An EL3 round trip does not flush the BTB}

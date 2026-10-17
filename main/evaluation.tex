@@ -12,8 +12,8 @@ real software (\autoref{sec:eval-exploit}).
 
 Our primary target is an Arm Neoverse~N3 (Armv9.2-A), on a bare-metal cloud instance pinned to a
 single isolated core. We reproduce the leaks on a Google Pixel~8 (Tensor~G3), pinning to its
-Cortex-A715 and Cortex-X3 cores in turn. The BTB-mediated canonicality channel is confined to the
-Cortex-A715 (Armv9.0-A) and, notably, does not reproduce on the Cortex-X3 prime core, whereas the
+Cortex-A715 and Cortex-X3 cores in turn. Among the Pixel~8's cores, the BTB-mediated canonicality channel is confined to the
+Cortex-A715 (Armv9.0-A) and does not reproduce on the Cortex-X3 prime core, whereas the
 cache and TLB channels reproduce on both. The N3 controller drives the Pixel~8 remotely, reaching
 the device over \texttt{adb} tunneled through an SSH reverse connection across the network
 (\autoref{sec:port-remote}). We use an Intel Alder Lake core as a non-Arm baseline. Following prior
