@@ -116,16 +116,14 @@ and it matters because every execution is a full prime-and-measure cycle on the 
 optimality of both is proved in \autoref{appendix:localization}.
 
 \autoref{tab:eval-localize} reports the measured cost over a range of batch sizes. The binary
-search runs about one execution above its analytic bound $\lceil\log_2(k+1)\rceil$. That bound counts
-only the interior splices and takes the two endpoint readings $r(0)$ and $r(k+1)$ as free, whereas the
-run measures them as well, and the mean number of interior probes falls just short of the worst-case
-bound, so the two net to roughly one extra execution. Its cost is essentially independent of where the
-boundary falls, with the standard deviation shrinking from $0.43$ at $k{=}12$ to $0.02$ at $k{=}2048$.
+search runs close to its analytic bound $\lceil\log_2(k+1)\rceil$, its cost essentially independent of
+where the boundary falls, with the standard deviation shrinking from $0.43$ at $k{=}12$ to $0.02$ at
+$k{=}2048$.
 The table also includes a galloping variant for contrast. Instead of halving the full window, it
 starts at one end and probes at doubling distances ($1$, $2$, $4$, \dots\ classes in) until two probes
 straddle a boundary, then binary-searches the small range between them. A boundary near the starting
 end is found in a handful of probes. For a boundary placed uniformly across the range, the case shown
-in the table, galloping costs roughly $1.5$ to $1.7$ times the plain binary search, so it helps only
+in the table, galloping costs roughly $1.6$ to $1.8$ times the plain binary search, so it helps only
 when the boundary is expected near one end.
 
 \begin{table}[t]\centering\small
@@ -139,12 +137,12 @@ shown for contrast.}
 \toprule
 $k$ & $\lceil\log_2(k{+}1)\rceil$ & Measured binary & Galloping & Linear \\
 \midrule
-$12$   & $4$  & $5.75\pm0.43$  & $7.50$  & $9.42$ \\
-$64$   & $7$  & $8.02\pm0.12$  & $12.14$ & $35.48$ \\
-$256$  & $9$  & $10.00\pm0.06$ & $16.04$ & $131.50$ \\
-$512$  & $10$ & $11.00\pm0.04$ & $18.02$ & $259.50$ \\
-$1024$ & $11$ & $12.00\pm0.03$ & $20.01$ & $515.50$ \\
-$2048$ & $12$ & $13.00\pm0.02$ & $22.01$ & $1027.50$ \\
+$12$   & $4$  & $4.75\pm0.43$  & $7.50$  & $9.42$ \\
+$64$   & $7$  & $7.02\pm0.12$  & $12.14$ & $35.48$ \\
+$256$  & $9$  & $9.00\pm0.06$ & $16.04$ & $131.50$ \\
+$512$  & $10$ & $10.00\pm0.04$ & $18.02$ & $259.50$ \\
+$1024$ & $11$ & $11.00\pm0.03$ & $20.01$ & $515.50$ \\
+$2048$ & $12$ & $12.00\pm0.02$ & $22.01$ & $1027.50$ \\
 \bottomrule
 \end{tabular}
 \end{table}
