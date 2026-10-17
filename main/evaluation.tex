@@ -101,8 +101,9 @@ prefetcher, which then runs ahead and pulls a secret-dependent line into the cac
 contract's account of the program's own accesses. The channel is gated entirely by that prefetcher:
 it appears and disappears deterministically as the IP-prefetcher control bit (\reg{MSR~0x1A4}
 bit~3) is toggled. This is the known AfterImage channel~\cite{afterimage}. More broadly, surfacing a genuine
-microarchitectural leak on an Intel core with the same methodology, not only on Arm, shows that the
-speculative-leakage mechanism this work targets is not specific to one architecture.
+microarchitectural leak on an Intel core with the same methodology shows that the generalized priming
+approach is not specific to one architecture and is able to identify speculative leakage on non-Arm
+targets.
 
 \section{Localization cost}
 \label{sec:eval-localize}
