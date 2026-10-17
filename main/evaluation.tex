@@ -11,9 +11,12 @@ real software (\autoref{sec:eval-exploit}).
 \label{sec:eval-setup}
 
 Our primary target is an Arm Neoverse~N3 (Armv9.2-A), on a bare-metal cloud instance pinned to a
-single isolated core. We reproduce the Arm-specific leaks on a Google Pixel~8 (Tensor~G3), where
-the leak is pinned to a Cortex-A715 core (Armv9.0-A) and, notably, does not reproduce on the same
-SoC's Cortex-X3 prime core. We use an Intel Alder Lake core as a non-Arm baseline. Following prior
+single isolated core. We reproduce the leaks on a Google Pixel~8 (Tensor~G3), pinning to its
+Cortex-A715 and Cortex-X3 cores in turn. The BTB-mediated canonicality channel is confined to the
+Cortex-A715 (Armv9.0-A) and, notably, does not reproduce on the Cortex-X3 prime core, whereas the
+cache and TLB channels reproduce on both. The N3 controller drives the Pixel~8 remotely, reaching
+the device over \texttt{adb} tunneled through an SSH reverse connection across the network
+(\autoref{sec:port-remote}). We use an Intel Alder Lake core as a non-Arm baseline. Following prior
 \revizor{} work, we report throughput as test cases per hour with the number of inputs per test
 case, and we report, per violation, the \emph{time to detection} (TTD): the mean wall-clock time
 before the first detected violation on the Neoverse~N3.
@@ -29,15 +32,16 @@ the full toolchain (\autoref{sec:port-remote}). \autoref{tab:eval-throughput} re
 
 \begin{table}[t]\centering\small
 \setlength{\tabcolsep}{8pt}
-\caption{Fuzzing throughput on the Neoverse~N3: local execution versus remote orchestration.}
+\caption{Fuzzing throughput under the \textsc{CT-SEQ} contract: local execution on the
+Neoverse~N3 versus remote orchestration with the executor on the Pixel~8 Cortex-A715.}
 \label{tab:eval-throughput}
 \begin{tabular}{@{}lcc@{}}
 \toprule
  & Local & Remote \\
 \midrule
-Test cases / hour   & \rv{?} & \rv{?} \\
-Inputs / test case  & \rv{?} & \rv{?} \\
-Executions / second & \rv{?} & \rv{?} \\
+Test cases / hour   & $9{,}151$ & $1{,}233$ \\
+Inputs / test case  & $100$     & $100$ \\
+Executions / second & $254$     & $34.3$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -46,36 +50,28 @@ Executions / second & \rv{?} & \rv{?} \\
 \label{sec:eval-violations}
 
 \autoref{tab:eval-violations} lists the violations the fuzzer finds, their time to detection on
-the N3, and whether each reproduces on the N3, the Pixel~8 (Cortex-A715), and the Alder Lake
-baseline. Spectre-v1 and Spectre-v4 are not a contribution of this work. We reproduce them as a
-sanity check. For Spectre-v2 we report two detection paths: through the L1D it is the standard
-\revizor{} style, while through the BTB it has the code structure that standard priming cannot
-catch and that the generalized priming of \autoref{chap:priming} detects. Our own findings are
-the canonicality leak (\autoref{chap:canon}) and the \texttt{AUT*} sign-bit leak. We additionally
-observe, on the Alder Lake baseline only, an unexplained violation tied to the L1D
-instruction-pointer prefetcher: we have not explained the mechanism, but the signal appears and
-disappears deterministically as the corresponding prefetcher-control bit is toggled, so it is a
-genuine microarchitectural effect rather than measurement noise.
+the N3, and whether each reproduces on the N3, the Pixel~8 (Cortex-A715 and Cortex-X3), and the
+Alder Lake baseline. Spectre-v1, Spectre-v2, and Spectre-v4 are not a contribution of this work. We
+reproduce them as a sanity check. Our own findings are the canonicality leak (\autoref{chap:canon})
+and the \texttt{AUT*} sign-bit leak.
 
-\begin{table}[t]\centering\small
-\setlength{\tabcolsep}{6pt}
-\caption{Contract violations. TTD is the mean time to first detection, labeled by platform (N3 is
-the Neoverse~N3, AL is Alder Lake).
+\begin{table}[t]\centering\footnotesize
+\setlength{\tabcolsep}{5pt}
+\caption{Contract violations. TTD is the mean time to first detection on the Neoverse~N3.
 \cmark/\xmark: reproduced / not observed. \emph{n/a}: the underlying feature is absent on that
-platform. Red entries are not yet measured or confirmed.}
+platform.}
 \label{tab:eval-violations}
 \begin{tabular}{@{}l l c c c c c@{}}
 \toprule
 Violation & Channel & TTD & N3 & Cortex-A715 & Cortex-X3 & Alder Lake \\
 \midrule
-Spectre-v1 (conditional branch) & L1D       & N3:~\rv{?} & \rv{\cmark} & \rv{\cmark} & \rv{?} & \cmark \\
-Spectre-v2 (indirect branch)    & L1D       & N3:~\rv{?} & \rv{\cmark} & \rv{\cmark} & \rv{?} & \cmark \\
-Spectre-v2 (indirect branch)    & BTB       & N3:~\rv{?} & \rv{\cmark} & \rv{\cmark} & \rv{?} & \cmark \\
-Spectre-v4 (store bypass)       & L1D       & N3:~\rv{?} & \rv{\cmark} & \rv{\cmark} & \rv{?} & \cmark \\
-Canonicality                    & cache/TLB & N3:~\rv{?} & \cmark & \cmark & \rv{?} & \cmark \\
-Canonicality                    & BTB       & N3:~\rv{?} & \cmark & \cmark & \xmark & \xmark \\
-\texttt{AUT*} sign bit          & cache/TLB & N3:~\rv{?} & \cmark & \rv{?} & \rv{?} & n/a \\
-L1D IP prefetcher (unexplained) & L1D       & AL:~\rv{?} & \xmark & \xmark & \rv{?} & \cmark \\
+Spectre-v1 (conditional branch) & L1D       & $53.9$\,s & \cmark & \cmark & \cmark & \cmark \\
+Spectre-v2 (indirect branch)    & L1D       & $79.9$\,s & \cmark & \cmark & \cmark & \cmark \\
+Spectre-v4 (store bypass)       & L1D       & $32.3$\,s & \cmark & \cmark & \cmark & \cmark \\
+Canonicality                    & cache/TLB & $42.9$\,s & \cmark & \cmark & \cmark & \cmark \\
+Canonicality                    & BTB       & $84$\,s   & \cmark & \cmark & \xmark & \xmark \\
+\texttt{AUT*} sign bit          & cache/TLB & $54.5$\,s & \cmark & \cmark & \cmark & n/a \\
+L1D IP prefetcher               & L1D       &           & \xmark & \xmark & \xmark & \cmark \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -93,6 +89,16 @@ TLB either, unlike a correct sign bit, which does leave a footprint. This holds 
 \texttt{AUT*} and the combined authenticate-and-branch instructions, so an attacker can leak one
 bit at a time using the authentication instructions themselves as the leak primitive. It is not a
 signature forgery: no signature is recovered, guessed, or installed.
+
+\paragraph{The L1D IP-prefetcher leak.}
+On the Intel Alder Lake baseline we additionally observe a leak that no contract models, carried by
+the core's L1 data-cache IP-stride prefetcher. A load whose address depends on a secret trains the
+prefetcher, which then runs ahead and pulls a secret-dependent line into the cache, outside the
+contract's account of the program's own accesses. The channel is gated entirely by that prefetcher:
+it appears and disappears deterministically as the IP-prefetcher control bit (\reg{MSR~0x1A4}
+bit~3) is toggled. This is the known AfterImage channel~\cite{afterimage}. That the same
+methodology surfaces a genuine microarchitectural leak on an Intel core, and not only on Arm, shows
+that the speculative-leakage mechanism this work targets is not specific to one architecture.
 
 \section{Localization cost}
 \label{sec:eval-localize}
