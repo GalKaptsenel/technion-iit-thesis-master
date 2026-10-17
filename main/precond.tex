@@ -17,11 +17,11 @@ the contract it tests against, \autoref{sec:precond-primitives} lists the primit
 \label{sec:precond-gap}
 
 A \emph{precondition} is a requirement an instruction places on its inputs for its intended,
-non-exceptional behavior: \reg{AUT*} expects a pointer whose authentication code passes vreification, a tagged
+non-exceptional behavior: \reg{AUT*} expects a pointer whose authentication code passes verification, a tagged
 access expects a logical tag that matches the memory's allocation tag, and an ordinary load or store
 expects an address that is in range and correctly aligned.
-A valuable attack would require that the architectural flow of a victim program to stay intact, but nothing constrains the speculative
-paths. Attacks as PACMAN [cite] and TikTag used this to leak secutrity information about the victim program. Random generation cannot target
+A valuable attack would require the architectural flow of a victim program to stay intact, but nothing constrains the speculative
+paths. Attacks such as PACMAN~\cite{pacman} and TikTag~\cite{tiktag} used this to leak security information about the victim program. Random generation cannot target
 this directly: whether an input makes a given instruction retire is an input-reachability
 question, intractable in general. Thus to stay safe for every input, the generator instruments every
 potentially faulting instruction (masking memory addresses into the sandbox, avoiding
@@ -110,7 +110,7 @@ violation~\cite{contracts,revizor}.
 \section{Sealing primitives}
 \label{sec:precond-primitives}
 
-\autoref{tab:precond-sealings} lists the primitives. Each perturbs a precondition on a
+\autoref{tab:precond-sealings} lists the primitives. Each violates a precondition on a
 speculative-only site, while the architectural path keeps the genuine fills. The Pointer
 Authentication and Memory Tagging primitives install a correct signature or tag in the genuine fill
 and an incorrect one in the decoy, so a transiently executed \reg{AUT*}
@@ -123,7 +123,7 @@ flips the range-selecting bit, choosing between the \reg{TTBR0} and \reg{TTBR1} 
 \centering
 \footnotesize
 \setlength{\tabcolsep}{6pt}
-\caption{Sealing primitives. Each perturbs one precondition on a speculative-only site, while the
+\caption{Sealing primitives. Each violates one precondition on a speculative-only site, while the
 architectural path keeps the genuine fill.}
 \label{tab:precond-sealings}
 \begin{tabular}{@{}l l l@{}}
