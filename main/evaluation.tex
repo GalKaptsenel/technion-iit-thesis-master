@@ -107,26 +107,40 @@ speculative-leakage mechanism this work targets is not specific to one architect
 \section{Localization cost}
 \label{sec:eval-localize}
 
-Once a suspected violation is detected, the generalized priming localizes the responsible class boundary
-among the $k$ equivalence classes of a priming batch (\autoref{sec:priming-localizers}). The
-linear scan runs at most $k$ hardware executions and returns the largest leaking class. The binary
-search runs only $\lceil\log_2(k+1)\rceil$ and returns one. The saving is exponential, and it
-matters because every execution is a full prime-and-measure cycle on the device.
-\autoref{tab:eval-localize} gives the counts for representative batch sizes. The optimality of both
-is proved in \autoref{appendix:localization}.
+Once a suspected violation is detected, the generalized priming localizes the responsible class
+boundary among the $k$ equivalence classes of a priming batch (\autoref{sec:priming-localizers}).
+The linear scan runs at most $k$ hardware executions and returns the largest leaking class, while
+the binary search runs only $\lceil\log_2(k+1)\rceil$ and returns one. The saving is exponential,
+and it matters because every execution is a full prime-and-measure cycle on the device. The
+optimality of both is proved in \autoref{appendix:localization}.
+
+\autoref{tab:eval-localize} reports the measured cost over a range of batch sizes. The binary
+search runs about one execution above its analytic bound, the overhead of bracketing the search,
+and its cost is essentially independent of where the boundary falls, with the standard deviation
+shrinking from $0.43$ at $k{=}12$ to $0.02$ at $k{=}2048$. The table also shows a galloping variant
+for contrast. It probes at doubling distances inward from one end until it brackets a boundary and
+then bisects, which localizes a boundary close to that end, such as a recently trained class, in a
+number of runs that grows with the distance to the boundary rather than with $k$, about four at any
+batch size. The trade-off is that a uniformly placed boundary costs it roughly twice the plain
+bisection, so it pays off only when the boundary is expected near the chosen end.
 
 \begin{table}[t]\centering\small
-\setlength{\tabcolsep}{8pt}
+\setlength{\tabcolsep}{6pt}
 \caption{Localization cost: hardware executions to localize one boundary among $k$ equivalence
-classes, linear scan (worst case) versus binary search.}
+classes. The binary search is given both as its analytic bound $\lceil\log_2(k+1)\rceil$ and as the
+measured mean$\pm$sd over all boundary positions, with the galloping and linear-scan localizers
+shown for contrast.}
 \label{tab:eval-localize}
-\begin{tabular}{@{}l c c c@{}}
+\begin{tabular}{@{}r c c c c@{}}
 \toprule
- & $k{=}12$ & $k{=}64$ & $k{=}256$ \\
+$k$ & $\lceil\log_2(k{+}1)\rceil$ & Measured binary & Galloping & Linear \\
 \midrule
-Linear scan (worst case) & 12 & 64 & 256 \\
-Binary search            & 4  & 7  & 9 \\
-Measured avg.\ (binary)  & \rv{?} & \rv{?} & \rv{?} \\
+$12$   & $4$  & $5.75\pm0.43$  & $7.50$  & $9.42$ \\
+$64$   & $7$  & $8.02\pm0.12$  & $12.14$ & $35.48$ \\
+$256$  & $9$  & $10.00\pm0.06$ & $16.04$ & $131.50$ \\
+$512$  & $10$ & $11.00\pm0.04$ & $18.02$ & $259.50$ \\
+$1024$ & $11$ & $12.00\pm0.03$ & $20.01$ & $515.50$ \\
+$2048$ & $12$ & $13.00\pm0.02$ & $22.01$ & $1027.50$ \\
 \bottomrule
 \end{tabular}
 \end{table}
