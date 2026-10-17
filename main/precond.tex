@@ -161,3 +161,10 @@ exactly in the perturbed seals. A hardware-trace difference between the variants
 confined to those seals. Confirming a leak then reduces to checking that the difference comes from
 the precondition being violated speculatively, rather than from the perturbed instructions
 themselves.
+
+Generating inputs that respect an instruction's preconditions is also what a solver-based validator
+such as ScamV~\cite{scamv} must do, discharging each experiment's constraints with symbolic execution
+and an SMT solver. Precondition fuzzing instead fills the sealed sites with a lightweight per-input
+draw rather than a per-experiment solve, and it aims to violate a precondition on a speculative-only
+path rather than to satisfy every constraint, keeping the retiring execution legal. Because ScamV's
+models are non-speculative, that speculative precondition violation lies outside its scope.

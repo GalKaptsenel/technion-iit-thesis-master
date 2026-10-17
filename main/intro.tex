@@ -98,7 +98,9 @@ boundaries~\cite{isolation}. Osiris~\cite{osiris} and Medusa~\cite{transynther} 
 real CPU directly for side channels and data-leak gadgets. Osiris fuzzes instruction-sequence
 triples drawn from the ISA and times them for side channels, while Medusa mutates memory-access
 gadgets to synthesize data-sampling leaks. ScamV~\cite{scamv} validates an abstract observational model of a core against the
-hardware, using symbolic execution and SMT solvers to generate the distinguishing experiments. The pre-silicon approach is usually based on a simulated
+hardware, using symbolic execution and an SMT solver to generate the distinguishing experiments. Its
+leakage model does not encompass speculation and its evaluation targets the in-order Cortex-A53, so
+the out-of-order speculative leaks this thesis targets lie outside what it models and tests. The pre-silicon approach is usually based on a simulated
 design: AMuLeT~\cite{amulet}, itself a \revizor{} descendant, applies the same relational testing
 to a microarchitectural simulator such as gem5, and SpecDoctor~\cite{specdoctor} fuzzes an open
 register-transfer-level (RTL) core. Across both groups every system but ScamV targets x86-64 or an
