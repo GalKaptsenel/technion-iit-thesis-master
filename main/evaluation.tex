@@ -82,7 +82,9 @@ platform.
 \end{table}
 
 \paragraph{The \texttt{AUT*} sign-bit leak.}
-The \texttt{AUT*} instruction family leaks the pointer's \emph{sign bit}, not its signature. After
+The \texttt{AUT*} instruction family leaks the pointer's \emph{sign bit}, not its signature. This is a distinct oracle from the
+canonicality leak of \autoref{chap:canon}. The authenticated pointer is canonical, so the signal is
+the sign extension the authentication performs rather than the fast-reject of an out-of-range access. After
 PACMAN~\cite{pacman}, Arm introduced a mitigation that makes speculative authentication behave
 identically whether or not the signature is correct, so that the correctness of the \texttt{PAC}
 signature is itself indistinguishable under speculation (the speculative path always proceeds as
@@ -172,14 +174,14 @@ EL0         & EL2        & L1 dTLB & $1240$ & $100\%$   & \reg{cntvct\_el0} \\
 \end{table}
 
 \paragraph{Weaponization with return-oriented programming.}
-We weaponize the leak with two return-oriented-programming chains, one built from \texttt{musl} and
-one from OpenSSL. Each delivers the oracle through a real binary using only a simple memory-copy
-buffer overflow and no attacker code in the victim, and each achieves arbitrary reads from the
-victim's address space. Both targets are compiled without Pointer Authentication or stack canaries,
-the two explicit anti-ROP mitigations, and each chain is assembled entirely from gadgets already
-present in its own \texttt{musl} or OpenSSL library. Since the channel needs only a small, fixed
+We weaponize the leak with a return-oriented-programming chain built from OpenSSL (and one for
+\texttt{musl}). It delivers the oracle through a real binary using only a simple memory-copy
+buffer overflow and no attacker code in the victim, and achieves arbitrary reads from the
+victim's address space. The target is compiled without Pointer Authentication or stack canaries,
+the two explicit anti-ROP mitigations, and the chain is assembled entirely from gadgets already
+present in the OpenSSL library. Since the channel needs only a small, fixed
 sequence of operations from the chain, the scarcer gadget supply on AArch64 was not a constraint,
-and each chain took under an hour to build. Both transmit over the BTB channel and are read out with
+and the chain took under an hour to build. It transmits over the BTB channel and is read out with
 the rootless \reg{cntvct\_el0} timer. Because the OpenSSL read primitive walks OpenSSL's own heap, it
 recovers a complete in-use RSA-2048 private key at \reg{--samples 1500} (about $5.5$~hours). The high
 sample count is what pushes the accuracy that far, since a bit-exact key needs a high per-bit success
