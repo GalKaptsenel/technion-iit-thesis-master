@@ -6,8 +6,7 @@ reach. As the Technion guidelines ask that software developed for a thesis be de
 an appendix, we summarize them here. We describe their structure and attacker model rather than
 reproduce their source. Each is \emph{self-scoring}: the victim generates a fresh random secret
 each round, and the harness compares it to the recovered value only to report accuracy. All
-measurements are taken on the Neoverse~N3, each pinned to a single isolated core, except the Intel
-prefetcher proof of concept (\autoref{app:poc-ipp}), which runs on the Alder Lake baseline. The attacker runs
+measurements are taken on the Neoverse~N3, each pinned to a single isolated core. The attacker runs
 unprivileged at EL0, and for the cross-process and guest-to-host cases the attacker and victim share
 one physical core. No elevated privilege, special instruction, or configuration is required beyond a
 vulnerable code pattern in the target and the ability to co-locate on a core.
@@ -58,13 +57,3 @@ buffer. The harness primes one EL0 BTB entry, performs an EL3 round trip between
 probe, and reports whether the entry survived. It survives intact across many round trips.
 An EL3 world switch therefore does not by itself destroy the prediction state the BTB channel relies
 on, which is the open question of \autoref{sec:concl-open}.
-
-\section{Intel IP-prefetcher channel}
-\label{app:poc-ipp}
-
-On the Intel Alder Lake baseline, a hand-built proof of concept demonstrates the L1 data-cache
-IP-stride prefetcher channel of \autoref{sec:eval-violations}, the known AfterImage
-channel~\cite{afterimage}. A gadget issues a secret-dependent strided load that trains the
-prefetcher, and its run-ahead pulls a secret-dependent line into the cache that a Flush+Reload
-read-out then recovers. The channel is controlled by the IP-prefetcher enable bit (\reg{MSR~0x1A4}
-bit~3): the recovery succeeds with the prefetcher enabled and vanishes when it is disabled.

@@ -66,9 +66,9 @@ Violation & Channel & TTD & N3 & Cortex-A715 & Cortex-X3 & Alder Lake \\
 Spectre-v1 (conditional branch) & L1D       & $53.9$\,s$^{\dagger}$  & \cmark & \cmark & \cmark & \cmark \\
 Spectre-v2 (indirect branch)    & L1D       & $79.9$\,s$^{\dagger}$  & \cmark & \cmark & \cmark & \cmark \\
 Spectre-v4 (store bypass)       & L1D       & $32.3$\,s$^{\dagger}$  & \cmark & \cmark & \cmark & \cmark \\
-Canonicality                    & cache/TLB & $42.9$\,s$^{\dagger}$  & \cmark & \cmark & \cmark & \cmark \\
+Canonicality                    & L1D       & $42.9$\,s$^{\dagger}$  & \cmark & \cmark & \cmark & \cmark \\
 Canonicality                    & BTB       & $84$\,s$^{\dagger}$    & \cmark & \cmark & \xmark & \xmark \\
-\texttt{AUT*} sign bit          & cache/TLB & $54.5$\,s$^{\dagger}$  & \cmark & \cmark & \cmark & n/a \\
+\texttt{AUT*} sign bit          & L1D       & $54.5$\,s$^{\dagger}$  & \cmark & \cmark & \cmark & n/a \\
 L1D IP prefetcher~\cite{afterimage} & L1D & $35$\,min$^{\ddagger}$ & \xmark & \xmark & \xmark & \cmark \\
 \bottomrule
 \end{tabular}
@@ -169,7 +169,7 @@ and each chain took under an hour to build. Both transmit over the BTB channel a
 the rootless \reg{cntvct\_el0} timer. Because the OpenSSL read primitive walks OpenSSL's own heap, it
 recovers a complete in-use RSA-2048 private key at \reg{--samples 1500} (about $5.5$~hours). The high
 sample count is what pushes the accuracy that far, since a bit-exact key needs a high per-bit success
-rate. A shorter run of about $15$~minutes recovers most of the key, at a \rv{?}\% bit error rate.
+rate.
 
 \paragraph{Blind stack-canary recovery.}
 A separate demonstration recovers a victim's own stack canary with no prior knowledge of its value,
