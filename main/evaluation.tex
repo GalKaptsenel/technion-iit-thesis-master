@@ -27,7 +27,7 @@ before the first detected violation on the Neoverse~N3.
 The fuzzer runs in two configurations. In \emph{local} execution the generator, the contract
 executor, and the hardware executor all run on the N3. In \emph{remote} execution a controller
 generates and models test cases while a thin agent on each device only executes them and returns
-hardware traces, which lets one controller drive devices, such as the Pixel~8, that cannot host
+hardware traces. This lets one controller drive devices, such as the Pixel~8, that cannot host
 the full toolchain (\autoref{sec:port-remote}). \autoref{tab:eval-throughput} reports both.
 
 \begin{table}[t]\centering\small
@@ -52,8 +52,8 @@ Executions / second & $254$     & $34.3$ \\
 \autoref{tab:eval-violations} lists the violations the fuzzer finds, their time to detection on
 the N3, and whether each reproduces on the N3, the Pixel~8 (Cortex-A715 and Cortex-X3), and the
 Alder Lake baseline. Spectre-v1, Spectre-v2, and Spectre-v4 are not a contribution of this work. We
-reproduce them as a sanity check. Our own findings are the canonicality leak (\autoref{chap:canon})
-and the \texttt{AUT*} sign-bit leak.
+reproduce them as a sanity check. Our own findings are the canonicality leak (\autoref{chap:canon}), the \texttt{AUT*} sign-bit
+leak, and the automatic discovery of the L1D IP-prefetcher leak.
 
 \begin{table}[t]\centering\footnotesize
 \setlength{\tabcolsep}{4pt}
