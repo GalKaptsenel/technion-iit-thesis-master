@@ -82,9 +82,7 @@ platform.
 \end{table}
 
 \paragraph{The \texttt{AUT*} sign-bit leak.}
-The \texttt{AUT*} instruction family leaks the pointer's \emph{sign bit}, not its signature. This is a distinct oracle from the
-canonicality leak of \autoref{chap:canon}. The authenticated pointer is canonical, so the signal is
-the sign extension the authentication performs rather than the fast-reject of an out-of-range access. After
+The \texttt{AUT*} instruction family leaks the pointer's \emph{sign bit}, not its signature. After
 PACMAN~\cite{pacman}, Arm introduced a mitigation that makes speculative authentication behave
 identically whether or not the signature is correct, so that the correctness of the \texttt{PAC}
 signature is itself indistinguishable under speculation (the speculative path always proceeds as
