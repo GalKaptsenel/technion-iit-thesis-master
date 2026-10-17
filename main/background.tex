@@ -310,9 +310,9 @@ to read a victim's memory and recover an RSA-2048 key.
 
 Return-oriented programming is more challenging on AArch64 than on x86. A function returns with the
 \reg{RET} instruction, which transfers control to the address held in the link register \reg{X30}.
-On x86, by contrast, a return takes its target from a value popped off the stack. Thus an attacker
-cannot simply place the next gadget's address on the stack and let \reg{RET} jump to it. This makes
-useful gadgets scarcer and chaining them more involved. RiscyROP~\cite{riscyrop} automates the
+On x86, by contrast, a return takes its target from a value popped off the stack. Each gadget must therefore reload \reg{X30} from the stack
+before it returns, rather than let \reg{RET} take the next address directly off the stack as on x86.
+This makes useful gadgets scarcer and chaining them more involved. RiscyROP~\cite{riscyrop} automates the
 discovery and chaining of such gadgets on AArch64 and RISC-V.
 
 \begin{figure}[h]
@@ -395,7 +395,7 @@ layout for a 48-bit virtual address.
 address. The upper bits are shared among canonicality, the ignored top byte, the MTE logical tag,
 and the PAC field. Bit~55 selects the address range and is the effective sign bit when Top
 Byte Ignore is enabled (bit~63 when it is not), and it is excluded from the PAC field. With Memory
-Tagging the top byte carries the logical tag and the PAC field occupies bits $[54{:}48]$. Without
+Tagging the logical tag occupies bits $[59{:}56]$ and the PAC field occupies bits $[54{:}48]$. Without
 it, the top byte joins the PAC field, which bit~55 splits in two.}
 \label{fig:bg-ptrlayout}
 \end{figure}

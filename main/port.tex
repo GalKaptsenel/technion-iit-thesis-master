@@ -21,7 +21,7 @@ instruction set, so we keep it and rebuild the three ISA-specific backends for A
 64-bit execution state introduced in Armv8-A. We additionally model the Pointer
 Authentication and Memory Tagging extensions, which x86 \revizor{} has no analogue for and
 which are the subject of the precondition primitives of \autoref{chap:precond}. The port is
-evaluated on Armv9.2-A cores in \autoref{chap:eval}.
+evaluated on Armv9 cores in \autoref{chap:eval}.
 
 \section{Contract model via native execution}
 \label{sec:port-components}
@@ -186,7 +186,7 @@ the device is impractical: generating and analyzing large campaigns needs comput
 a software stack those devices lack. We therefore keep generation, contract modeling, and
 analysis on a capable host, and leave on the device hosting the CPU under test only the
 execution and measurement that need the silicon. A small on-device helper forwards requests to
-the kernel module, so a single host can drive many heterogeneous targets without modification.
+the kernel module, so a single host can drive many heterogeneous targets without modification (\autoref{fig:port-remote}).
 Because a network round trip per measurement would dominate the run, a campaign window
 aggregates many test cases and their inputs into one streamed super-batch, and the device
 returns all traces in a single response.
