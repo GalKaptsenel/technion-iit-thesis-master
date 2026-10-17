@@ -187,7 +187,7 @@ these claims in the order the thesis develops them, together with a second Arm l
   machinery above, we uncover a previously unknown leak that arises from the canonicality and
   alignment checks the CPU performs on loads, stores, and indirect branches. We demonstrate it
   on the Arm Neoverse~N3 and the Cortex-A715, which together span server-class and mobile Arm
-  cores, and we show that it crosses both privilege boundaries (EL0-attacker to EL2-victim) and
+  cores, and we show that it crosses both the privilege boundary (EL0-attacker to EL2-victim) and
   the virtualization boundary (attacker-VM to victim-host). We then weaponize it in two ways.
   First, we use it to leak a victim's stack canary. Second, we build a return-oriented-programming
   chain from \texttt{OpenSSL} gadgets and recover a complete RSA-2048 private key
