@@ -173,28 +173,10 @@ rate. A shorter run of about $15$~minutes recovers most of the key, at a \rv{?}\
 
 \paragraph{Blind stack-canary recovery.}
 A separate demonstration recovers a victim's own stack canary with no prior knowledge of its value,
-from a two-dimensional-array gadget driven the three independent ways of \autoref{sec:canon-windows},
+from a two-dimensional-array gadget driven the three independent ways of \autoref{sec:canon-windows}:
 a mistrained bounds check (Spectre-v1), a store-bypassed bound (Spectre-v4), and a return shadow
-(Spectre-RSB), recovering the full \reg{[55:0]} pointer value. The proof of concept isolates the
-channel rather than packaging a complete exploit, and it assumes that every page its probe reaches
-is mapped, so the program lays out a finite scaffold of pages its own accesses can land on and reads
-cache residency over them. A fully mapped user address space is a laboratory convenience, not a
-mitigation. Paging is a memory-management mechanism and not a confidentiality boundary, so a
-target's pages usually being unmapped should not be relied on as a defense. The Flush+Reload
-read-out, the performance-counter timing, and positioning the watched page from the known canary
-serve only to reduce noise, and the other demonstrations read the same oracle rootlessly and over
-Prime+Probe.
-
-\section{Covert-channel analysis}
-\label{sec:eval-covert}
-
-The bit rates above bound the channel's capacity, and they differ by carrier for a structural
-reason. A transient L1D fill is same-thread-bound and is discarded on a context switch, so it
-cannot carry a leak across a boundary. The cross-domain variants therefore ride a per-core
-structure that survives the switch (the BTB, or the data TLB where the BTB is split across the
-boundary), which trades bandwidth for persistence. This \emph{context-switch wall} is why the
-EL2-to-EL0 leak, carried by the shared data TLB, runs an order of magnitude faster than the
-BTB-carried cross-process leak.
-
-
-[I miss the cross baoundary bit rate, e2e weponization (I want to show pseudo code of the canocniality leak [with the 2-d array] where it explcitly states the assumption, and the OpenSSL ROP. I think you put it in the 7.5, but I think it should be here]
+(Spectre-RSB). The proof of concept assumes that every page its probe reaches is
+mapped.\footnote{The victim explicitly maps, at startup, the finite set of pages the probe needs,
+since mapping the entire user address space is not practical.} Paging is a memory-management
+mechanism and not a confidentiality boundary, so a target's pages usually being unmapped should not
+be relied on as a defense.
