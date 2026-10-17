@@ -57,9 +57,7 @@ leak, and the automatic discovery of the L1D IP-prefetcher leak.
 
 \begin{table}[t]\centering\footnotesize
 \setlength{\tabcolsep}{4pt}
-\caption{Contract violations and their time to detection (TTD). $^{\dagger}$~mean over 20 seeds on
-the Neoverse~N3. $^{\ddagger}$~a single Alder Lake campaign. \cmark/\xmark: reproduced / not
-observed. \emph{n/a}: the underlying feature is absent on that platform.}
+\caption{Contract violations and their time to detection (TTD).}
 \label{tab:eval-violations}
 \begin{tabular}{@{}l l c c c c c@{}}
 \toprule
@@ -74,6 +72,13 @@ Canonicality                    & BTB       & $84$\,s$^{\dagger}$    & \cmark & 
 L1D IP prefetcher               & L1D       & $35$\,min$^{\ddagger}$ & \xmark & \xmark & \xmark & \cmark \\
 \bottomrule
 \end{tabular}
+
+\vspace{2pt}
+\begin{minipage}{\linewidth}
+$^{\dagger}$~mean over 20 seeds on the Neoverse~N3. $^{\ddagger}$~a single Alder Lake campaign.
+\cmark/\xmark: reproduced / not observed. \emph{n/a}: the underlying feature is absent on that
+platform.
+\end{minipage}
 \end{table}
 
 \paragraph{The \texttt{AUT*} sign-bit leak.}
@@ -91,18 +96,18 @@ bit at a time using the authentication instructions themselves as the leak primi
 
 \paragraph{The L1D IP-prefetcher leak.}
 On the Intel Alder Lake baseline we additionally observe a leak that no contract models, carried by
-the core's L1 data-cache IP-stride prefetcher. A load whose address depends on a secret trains the
+the core's L1 data-cache IP-stride prefetcher. A load whose target address depends on a secret trains the
 prefetcher, which then runs ahead and pulls a secret-dependent line into the cache, outside the
 contract's account of the program's own accesses. The channel is gated entirely by that prefetcher:
 it appears and disappears deterministically as the IP-prefetcher control bit (\reg{MSR~0x1A4}
-bit~3) is toggled. This is the known AfterImage channel~\cite{afterimage}. That the same
-methodology surfaces a genuine microarchitectural leak on an Intel core, and not only on Arm, shows
-that the speculative-leakage mechanism this work targets is not specific to one architecture.
+bit~3) is toggled. This is the known AfterImage channel~\cite{afterimage}. More broadly, surfacing a genuine
+microarchitectural leak on an Intel core with the same methodology, not only on Arm, shows that the
+speculative-leakage mechanism this work targets is not specific to one architecture.
 
 \section{Localization cost}
 \label{sec:eval-localize}
 
-Once a violation is detected, the generalized priming localizes the responsible class boundary
+Once a suspected violation is detected, the generalized priming localizes the responsible class boundary
 among the $k$ equivalence classes of a priming batch (\autoref{sec:priming-localizers}). The
 linear scan runs at most $k$ hardware executions and returns the largest leaking class. The binary
 search runs only $\lceil\log_2(k+1)\rceil$ and returns one. The saving is exponential, and it
@@ -130,15 +135,27 @@ Measured avg.\ (binary)  & \rv{?} & \rv{?} & \rv{?} \\
 \label{sec:eval-exploit}
 
 \paragraph{Reach across isolation boundaries.}
-A single binary recovers a victim's secret high-pointer bits, a fresh random \texttt{PAC} field
-the attacker does not know in advance, across three boundaries, without the victim's key and
-without the victim disclosing the pointer. \textbf{Cross-process} (EL0 to EL0) rides the shared
-per-core BTB, with the victim branching once per measurement: $100\%$ recovery over the PMU
-read-out at about $65$~bit/s, or $90$--$100\%$ with a rootless \reg{cntvct\_el0} timer at about
-$7$~bit/s. \textbf{Cross-VM} (guest to host) shares a physical core over the BTB, timed in the
-guest with \reg{cntvct\_el0}: $100\%$ at about $130$~bit/s. \textbf{Cross-privilege} (EL2 to EL0),
-an EL2 kernel-module victim under VHE leaking to an EL0 attacker, uses the shared L1 data TLB,
-because the BTB is split across the exception-level boundary: $100\%$ at about $1230$~bit/s.
+A single binary recovers a victim's secret high-pointer bits, a fresh random \texttt{PAC} field the
+attacker does not know in advance, across three boundaries (\autoref{tab:eval-reach}). The
+cross-privilege case uses the shared L1 data TLB rather than the BTB, which is split across the
+exception-level boundary.
+
+\begin{table}[t]\centering\small
+\setlength{\tabcolsep}{6pt}
+\caption{Reach across isolation boundaries: recovery of a fresh random \texttt{PAC} field over each
+carrier.}
+\label{tab:eval-reach}
+\begin{tabular}{@{}l l l c c l@{}}
+\toprule
+Attacker EL & Victim EL & Carrier & Rate (bit/s) & Success & Counter \\
+\midrule
+EL0         & EL0        & BTB     & $65$   & $100\%$       & PMU \\
+EL0         & EL0        & BTB     & $7$    & $90$--$100\%$ & \reg{cntvct\_el0} \\
+EL0 (guest) & EL0 (host) & BTB     & $130$  & $100\%$       & \reg{cntvct\_el0} \\
+EL0         & EL2        & L1 dTLB & $1230$ & $100\%$       & \reg{cntvct\_el0} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \paragraph{Weaponization with return-oriented programming.}
 We weaponize the leak with two return-oriented-programming chains, built from \texttt{musl} and
