@@ -57,21 +57,21 @@ and the \texttt{AUT*} sign-bit leak.
 
 \begin{table}[t]\centering\footnotesize
 \setlength{\tabcolsep}{4pt}
-\caption{Contract violations. TTD is the mean time to first detection on the Neoverse~N3, except
-the L1D IP-prefetcher row (a single Alder Lake campaign). \cmark/\xmark: reproduced / not observed.
-\emph{n/a}: the underlying feature is absent on that platform.}
+\caption{Contract violations and their time to detection (TTD). $^{\dagger}$~mean over 20 seeds on
+the Neoverse~N3. $^{\ddagger}$~a single Alder Lake campaign. \cmark/\xmark: reproduced / not
+observed. \emph{n/a}: the underlying feature is absent on that platform.}
 \label{tab:eval-violations}
 \begin{tabular}{@{}l l c c c c c@{}}
 \toprule
 Violation & Channel & TTD & N3 & Cortex-A715 & Cortex-X3 & Alder Lake \\
 \midrule
-Spectre-v1 (conditional branch) & L1D       & $53.9$\,s & \cmark & \cmark & \cmark & \cmark \\
-Spectre-v2 (indirect branch)    & L1D       & $79.9$\,s & \cmark & \cmark & \cmark & \cmark \\
-Spectre-v4 (store bypass)       & L1D       & $32.3$\,s & \cmark & \cmark & \cmark & \cmark \\
-Canonicality                    & cache/TLB & $42.9$\,s & \cmark & \cmark & \cmark & \cmark \\
-Canonicality                    & BTB       & $84$\,s   & \cmark & \cmark & \xmark & \xmark \\
-\texttt{AUT*} sign bit          & cache/TLB & $54.5$\,s & \cmark & \cmark & \cmark & n/a \\
-L1D IP prefetcher               & L1D       & $35$\,min & \xmark & \xmark & \xmark & \cmark \\
+Spectre-v1 (conditional branch) & L1D       & $53.9$\,s$^{\dagger}$  & \cmark & \cmark & \cmark & \cmark \\
+Spectre-v2 (indirect branch)    & L1D       & $79.9$\,s$^{\dagger}$  & \cmark & \cmark & \cmark & \cmark \\
+Spectre-v4 (store bypass)       & L1D       & $32.3$\,s$^{\dagger}$  & \cmark & \cmark & \cmark & \cmark \\
+Canonicality                    & cache/TLB & $42.9$\,s$^{\dagger}$  & \cmark & \cmark & \cmark & \cmark \\
+Canonicality                    & BTB       & $84$\,s$^{\dagger}$    & \cmark & \cmark & \xmark & \xmark \\
+\texttt{AUT*} sign bit          & cache/TLB & $54.5$\,s$^{\dagger}$  & \cmark & \cmark & \cmark & n/a \\
+L1D IP prefetcher               & L1D       & $35$\,min$^{\ddagger}$ & \xmark & \xmark & \xmark & \cmark \\
 \bottomrule
 \end{tabular}
 \end{table}
