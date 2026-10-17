@@ -4,7 +4,7 @@
 % Notes:
 % - This file uses the UTF-8 character set encoding for the Hebrew
 %   text not to get garbled. Keep it that way.
-% - Assuming your thesis is mainly in English, Graduate School 
+% - Assuming your thesis is mainly in English, Graduate School
 %   regulations mandate the following lengths for the abstracts:
 %
 %      Language    Min. Length   Max. Length
@@ -22,7 +22,7 @@ Modern CPUs rely on undocumented performance mechanisms, such as branch predicti
 
 Many of these leaks share a structure: an instruction imposes preconditions on its operands, and the handling of a violated precondition leaves an observable microarchitectural trace. We port Revizor to AArch64, add support for Pointer Authentication (PAuth) and the Memory Tagging Extension (MTE), enable headless fuzzing of remote cores, and introduce a method for fuzzing instruction preconditions. We also show that Revizor's validation procedure discards leaks whose source lies outside the L1D cache, and add a source-agnostic detection method that, while observing only the L1D, provably extends the set of detectable leaks to those carried by any microarchitectural structure whose effect can be made to reach the L1D.
 
-We discover two new speculative leaks affecting both server-class and mobile Arm CPUs: one in speculative canonicality and alignment checks, and the other in the sign extension performed by Pointer Authentication instructions. Both cross privilege (EL0-attacker to EL2-victim) and virtualization (attacker-VM to victim-host) boundaries. We turn both into covert channels, recover a victim's stack canary, and, through a ROP chain in OpenSSL, extract a complete RSA-2048 key.
+We discover two new speculative leaks affecting both server-class and mobile Arm CPUs: one in speculative canonicality and alignment checks, and the other in the sign extension performed by Pointer Authentication instructions. We also identify a known hardware-prefetcher leak on x86-64 that Revizor could not detect previously. Both cross privilege (EL0-attacker to EL2-victim) and virtualization (attacker-VM to victim-host) boundaries. We turn both into covert channels, recover a victim's stack canary, and, through a ROP chain in OpenSSL, extract a complete RSA-2048 key.
 
 } % end of English abstract
 
@@ -33,10 +33,20 @@ We discover two new speculative leaks affecting both server-class and mobile Arm
 % If this happens to you, try wrapping the command within a
 % \textenglish{ } - that may (or may not) help.
 
-מעבדים מודרניים מסתמכים על מנגנונים שונים לשיפור ביצועיהם שרובם אינם מתועדים - כולל הרצה ספקולטיבית,  \textenglish{Branch Prediction, prefetching} ו-\textenglish{store-load reordering} - אשר הובילו שוב ושוב לפרצות אבטחה לא מכוונות. פרצות כגון \textenglish{Spectre} ו-\textenglish{Meltdown}, שהתגלו לראשונה בארכיטקטורת \textenglish{x86}, הוכיחו כי ביצוע ספקולטיבי בשילוב עם ערוצי צד מיקרו-ארכיטקטוניים עלולים לדלוף מידע מעבר לגבולות האבטחה, ולמרות אמצעי הגנה נרחבים, דלפות חדשות ממשיכות לצוץ. מעבדי \textenglish{Arm}, המניעים את הרוב המכריע של הטלפונים החכמים והופכים לנפוצים יותר ויותר במחשבים ניידים, מערכות \textenglish{HPC} וחוות שרתים, זכו לבחינה פחותה משמעותית בהשוואה ל-\textenglish{x86-64}, אך הם עדיין פגיעים להתקפות מסוג \textenglish{Spectre} ולהתקפות ייעודיות ל-\textenglish{Arm} כגון \textenglish{TikTag} ו-\textenglish{PACMAN}.
+מעבדים מודרניים מתבססים על מנגנונים רבים, שרובם אינם מתועדים, כדי לשפר את ביצועיהם. המעבד מהיר בכמה סדרי גודל מרכיבים אחרים כדוגמת הזיכרון, ולכן לעיתים קרובות הוא נדרש לבחור בין שתי אפשרויות. האפשרות הראשונה היא לעצור בכל פעם שהוא זקוק למידע שאין לו גישה מהירה אליו, ולהמתין לתשובה מהימנה. האפשרות השנייה היא לבצע ניחוש מושכל, ופעולה זו נקראת ספקולציה.
 
-דפוס חוזר עומד בבסיס רבות מהדלפות אלו: פקודות מציבות תנאים מוקדמים על האופרנדים שלהן - לדוגמה, תגית \textenglish{MTE} תואמת או חתימת מצביע חוקית - והפרה של תנאים אלו עלולה לגרום לשגיאות או לאפקטים מיקרו-ארכיטקטוניים אחרים הניתנים לצפייה על ידי תוקף. אנו מבצעים התאמה של \textenglish{Revizor}, כלי \textenglish{fuzzing} בשיטת קופסה שחורה המבוסס על בדיקות יחסיות מבוססות-מודל, לארכיטקטורת \textenglish{AArch64}, מוסיפים יכולות \textenglish{fuzzing} מרחוק, ומרחיבים אותו כך שיתמוך בתכונות ייחודיות ל-\textenglish{Arm}, כולל \textenglish{MTE} ו-\textenglish{PAuth}. בנוסף, אנו מציידים את \textenglish{Revizor} בגישה חדשנית ויעילה לאיתור דלפות, המרחיבה באופן מוכח את קבוצת הדלפות הניתנות לגילוי, ומציגים מתודולוגיה לבדיקה שיטתית של תנאים מוקדמים והנחות של פקודות.
+מעבדים מודרניים עושים שימוש בסוגים רבים של ספקולציה, ותרומתם לביצועים אינה מוטלת בספק. חיזוי הסתעפויות (branch prediction), למשל, מנסה לחזות את תוצאותיהן של הסתעפויות בקוד. סידור מחדש של פקודות store ו-load (store-load reordering) מאפשר לפקודות load להתבצע לפני פקודות store שקודמות להן. לא ניתן לעשות זאת ללא ספקולציה תוך שמירה על נכונות ארכיטקטונית. מנגנון ה-hardware prefetching מנסה לחזות לאילו כתובות בזיכרון התוכנית תיגש, עוד לפני שביקשה זאת במפורש.
 
-שני אלו מאפשרים לנו לחשוף שתי דלפות שלא היו ידועות קודם לכן: האחת נובעת מבדיקות תקינות (\textenglish{canonicality}) ויישור (\textenglish{alignment}) של המעבד בעת פעולות טעינה, שמירה והסתעפויות עקיפות, והשנייה נובעת מהרחבת הסימן (\textenglish{sign extension}) שמבצעות פקודות ה-\textenglish{Pointer Authentication}. אנו מדגימים אותן על מעבדי \textenglish{Neoverse N3} ו-\textenglish{Cortex-A715}, המקיפים מעבדי \textenglish{Arm} לשרתים ולמכשירים ניידים, ומראים כי הן חוצות גבולות של הרשאות (מ-\textenglish{EL0} של התוקף אל \textenglish{EL2} של הקורבן) ושל וירטואליזציה (ממכונה וירטואלית של התוקף אל המכונה המארחת). לבסוף, אנו הופכים את הדלפה הראשונה לנשק מעשי: אנו מחלצים את ה-\textenglish{stack canary} של תהליך קורבן, ובאמצעות שרשרת \textenglish{ROP} ב-\textenglish{OpenSSL} משחזרים מפתח פרטי \textenglish{RSA-2048} שלם.
+אופטימיזציות מעין אלו חשובות מאוד, אך הן גם הובילו לפרצות אבטחה חמורות רבות. התקפה על מנגנונים אלו, בשילוב עם ערוץ צד כדוגמת זיכרון המטמון (cache) או צריכת החשמל, עלולה להדליף מידע סודי. פרצות כדוגמת Spectre ו-Meltdown, שהתגלו לראשונה בארכיטקטורת x86, הדגימו זאת. הן ניצלו מספר מנגנונים מעין אלו, השתמשו ב-cache כערוץ צד, והצליחו להדליף מידע מעבר לגבולות אבטחה שהמעבד אמור לאכוף. דליפות חדשות ממשיכות להתגלות, על אף ניסיונות הגנה רבים.
+
+מעבדי Arm נמצאים ברוב המכריע של הטלפונים החכמים, והם הופכים לנפוצים יותר ויותר במחשבים ניידים ובחוות שרתים. למרות זאת, הם לא זכו לבחינה מעמיקה בהשוואה למקביליהם בארכיטקטורת x86-64. מעבדי Arm פגיעים להתקפות ספקולטיביות כמו Spectre, וגם להתקפות ייעודיות כדוגמת TikTag ו-PACMAN.
+
+דפוס חוזר עומד בבסיסן של דליפות ספקולטיביות רבות: פקודות מציבות תנאים על הקלט שלהן או על מצב המערכת כולה, ותנאים אלו נבדקים רק בזמן ריצה. למשל, תגיות MTE נבדקות בזמן ביצוע פקודות גישה לזיכרון, ומצביעים עשויים לעבור אימות מול חתימת PAC. המערכת מוודאת את נכונותם של ערכים אלו כדי להמשיך בהרצת התוכנית. לעומת זאת, הפרה של תנאים אלו עלולה להוביל לחריגות (faults) או לאפקטים מיקרו-ארכיטקטוניים אחרים שתוקף יכול לצפות בהם, ובכך להדליף מידע סודי.
+
+במחקר זה אנו מתאימים את Revizor לארכיטקטורת AArch64, מוסיפים יכולת לביצוע fuzzing מרחוק, ומרחיבים את התמיכה בתכונות ייחודיות ל-Arm, ובהן MTE ו-PAuth. בנוסף, אנו מזהים פער ביכולותיו הנוכחיות של Revizor, המונע ממנו לזהות משפחה גדולה של התקפות ספקולטיביות. אנו מציעים שיטה חדשה ויעילה לאיתור דליפות, ומוכיחים כי היא מזהה את כל מה ש-Revizor מסוגל לזהות כיום, ואף יותר. לבסוף, אנו מציגים מתודולוגיה לבדיקה שיטתית של התנאים שפקודות מציבות להרצה מוצלחת.
+
+יחד, שתי התרומות האלו מאפשרות לנו לחשוף שתי דליפות חדשות במעבדי Arm. הראשונה נובעת מבדיקות התקינות שמעבדי Arm מבצעים על הכתובת בכל גישה לזיכרון (קריאה, כתיבה והרצה). השנייה נובעת מתיקון אבטחה שנועד להבטיח שפקודות האימות של PAuth אינן מדליפות את נכונות החתימה. אנו מראים כי בפועל פקודות אלו מדליפות תמיד את ביט 55 של המצביע. בנוסף, אנו מזהים התקפה ידועה על מעבדי x86-64 ש-Revizor לא היה מסוגל למצוא קודם לכן.
+
+אנו מדגימים את הדליפות על מעבדי Neoverse N3 ו-Cortex-A715, המיועדים לשרתים ולמכשירים ניידים בהתאמה, ומראים שהן חוצות גבולות הרשאה וגבולות וירטואליזציה. לבסוף, אנו מציגים שתי התקפות המנצלות את הדליפה הראשונה. הראשונה מדליפה את ה-stack canary הסודי של תוכנית הקורבן. השנייה משתמשת בהתקפת ROP ייעודית שפיתחנו עבור OpenSSL, ומדליפה מפתח RSA-2048 פרטי שלם.
 
 } % end of Hebrew abstract

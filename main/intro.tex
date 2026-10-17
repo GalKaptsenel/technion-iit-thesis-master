@@ -171,7 +171,8 @@ these claims in the order the thesis develops them.
 \item \textbf{Generalized priming (\autoref{chap:priming}).} We show that \revizor{}'s
   current priming rule cannot report a whole class of genuine leaks, namely those whose only
   effect on the run that causes them lies outside the L1 data cache, and we give a
-  generalization that provably detects every leak the current rule does, and strictly more.
+  generalization that, while still observing only the L1D, provably extends the set of detectable
+  leaks to those carried by any microarchitectural structure whose effect can be made to reach the L1D.
   We give two variants of the generalization, each of which localizes the source of a leak: a
   linear scan that localizes every leak in a chain of inputs, and a binary search that
   localizes one. We prove each optimal for what it returns.
