@@ -17,7 +17,7 @@ vulnerable code pattern in the target and the ability to co-locate on a core.
 
 A single binary, invoked as \reg{canon\_leak --mode \{xproc|xvm|xel\}}, recovers a victim's secret
 high-pointer bits, a fresh random \reg{PAC} field the attacker does not know in advance, across
-three boundaries, without the victim's key and without the victim disclosing the pointer. The
+three boundaries. The
 \reg{xproc} mode leaks EL0 to EL0 over the shared per-core branch-target buffer, the \reg{xvm} mode
 from an attacker guest to a victim host over the same BTB, and the \reg{xel} mode from an EL2
 kernel-module victim under VHE to an EL0 attacker over the shared L1 data TLB, which it uses because
@@ -34,19 +34,19 @@ out-of-bounds inner index reads the canary, so that only the mispredicted path f
 address and the access stays in bounds architecturally. The same gadget is driven three independent
 ways, a mistrained bounds check (Spectre-v1), a store-bypassed bound (Spectre-v4), and a return
 shadow (Spectre-RSB). Recovery reads the canonicality oracle of \autoref{chap:canon} through
-Flush+Reload~\cite{flushreload} over a pre-mapped page scaffold, combining an additive sweep for the
-high bits with a top-down carry-leak for the low bits, and recovers the full \reg{[55:0]} value.
+Flush+Reload~\cite{flushreload} over a pre-mapped page scaffold (\autoref{sec:eval-exploit}), combining an additive sweep for the
+high bits with a top-down carry-trick for the low bits, and recovers the full \reg{[55:0]} value.
 
 \section{RSA-2048 key recovery through OpenSSL}
 \label{app:poc-openssl}
 
-Invoked as \reg{rsa\_leak}, this PoC is an end-to-end attack through an unmodified OpenSSL. A plain
+Invoked as \reg{rsa\_leak}, this PoC is an end-to-end attack through OpenSSL with its anti-ROP mitigations disabled and only a
+single vulnerable \texttt{memcpy} planted in it (\autoref{sec:eval-exploit}). A plain
 stack-buffer overflow drives a return-oriented chain built entirely from gadgets found within the
 OpenSSL library itself, with no attacker code in the victim. The chain sets up and fires a
 Spectre-v4 window inside the real victim and transmits over the BTB channel, read with the rootless
 \reg{cntvct\_el0} timer~\cite{primeprobe}. Because the read primitive walks OpenSSL's own heap, it
-recovers the bytes of an in-use RSA-2048 private key. The one build requirement is that the target
-is compiled without pointer-authenticated returns.
+recovers the bytes of an in-use RSA-2048 private key.
 
 \section{An EL3 round trip does not flush the BTB}
 \label{app:poc-smc}
@@ -55,8 +55,7 @@ Invoked as \reg{smc\_bench}, this PoC tests a necessary precondition for crossin
 non-secure boundary. We cannot place a victim in the secure world on our hardware, so instead of
 demonstrating the crossing we test whether entering EL3 disturbs the normal-world branch-target
 buffer. The harness primes one EL0 BTB entry, performs an EL3 round trip between the prime and the
-probe, and reports whether the entry survived. It survives intact across many round trips, while
-control experiments confirm the entry is evictable and that the measurement can see a real flush.
+probe, and reports whether the entry survived. It survives intact across many round trips.
 An EL3 world switch therefore does not by itself destroy the prediction state the BTB channel relies
 on, which is the open question of \autoref{sec:concl-open}.
 
