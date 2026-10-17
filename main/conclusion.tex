@@ -20,7 +20,7 @@ satisfies the precondition and the attack never faults the victim (\autoref{chap
 these uncovered a leak rooted in the CPU's canonicality and alignment checks on loads, stores, and
 indirect branches (\autoref{chap:canon}), which reproduces across server-class and mobile Arm cores
 and crosses the process, virtualization, and privilege boundaries, and which we weaponized end to
-end to recover a complete RSA-2048 private key through OpenSSL (\autoref{chap:eval}). Finally, the
+end to recover a complete RSA-2048 private key through OpenSSL (\autoref{chap:eval}). The same fuzzing also surfaced a second Arm leak, in the sign extension of the Pointer Authentication instructions, which leaks bit~55 of the pointer regardless of whether the signature is correct (\autoref{chap:eval}). Finally, the
 generalized priming is not confined to Arm. Applied to an x86-64 core, it automatically identifies a
 known prefetcher-mediated leak that the original priming does not surface, which shows that both the
 detection method and the leakage mechanism it targets are not specific to one architecture. The proof-of-concept artifacts behind these results are

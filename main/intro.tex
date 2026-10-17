@@ -159,7 +159,7 @@ operands form a systematic and fuzzable source of speculative leakage. The fourt
 fuzzing those preconditions uncovers a canonicality and alignment leak on production Arm cores,
 a leak that crosses privilege and virtualization boundaries and that we turn into both a
 stack-canary leak and full cryptographic key recovery. The contributions that follow state
-these claims in the order the thesis develops them.
+these claims in the order the thesis develops them, together with a second Arm leak the same fuzzing uncovers.
 
 \begin{itemize}
 \item \textbf{An AArch64 port of \revizor{} (\autoref{chap:port}).} We port the MRT fuzzer
@@ -192,6 +192,13 @@ these claims in the order the thesis develops them.
   First, we use it to leak a victim's stack canary. Second, we build a return-oriented-programming
   chain from \texttt{OpenSSL} gadgets and recover a complete RSA-2048 private key
   (\autoref{chap:eval}).
+
+\item \textbf{The \texttt{AUT*} sign-bit leak (\autoref{chap:eval}).} Using the same
+  machinery, we characterize a second previously unknown leak, in the sign extension
+  performed by the Pointer Authentication instructions. After the post-PACMAN mitigation
+  makes speculative authentication proceed as if the signature were correct, these
+  instructions still sign-extend bit~55 of the pointer into the former \texttt{PAC} field,
+  leaking that bit whether or not authentication succeeds.
 \end{itemize}
 
 \section{Related work}
