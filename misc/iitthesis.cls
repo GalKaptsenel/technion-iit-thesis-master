@@ -401,8 +401,8 @@
   url=true,
   maxbibnames=99, % Effectively ensure all authors are listed
   language=american, % ... English
-  style=trad-alpha,
-  maxalphanames=4 % Only use first 4 names for an initials key
+  style=numeric,
+  maxalphanames=4 % (unused by the numeric style; kept for easy switch-back)
   ]{biblatex}
 \setcounter{biburllcpenalty}{7000}
 \setcounter{biburlucpenalty}{8000}
