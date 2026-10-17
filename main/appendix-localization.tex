@@ -124,6 +124,8 @@ localizer makes exactly these runs.
 
 Both localizers use the same splices, the same probe, and the same soundness argument
 (\autoref{lem:prime-genuine}). They differ only in what they return and in cost.
-\autoref{tab:loc-compare} summarizes them. Runs are per direction, to be doubled for both
-directions and multiplied by the repetition count used to suppress measurement noise. The linear
-scan is the choice when every leaking class is wanted. Binary search when one suffices.
+\autoref{tab:loc-compare} summarizes them. The run counts are per direction, that is, one pass of
+the batch that starts from the lane~$a$ inputs and finishes at the lane~$b$ inputs. Localizing in
+both directions therefore doubles the count, and each run is further repeated as many times as the
+noise reduction requires. The linear scan is the choice when every leaking class is wanted. Binary
+search when one suffices.
