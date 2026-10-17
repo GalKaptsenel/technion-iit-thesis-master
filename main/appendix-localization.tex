@@ -31,12 +31,12 @@ The argument rests on one observation: a deterministic localizer only knows what
 so if two hardware behaviours agree at every splice it runs, it returns the same answer on both. A
 hardware behaviour is, for the localizer, just the list of readings $(r(0),\dots,r(k+1))$ with
 $r(0)\neq r(k+1)$. Only equalities among readings matter, so we name readings by symbols. Fix two distinct readings
-$r(0)=\rho_a\neq\rho_b=r(k+1)$. We define the \emph{step sequence} $S_j$ by
+$r(0)=\rho_b\neq\rho_a=r(k+1)$. We define the \emph{step sequence} $S_j$ by
 \[
   S_j(t) =
   \begin{cases}
-    \rho_a & \text{if } t \le j,\\
-    \rho_b & \text{if } t > j.
+    \rho_b & \text{if } t \le j,\\
+    \rho_a & \text{if } t > j.
   \end{cases}
 \]
 which is what a single leaking class $j$ produces: its only boundary is $j$.
@@ -54,9 +54,9 @@ except that split $u$ reads a third value $\gamma\notin\{\rho_a,\rho_b\}$, that 
 \[
   S'(t) =
   \begin{cases}
-    \rho_a & \text{if } t \le j,\\
+    \rho_b & \text{if } t \le j,\\
     \gamma & \text{if } t = u,\\
-    \rho_b & \text{if } t > j \text{ and } t \neq u.
+    \rho_a & \text{if } t > j \text{ and } t \neq u.
   \end{cases}
 \]
 The localizer never ran
