@@ -156,10 +156,10 @@ on a speculative-only path and never crashes the test case. Each primitive also 
 architectural state immediately after the sealed access (it strips the forged \reg{PAC} bits,
 retags to the real allocation tag, or undoes a pointer manipulation), so the genuine and decoy
 variants re-converge immediately past the site, and their speculative difference is contained to
-the single sealed instruction. The two variants are therefore not identical code: they differ
-exactly in the perturbed seals. A hardware-trace difference between the variants is thus
+the single sealed instruction. It is important to note that the two variants are therefore not identical code: they differ
+exactly in the patched seals. A hardware-trace difference between the variants is thus
 confined to those seals. Confirming a leak then reduces to checking that the difference comes from
-the precondition being violated speculatively, rather than from the perturbed instructions
+the precondition being violated speculatively, rather than from the patched instructions
 themselves.
 
 Generating inputs that respect an instruction's preconditions is also what a solver-based validator
