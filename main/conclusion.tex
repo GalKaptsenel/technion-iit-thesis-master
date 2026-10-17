@@ -5,20 +5,26 @@
 \label{sec:concl-summary}
 
 This thesis brought automated, contract-based leak discovery to AArch64 and used it to find and
-weaponize a new class of Arm leaks. We ported \revizor{}'s model-based relational testing to
-AArch64 with a native-execution contract executor, added headless fuzzing of remote cores, and
-modeled the Pointer Authentication and Memory Tagging extensions
-(\autoref{chap:port}). We showed that \revizor{}'s priming step is incomplete (it cannot report a
-leak whose only effect on its own run lies outside the L1 data cache), and replaced it with a
-generalized rule that strictly generalizes the contract-violation definition, provably detects
-strictly more, and localizes each report to a genuine violation with two optimal localizers
-(\autoref{chap:priming}). We introduced precondition fuzzing, which seals the precondition sites of
-a test case and fills them per input to satisfy or violate a precondition on a speculative-only
-path, without ever faulting the victim (\autoref{chap:precond}). Together these uncovered a leak
-rooted in the CPU's canonicality and alignment checks on loads, stores, and indirect branches
-(\autoref{chap:canon}), which reproduces across server-class and mobile Arm cores and crosses the
-process, virtualization, and privilege boundaries, and which we weaponized end to end to recover a
-complete RSA-2048 private key through OpenSSL (\autoref{chap:eval}).
+weaponize new Arm leaks. We ported \revizor{}'s model-based relational testing to AArch64 with a
+native-execution contract executor, added headless fuzzing of remote cores, and modeled the Pointer
+Authentication and Memory Tagging extensions (\autoref{chap:port}). We showed that \revizor{}'s
+priming step is incomplete (it cannot report a leak whose only effect on its own run lies outside
+the L1 data cache) and replaced it with a generalized rule. The rule strictly generalizes the
+contract-violation definition and provably detects a superset of the violations the original one can
+report, and the two leakage localizers it provides are optimal (\autoref{chap:priming}). We then
+introduced precondition fuzzing, which reaches the valuable real-world leaks that surface when
+execution is allowed to diverge from the preconditions an instruction expects. It seals the
+precondition sites of a test case and fills them per input, either to satisfy a precondition or,
+only on a speculative-only path, to violate one, so that the architectural execution always
+satisfies the precondition and the attack never faults the victim (\autoref{chap:precond}). Together
+these uncovered a leak rooted in the CPU's canonicality and alignment checks on loads, stores, and
+indirect branches (\autoref{chap:canon}), which reproduces across server-class and mobile Arm cores
+and crosses the process, virtualization, and privilege boundaries, and which we weaponized end to
+end to recover a complete RSA-2048 private key through OpenSSL (\autoref{chap:eval}). Finally, the
+generalized priming is not confined to Arm. Applied to an x86-64 core, it automatically identifies a
+known prefetcher-mediated leak that the original priming does not surface, which shows that both the
+detection method and the leakage mechanism it targets are not specific to one architecture. The proof-of-concept artifacts behind these results are
+described in \autoref{appendix:pocs}.
 
 \section{Open questions}
 \label{sec:concl-open}
@@ -26,18 +32,13 @@ complete RSA-2048 private key through OpenSSL (\autoref{chap:eval}).
 \paragraph{Detection for a general follow-up program.}
 The extended contract violation of \autoref{chap:priming} is defined against an arbitrary follow-up
 program $Q$, yet the detection construction realizes $Q$ only as the victim program $P$ replayed
-over a static set of inputs, arranged into lanes. Generalizing the construction to an arbitrary
-observing program $Q$, while keeping its logarithmic localization cost, would widen the class of
+over a static set of inputs. Generalizing the construction to an arbitrary
+observing program $Q$, while keeping efficient fuzzing cost, would widen the class of
 cascaded leaks the method can reach. How to do so efficiently remains open.
-
-\paragraph{The unexplained prefetcher effect.}
-The L1D instruction-pointer prefetcher violation observed on the Alder Lake baseline is
-deterministic in the prefetcher-control bit but not yet root-caused. Explaining it, and
-determining whether an analogous effect exists on the Arm targets, is left to future work.
 
 \paragraph{The secure / non-secure boundary.}
 A necessary precondition for crossing the secure boundary holds on our hardware: an EL3 world
 switch does not by itself flush the normal-world branch-target buffer, so the BTB eviction channel
-survives it. Whether the channel actually crosses to a secure-world victim, which requires a
+survives it (\autoref{app:poc-smc}). Whether the channel actually crosses to a secure-world victim, which requires a
 trusted-execution vehicle we did not have, remains open.
 
