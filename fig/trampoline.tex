@@ -13,7 +13,7 @@
   \draw[ar] (ex) -- (tr) node[lbl,midway,right=1pt]{next executed word is \texttt{BL hook}};
   \draw[ar] (tr) -- (hk);
   \draw[ar] (hk.west) -- ++(-0.75,0) |- (rs.west);
-  \node[lbl, rotate=90, fill=white, inner sep=1pt] at (-2.95,-2.475) {next instruction};
+  \node[lbl, rotate=90, fill=white, inner sep=1pt] at (-2.6,-2.475) {next instruction};
   \path let \p1 = (current bounding box.north east),
             \p2 = (current bounding box.south west),
             \n1 = {max(\x1, -\x2)} in

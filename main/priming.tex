@@ -243,7 +243,9 @@ A \emph{lane} is a sequence of $k+1$ inputs run as its own batch.
 \label{def:lane-boost}
 \emph{Lane boosting} derives each further lane from the first by boosting every entry, so position
 $m$ of two lanes holds distinct inputs of the same class, which we call \emph{class} $m$. Stacking
-the lanes gives a matrix whose rows are lanes (and batches) and whose columns are classes.
+the lanes gives a matrix whose rows are lanes (and batches) and whose columns are classes. We write
+$\inp{m}{a}$ for the input at class $m$ of lane $a$, the superscript naming the lane and the subscript
+the class.
 \end{definition}
 
 \revizor{} flags a candidate when two lanes differ in their L1D trace at the same column. Without
