@@ -128,8 +128,8 @@ $I_C$ (stride $F$) & $\{0,F,2F,S,2S\}$ & $\{0,F,2F\}^\star$ \\
 Both leaks share a shape (\autoref{fig:priming-shape}): the secret is written to a structure other
 than the monitored L1D, and it reaches the L1D only through a later run. We make the limitation
 precise. Write $\runf(P,I,\mu)$ for the microarchitectural state left by running $P$ on input $I$
-from state $\mu$. We treat it as deterministic, since replaying a sequence reproduces its states and
-repeated measurement filters noise. The L1D attacker is then a projection,
+from state $\mu$. We treat it as approximately deterministic, utilizing repetition for nondeterministic noise
+reduction, since replaying a sequence reproduces its states. The L1D attacker is then a projection,
 $\Al(P,I,\mathit{Ctx})=O_{\mathrm{L1D}}(\runf(P,I,\mathit{Ctx}))$.
 
 \begin{figure}[!ht]
@@ -314,7 +314,7 @@ The two splices around $t$ reach the same context $\nu_t$ (same $\IS$ and prefix
 $\inp{t}{a}$ or $\inp{t}{b}$, and then the \emph{same} fixed continuation $Q$ ending at the probe.
 Reading the probe is therefore the $Q$-hardware trace of \autoref{def:prime-qtrace}:
 $r(t+1)=\AQ{O_{\mathrm{L1D}}}(P,\inp{t}{a},\nu_t)$ and $r(t)=\AQ{O_{\mathrm{L1D}}}(P,\inp{t}{b},\nu_t)$.
-Since $\runf$ is approximately deterministic (noise reduced by repetition), the two readings can differ only through which input
+Since $\runf$ is approximately deterministic, utilizing repetition for nondeterministic noise reduction, the two readings can differ only through which input
 ran, and a boundary means they differ. The two inputs share column $t$, hence a class, and are
 distinct, so the tuple meets \autoref{def:prime-extviolation}. When $t=k$ the continuation is
 empty and the reading is the probe's own L1D trace, the direct case.
@@ -322,8 +322,8 @@ empty and the reading is the probe's own L1D trace, the direct case.
 
 When additionally the input pair $\inp{t}{a}$ and $\inp{t}{b}$ leaves the same L1D trace from every microarchitectural state, it is a
 non-L1D-cache violation (\autoref{def:prime-ncv}), the class priming always discards
-(\autoref{thm:prime-miss}). By finding a boundary, the construction detects exactly the leaks priming drops,
-whenever they cascade through the microarchitecture and eventually reach the L1D.
+(\autoref{thm:prime-miss}). By finding a boundary, the construction provably detects every leak priming
+drops whose effect cascades through the microarchitecture and eventually reaches the L1D.
 
 \section{Localizing a boundary}
 \label{sec:priming-localizers}
