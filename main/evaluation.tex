@@ -190,8 +190,7 @@ A separate demonstration recovers a victim's own stack canary with no prior know
 from a two-dimensional-array gadget driven the three independent ways of \autoref{sec:canon-windows}:
 a mistrained bounds check (Spectre-v1), a store-bypassed bound (Spectre-v4), and a return shadow
 (Spectre-RSB). The oracle recovers bits $[55{:}0]$ of the $64$-bit canary. The top byte $[63{:}56]$ is
-ignored under TBI and cannot be leaked, and the low byte is the known \texttt{0x00} terminator, so
-$[55{:}0]$ is the recoverable canary. The proof of concept assumes that every page its probe reaches is
+ignored under TBI and cannot be leaked, so $[55{:}0]$ is the recoverable canary. The proof of concept assumes that every page its probe reaches is
 mapped.\footnote{The victim explicitly maps, at startup, the finite set of pages the probe needs,
 since mapping the entire user address space is not practical.} Paging is a memory-management
 mechanism and not a confidentiality boundary, so a target's pages usually being unmapped should not
