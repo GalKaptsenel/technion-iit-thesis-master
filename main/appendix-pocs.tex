@@ -34,9 +34,9 @@ window, and accesses it, leaving a footprint when bit~55 keeps the pointer in ra
 does not. The attacker reads that footprint over the L1D cache, the data TLB, or the instruction TLB
 (\reg{--medium \{l1d|dtlb|itlb\}}), using the plain \reg{AUT*} gadget or the combined \reg{LDRA*} and
 \reg{BLRA*} form (\reg{--gadget \{aut|combined\}}). The \reg{xthread} mode places the victim and
-attacker in two threads of one process on a shared core, \reg{xcore} on different cores over the
-shared last-level cache (L1D only, since the TLBs are per-core), and \reg{xel} leaks from an EL2
-kernel-module victim under VHE to an EL0 attacker. The read-out is a prime-and-probe of an
+attacker in two threads of one process on a shared core, \reg{xcore} on different cores where only
+the cache reaches across them through the shared last-level cache, as the TLBs are per-core, and
+\reg{xel} leaks from an EL2 kernel-module victim under VHE to an EL0 attacker. The read-out is a prime-and-probe of an
 attacker-owned eviction set read through a PMU event, except \reg{xcore}, which Flush+Reloads a
 shared line timed by the rootless \reg{cntvct\_el0} counter.
 
