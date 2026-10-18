@@ -88,9 +88,9 @@ identically whether or not the signature is correct, so that the correctness of 
 signature is itself indistinguishable under speculation (the speculative path always proceeds as
 if the signature were correct). As the architecture dictates, when an authentication instruction
 executes, the effective sign bit is sign-extended into the bits that the \texttt{PAC} field
-occupied, just before the access. The fuzzer flagged that when that sign bit is corrupted, there
-is no effect on the L1D, and further investigation showed no effect on the instruction or data
-TLB either, unlike a correct sign bit, which does leave a footprint. This holds for both the
+occupied, just before the access. When that sign bit is corrupted, the access leaves no footprint
+in the L1D, the data TLB, or the instruction TLB, unlike a correct sign bit, which does leave one.
+This holds for both the
 \texttt{AUT*} and the combined authenticate-and-branch instructions, so an attacker can leak one
 bit at a time using the authentication instructions themselves as the leak primitive.
 
@@ -122,7 +122,7 @@ $k{=}2048$.
 The table also includes a galloping variant for contrast. Instead of halving the full window, it
 starts at one end and probes at doubling distances ($1$, $2$, $4$, \dots\ classes in) until two probes
 straddle a boundary, then binary-searches the small range between them. A boundary near the end is found in a handful of probes. For a boundary placed uniformly across the range, the case shown
-in the table, galloping costs roughly $1.6$ to $1.8$ times the plain binary search, so it helps only
+in the table, galloping costs roughly $1.4$ to $1.8$ times the plain binary search, so it helps only
 when the boundary is expected near one end.
 
 \begin{table}[t]\centering\small
@@ -136,12 +136,12 @@ shown for contrast.}
 \toprule
 $k$ & $\lceil\log_2(k{+}1)\rceil$ & Measured binary & Galloping & Linear \\
 \midrule
-$12$   & $4$  & $4.75\pm0.43$  & $7.50$  & $9.42$ \\
-$64$   & $7$  & $7.02\pm0.12$  & $12.14$ & $35.48$ \\
-$256$  & $9$  & $9.00\pm0.06$ & $16.04$ & $131.50$ \\
-$512$  & $10$ & $10.00\pm0.04$ & $18.02$ & $259.50$ \\
-$1024$ & $11$ & $11.00\pm0.03$ & $20.01$ & $515.50$ \\
-$2048$ & $12$ & $12.00\pm0.02$ & $22.01$ & $1027.50$ \\
+$12$   & $4$  & $4.75\pm0.43$  & $6.50\pm1.38$  & $8.50\pm3.45$ \\
+$64$   & $7$  & $7.02\pm0.12$  & $11.14\pm2.40$ & $34.50\pm18.47$ \\
+$256$  & $9$  & $9.00\pm0.06$ & $15.04\pm2.66$ & $130.50\pm73.90$ \\
+$512$  & $10$ & $10.00\pm0.04$ & $17.02\pm2.72$ & $258.50\pm147.80$ \\
+$1024$ & $11$ & $11.00\pm0.03$ & $19.01\pm2.77$ & $514.50\pm295.60$ \\
+$2048$ & $12$ & $12.00\pm0.02$ & $21.01\pm2.79$ & $1026.50\pm591.21$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -153,8 +153,8 @@ $2048$ & $12$ & $12.00\pm0.02$ & $22.01$ & $1027.50$ \\
 A single binary recovers a victim's secret high-pointer bits, a fresh random \texttt{PAC} field the
 attacker does not know in advance, across three boundaries (\autoref{tab:eval-reach}). The
 cross-privilege case uses the shared L1 data TLB rather than the BTB, which is split across the
-exception-level boundary. The recovery rates vary widely with the accuracy required and the averaging
-technique used, so they reflect the measurement setup rather than an ordering of the boundaries themselves.
+exception-level boundary. The recovery rates depend on the accuracy required, so they should not be
+read as a ranking of the boundaries themselves.
 
 \begin{table}[t]\centering\small
 \setlength{\tabcolsep}{6pt}
@@ -183,9 +183,7 @@ present in the OpenSSL library. Since the channel needs only a small, fixed
 sequence of operations from the chain, the scarcer gadget supply on AArch64 was not a constraint,
 and the chain took under an hour to build. It transmits over the BTB channel and is read out with
 the rootless \reg{cntvct\_el0} timer. Because the OpenSSL read primitive walks OpenSSL's own heap, it
-recovers a complete in-use RSA-2048 private key at \reg{--samples 1500} (about $5.5$~hours). The high
-sample count is what pushes the accuracy that far, since a bit-exact key needs a high per-bit success
-rate.
+recovers a complete in-use RSA-2048 private key at \reg{--samples 1500} (about $5.5$~hours).
 
 \paragraph{Blind stack-canary recovery.}
 A separate demonstration recovers a victim's own stack canary with no prior knowledge of its value,

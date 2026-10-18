@@ -4,9 +4,9 @@
 The research produced a set of proof-of-concept programs that demonstrate the leaks and their
 reach. As the Technion guidelines ask that software developed for a thesis be described in
 an appendix, we summarize them here. We describe their structure and attacker model. Their source is available at
-\url{https://github.com/GalKaptsenel/thesis-artifacts}. Each is \emph{self-scoring}: the victim generates a fresh random secret
-each round, and the harness compares it to the recovered value only to report accuracy. All
-measurements are taken on the Neoverse~N3, each pinned to a single isolated core. The attacker runs
+\url{https://github.com/GalKaptsenel/thesis-artifacts}. Each is \emph{self-scoring}: the victim draws a fresh random secret
+each round, and the harness compares it to the recovered value only for scoring. All
+measurements are taken on the Neoverse~N3, pinned to isolated cores. The attacker runs
 unprivileged at EL0, and for the cross-process and guest-to-host cases the attacker and victim share
 one physical core. No elevated privilege, special instruction, or configuration is required beyond a
 vulnerable code pattern in the target and the ability to co-locate on a core.
@@ -36,9 +36,9 @@ does not. The attacker reads that footprint over the L1D cache, the data TLB, or
 \reg{BLRA*} form (\reg{--gadget \{aut|combined\}}). The \reg{xthread} mode places the victim and
 attacker in two threads of one process on a shared core, \reg{xcore} on different cores where only
 the cache reaches across them through the shared last-level cache, as the TLBs are per-core, and
-\reg{xel} leaks from an EL2 kernel-module victim under VHE to an EL0 attacker. The read-out is a prime-and-probe of an
-attacker-owned eviction set read through a PMU event, except \reg{xcore}, which Flush+Reloads a
-shared line timed by the rootless \reg{cntvct\_el0} counter.
+\reg{xel} leaks from an EL2 kernel-module victim under VHE to an EL0 attacker. The read-out is a prime and probe of an
+attacker-owned eviction set read through a PMU event, except \reg{xcore}, which times a Flush and Reload of a
+shared line with the rootless \reg{cntvct\_el0} counter.
 
 \section{Blind stack-canary recovery}
 \label{app:poc-canary}
