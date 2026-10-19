@@ -115,10 +115,12 @@ the binary search runs only $\lceil\log_2(k+1)\rceil$ and returns one. The savin
 and it matters because every execution is a full prime-and-measure cycle on the device. The
 optimality of both is proved in \autoref{appendix:localization}.
 
-\autoref{tab:eval-localize} reports the measured cost over a range of batch sizes. The binary
-search stays at or just below its worst-case bound $\lceil\log_2(k+1)\rceil$, since a boundary that
-falls on an early split is found a step sooner, and its cost is essentially independent of where the
-boundary falls, with the standard deviation shrinking from $0.42$ at $k{=}12$ to $0.03$ at
+\autoref{tab:eval-localize} reports the cost of each localizer. For every batch size $k$ we place
+the single leaking boundary at each of the $k+1$ possible positions in turn, run the localizer, and
+count the interior splices it issues, averaging over all positions. The binary search stays at or
+just below its worst-case bound of $\lceil\log_2(k+1)\rceil$ probes. It dips below the bound only
+when the boundary lands on an early split, which is found one step sooner. Its cost barely depends
+on where the boundary falls, and the standard deviation shrinks from $0.42$ at $k{=}12$ to $0.03$ at
 $k{=}2048$.
 The table also includes a galloping variant for contrast. Instead of halving the full window, it
 starts at one end and probes at doubling distances ($1$, $2$, $4$, \dots\ classes in) until two probes
