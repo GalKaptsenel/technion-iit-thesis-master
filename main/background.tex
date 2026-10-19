@@ -342,7 +342,7 @@ start the page-table walk for each half~\cite{arm64pagetables} (\autoref{tab:bg-
 architectural state, but the microarchitecture is only partially isolated. TLB entries are
 typically tagged with an address-space identifier (ASID) and, under virtualization, a
 virtual-machine identifier (VMID), so one domain cannot \emph{use} another's entries. The branch
-predictors are not specified by the architecture~\cite{chen2024dissectingconditionalbranchpredictors,jia_cbp},
+predictors are not specified by the architecture~\cite{chen2024dissectingconditionalbranchpredictors},
 though cores implementing FEAT\_CSV2 prevent branch targets trained in one context from steering
 speculation in another. Tagging and context isolation keep one domain from using another's
 state, but unless a structure's entries are physically partitioned by privilege domain, the domains
