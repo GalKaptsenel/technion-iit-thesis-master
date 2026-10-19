@@ -122,7 +122,7 @@ just below its worst-case bound of $\lceil\log_2(k+1)\rceil$ probes. It dips bel
 when the boundary lands on an early split, which is found one step sooner. Its cost barely depends
 on where the boundary falls, and the standard deviation shrinks from $0.42$ at $k{=}12$ to $0.03$ at
 $k{=}2048$.
-The table also includes a galloping variant for contrast. Instead of halving the full window, it
+The table also includes a galloping variant~\cite{bentley_yao} for contrast. Instead of halving the full window, it
 starts at one end and probes at doubling distances ($1$, $2$, $4$, \dots\ classes in) until two probes
 straddle a boundary, then binary-searches the small range between them. A boundary near the end is found in a handful of probes. For a boundary placed uniformly across the range, the case shown
 in the table, galloping costs roughly $1.4$ to $1.8$ times the plain binary search, so it helps only
@@ -132,9 +132,8 @@ when the boundary is expected near one end.
 \setlength{\tabcolsep}{6pt}
 \caption{Localization cost in interior splices to localize one boundary among $k$ equivalence
 classes, counting only the probes the localizer issues: the two bracket readings $r(0)$ and $r(k+1)$
-are already known from the flagged violation (\autoref{appendix:localization}). The binary search is
-given both as its worst-case bound $\lceil\log_2(k+1)\rceil$ and as the measured mean$\pm$sd over all
-boundary positions, with the galloping and linear-scan localizers shown for contrast.}
+are already known from the flagged violation (\autoref{appendix:localization}). The galloping
+(\autoref{sec:eval-localize},~\cite{bentley_yao}) and linear-scan localizers are shown for contrast.}
 \label{tab:eval-localize}
 \begin{tabular}{@{}r c c c c@{}}
 \toprule
