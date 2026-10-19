@@ -116,8 +116,9 @@ and it matters because every execution is a full prime-and-measure cycle on the 
 optimality of both is proved in \autoref{appendix:localization}.
 
 \autoref{tab:eval-localize} reports the measured cost over a range of batch sizes. The binary
-search runs close to its analytic bound $\lceil\log_2(k+1)\rceil$, its cost essentially independent of
-where the boundary falls, with the standard deviation shrinking from $0.43$ at $k{=}12$ to $0.02$ at
+search stays at or just below its worst-case bound $\lceil\log_2(k+1)\rceil$, since a boundary that
+falls on an early split is found a step sooner, and its cost is essentially independent of where the
+boundary falls, with the standard deviation shrinking from $0.42$ at $k{=}12$ to $0.03$ at
 $k{=}2048$.
 The table also includes a galloping variant for contrast. Instead of halving the full window, it
 starts at one end and probes at doubling distances ($1$, $2$, $4$, \dots\ classes in) until two probes
@@ -127,21 +128,22 @@ when the boundary is expected near one end.
 
 \begin{table}[t]\centering\small
 \setlength{\tabcolsep}{6pt}
-\caption{Localization cost: hardware executions to localize one boundary among $k$ equivalence
-classes. The binary search is given both as its analytic bound $\lceil\log_2(k+1)\rceil$ and as the
-measured mean$\pm$sd over all boundary positions, with the galloping and linear-scan localizers
-shown for contrast.}
+\caption{Localization cost in interior splices to localize one boundary among $k$ equivalence
+classes, counting only the probes the localizer issues: the two bracket readings $r(0)$ and $r(k+1)$
+are already known from the flagged violation (\autoref{appendix:localization}). The binary search is
+given both as its worst-case bound $\lceil\log_2(k+1)\rceil$ and as the measured mean$\pm$sd over all
+boundary positions, with the galloping and linear-scan localizers shown for contrast.}
 \label{tab:eval-localize}
 \begin{tabular}{@{}r c c c c@{}}
 \toprule
 $k$ & $\lceil\log_2(k{+}1)\rceil$ & Measured binary & Galloping & Linear \\
 \midrule
-$12$   & $4$  & $4.75\pm0.43$  & $6.50\pm1.38$  & $8.50\pm3.45$ \\
-$64$   & $7$  & $7.02\pm0.12$  & $11.14\pm2.40$ & $34.50\pm18.47$ \\
-$256$  & $9$  & $9.00\pm0.06$ & $15.04\pm2.66$ & $130.50\pm73.90$ \\
-$512$  & $10$ & $10.00\pm0.04$ & $17.02\pm2.72$ & $258.50\pm147.80$ \\
-$1024$ & $11$ & $11.00\pm0.03$ & $19.01\pm2.77$ & $514.50\pm295.60$ \\
-$2048$ & $12$ & $12.00\pm0.02$ & $21.01\pm2.79$ & $1026.50\pm591.21$ \\
+$12$   & $4$  & $3.77\pm0.42$  & $5.15\pm1.79$  & $7.00\pm3.74$ \\
+$64$   & $7$  & $6.03\pm0.17$  & $10.00\pm2.63$ & $33.00\pm18.76$ \\
+$256$  & $9$  & $8.01\pm0.09$ & $13.99\pm2.77$ & $129.00\pm74.19$ \\
+$512$  & $10$ & $9.00\pm0.06$ & $15.99\pm2.80$ & $257.00\pm148.09$ \\
+$1024$ & $11$ & $10.00\pm0.04$ & $18.00\pm2.81$ & $513.00\pm295.89$ \\
+$2048$ & $12$ & $11.00\pm0.03$ & $20.00\pm2.82$ & $1025.00\pm591.50$ \\
 \bottomrule
 \end{tabular}
 \end{table}
