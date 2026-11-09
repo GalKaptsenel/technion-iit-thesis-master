@@ -55,7 +55,7 @@ high bits with a top-down carry-trick for the low bits, and recovers the full \r
 \section{RSA-2048 key recovery through OpenSSL}
 \label{app:poc-openssl}
 
-Invoked as \reg{rsa\_leak}, this PoC is an end-to-end attack through OpenSSL with its anti-ROP mitigations disabled and only a
+Invoked as \reg{rsa\_leak}, this PoC demonstrates the address-validity leak as a covert channel through OpenSSL, with its anti-ROP mitigations disabled and only a
 single vulnerable \texttt{memcpy} planted in it (\autoref{sec:eval-exploit}). A plain
 stack-buffer overflow drives a return-oriented chain built entirely from gadgets found within the
 OpenSSL library itself, with no attacker code in the victim. The chain sets up and fires a
@@ -66,7 +66,7 @@ recovers the bytes of an in-use RSA-2048 private key.
 \section{An EL3 round trip does not flush the BTB}
 \label{app:poc-smc}
 
-Invoked as \reg{smc\_bench}, this PoC tests a necessary precondition for crossing the secure/
+Invoked as \reg{smc\_bench}, this PoC tests a necessary condition for crossing the secure/
 non-secure boundary. We cannot place a victim in the secure world on our hardware, so instead of
 demonstrating the crossing we test whether entering EL3 disturbs the normal-world branch-target
 buffer. The harness primes one EL0 BTB entry, performs an EL3 round trip between the prime and the

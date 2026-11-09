@@ -1,43 +1,42 @@
 \begin{tikzpicture}[
   font=\small,
   cell/.style={draw=black!55, rounded corners=1.5pt, minimum width=8.5mm,
-               minimum height=6.5mm, inner sep=1pt, align=center},
-  acell/.style={cell, fill=softA},
-  bcell/.style={cell, fill=softB},
-  is/.style={cell, fill=black!8, minimum width=6mm},
-  rl/.style={font=\footnotesize, text=black!80, anchor=east},
+               minimum height=7mm, inner sep=1pt, align=center},
+  acell/.style={cell, fill=blue!7},
+  bcell/.style={cell, fill=orange!12},
+  is/.style={cell, fill=black!8, minimum width=6.5mm},
   hdr/.style={font=\footnotesize, text=black!70},
-  rd/.style={font=\footnotesize, text=black!80, anchor=west},
-  br/.style={decorate, decoration={brace, amplitude=4pt, raise=1pt, mirror}, draw=black!55},
+  rl/.style={font=\footnotesize, text=black!80, anchor=east},
 ]
-  \def\dx{1.3}
-  \def\yt{0} \def\yb{-1.0}
-  \node[rl] at (-0.1,\yt) {$\spl{t{+}1}$};
-  \node[is] at (0.35,\yt) {$\IS$};
-  \node[acell] at ({0.35+1*\dx},\yt) {$\inp{0}{a}$};
-  \node        at ({0.35+2*\dx},\yt) {$\cdots$};
-  \node[acell] at ({0.35+3*\dx},\yt) {$\inp{t-1}{a}$};
-  \node[acell] at ({0.35+4*\dx},\yt) {$\inp{t}{a}$};
-  \node[bcell] at ({0.35+5*\dx},\yt) {$\inp{t+1}{b}$};
-  \node        at ({0.35+6*\dx},\yt) {$\cdots$};
-  \node[bcell] at ({0.35+7*\dx},\yt) {$\inp{k}{b}$};
-  \node[rd] at ({0.35+7*\dx+0.65},\yt) {$r(t{+}1)$};
-  \node[rl] at (-0.1,\yb) {$\spl{t}$};
-  \node[is] at (0.35,\yb) {$\IS$};
-  \node[acell] at ({0.35+1*\dx},\yb) {$\inp{0}{a}$};
-  \node        at ({0.35+2*\dx},\yb) {$\cdots$};
-  \node[acell] at ({0.35+3*\dx},\yb) {$\inp{t-1}{a}$};
-  \node[bcell] at ({0.35+4*\dx},\yb) {$\inp{t}{b}$};
-  \node[bcell] at ({0.35+5*\dx},\yb) {$\inp{t+1}{b}$};
-  \node        at ({0.35+6*\dx},\yb) {$\cdots$};
-  \node[bcell] at ({0.35+7*\dx},\yb) {$\inp{k}{b}$};
-  \node[rd] at ({0.35+7*\dx+0.65},\yb) {$r(t)$};
-  \draw[culprit, thick, rounded corners=2pt]
-      ({0.35+4*\dx-0.55},{\yt+0.45}) rectangle ({0.35+4*\dx+0.55},{\yb-0.45});
-  \node[hdr, text=culprit] at ({0.35+4*\dx},{\yt+0.78}) {only difference: column $t$};
-  \node[hdr, text=probe] at ({0.35+7*\dx},{\yt+0.78}) {probe};
-  \draw[br] ({0.35+1*\dx-0.5},{\yb-0.55}) -- ({0.35+3*\dx+0.5},{\yb-0.55})
-       node[midway, below=4pt, hdr, text=laneA]{shared prefix: lane $a$};
-  \draw[br] ({0.35+5*\dx-0.5},{\yb-0.55}) -- ({0.35+7*\dx+0.5},{\yb-0.55})
-       node[midway, below=4pt, hdr, text=laneB]{shared suffix: lane $b$ (probe included)};
+  \def\dx{1.08}
+  \def\ya{0} \def\yb{-0.9}
+  \path (-1.6,1.3) -- ({0.5+5*\dx+0.85},-1.75);
+  \node[rl] at (0.1,\ya) {$\spl{t{+}1}$};
+  \node[is] at (0.55,\ya) {$\IS$};
+  \node[acell] at ({0.5+1*\dx},\ya) {$\inp{0}{a}$};
+  \node[acell] at ({0.5+2*\dx},\ya) {$\cdots$};
+  \node[acell] at ({0.5+3*\dx},\ya) {$\inp{t}{a}$};
+  \node[bcell] at ({0.5+4*\dx},\ya) {$\cdots$};
+  \node[bcell] at ({0.5+5*\dx},\ya) {$\inp{k}{b}$};
+  \node[rl] at (0.1,\yb) {$\spl{t}$};
+  \node[is] at (0.55,\yb) {$\IS$};
+  \node[acell] at ({0.5+1*\dx},\yb) {$\inp{0}{a}$};
+  \node[acell] at ({0.5+2*\dx},\yb) {$\cdots$};
+  \node[bcell] at ({0.5+3*\dx},\yb) {$\inp{t}{b}$};
+  \node[bcell] at ({0.5+4*\dx},\yb) {$\cdots$};
+  \node[bcell] at ({0.5+5*\dx},\yb) {$\inp{k}{b}$};
+  \fill[green!60, fill opacity=0.12, rounded corners=2pt]
+      ({0.5+3*\dx-0.55},{\ya+0.45}) rectangle ({0.5+3*\dx+0.55},{\yb-0.45});
+  \draw[green!50!black, opacity=0.42, thick, rounded corners=2pt]
+      ({0.5+3*\dx-0.55},{\ya+0.45}) rectangle ({0.5+3*\dx+0.55},{\yb-0.45});
+  \node[hdr, text=green!45!black] at ({0.5+3*\dx},{\yb-0.62}) {boundary};
+  \draw[black!60, thick, dashed, rounded corners=2pt]
+      ({0.5+5*\dx-0.5},{\ya+0.4}) rectangle ({0.5+5*\dx+0.5},{\yb-0.4});
+  \node[hdr, text=black!65] at ({0.5+5*\dx},{\yb-0.62}) {probe};
+  \draw[decorate,decoration={brace,amplitude=4pt},black!50]
+      (0.2,{\ya+0.5}) -- ({0.5+2*\dx+0.5},{\ya+0.5});
+  \node[hdr, align=center, anchor=south] at (1.68,{\ya+0.66}) {same\\prefix (lane $a$)};
+  \draw[decorate,decoration={brace,amplitude=4pt},black!50]
+      ({0.5+4*\dx-0.5},{\ya+0.5}) -- ({0.5+5*\dx+0.5},{\ya+0.5});
+  \node[hdr, align=center, anchor=south] at ({0.5+4.5*\dx},{\ya+0.66}) {same\\suffix $Q$ (lane $b$)};
 \end{tikzpicture}

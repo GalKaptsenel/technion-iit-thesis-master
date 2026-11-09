@@ -1,131 +1,111 @@
 \chapter{Localization Analysis}
 \label{appendix:localization}
 
-This appendix gives the full cost analysis behind the two localizers of
-\autoref{sec:priming-localizers}. Both run splices $\batch{\spl{t}}$ and read the probe reading
-$r(t)$ of \autoref{def:splice}. The cost of a localizer is the number of interior splices
-($1\le t\le k$) it runs. The end readings $r(0)$ and $r(k+1)$ are known from the flagged
-violation. We count one direction and one repetition. Soundness of every reported pair is
-\autoref{lem:prime-genuine}. Here we bound the number of runs. Throughout, a split $t$ with
-$r(t)\neq r(t+1)$ is a \emph{boundary}, and $\tmax=\max\{t:r(t)\neq r(t+1)\}$ is the largest one.
+Both localizers of \autoref{sec:priming-localizers} use the primitive $\textsc{Measure}(t)$, which
+runs the batch $\batch{\spl{t}}$ and returns the probe reading $r(t)$. We show each localizer is
+optimal for what it returns and summarize the trade-off in \autoref{tab:loc-compare}.
 
 \section{Linear scan}
 \label{app:loc-scan}
 
-The linear scan moves the split down one class at a time, from $t=k$ toward $t=1$, comparing each
-reading with the previous one, and stops at the first boundary.
+The scan (\autoref{alg:prime-scan}) walks the split backwards from the probe end. From the known
+$r(k+1)$ it measures $r(k),r(k-1),\dots$ and stops at the first neighbor that disagrees. That split
+is a boundary, and its column is the highest leaking column.
 
 \begin{proposition}[Cost of the scan]
 \label{prop:scancost}
-The linear scan returns $\tmax$ and runs at most $k$ batches.
+The linear scan returns $\tmax=\max\{t:r(t)\neq r(t+1)\}$ and runs at most $k$ batches.
 \end{proposition}
-
 \begin{proof}
-The scan stops at the first $t$, counting down from $k$, with $r(t)\neq r(t+1)$. Since it did not
-stop earlier, $r(t+1)=r(t+2)=\dots=r(k+1)$, so no split above $t$ is a boundary and $t=\tmax$. The
-interior batches it runs are among $\batch{\spl{k}},\dots,\batch{\spl{1}}$, at most $k$ of them.
+It stops at the first $t$, counting down from $k$, with $r(t)\neq r(t+1)$. Since it did not stop
+earlier, $r(t+1)=\dots=r(k+1)$, so no split above $t$ is a boundary and $t=\tmax$. The interior
+splices it runs lie among $\spl{k},\dots,\spl{1}$, at most $k$.
 \end{proof}
 
-The matching lower bound shows no localizer that must return the largest (or smallest) boundary can do better.
-The argument rests on one observation: a deterministic localizer only knows what it has measured,
-so if two hardware behaviours agree at every splice it runs, it returns the same answer on both. A
-hardware behaviour is, for the localizer, just the list of readings $(r(0),\dots,r(k+1))$ with
-$r(0)\neq r(k+1)$. Only equalities among readings matter, so we name readings by symbols. Fix two distinct readings
-$r(0)=\rho_b\neq\rho_a=r(k+1)$. We define the \emph{step sequence} $S_j$ by
+\section{Binary search}
+\label{app:loc-bsearch}
+
+Binary search (\autoref{alg:prime-bsearch}) keeps a window $[\ell,h]$ whose end readings differ, so
+a boundary lies inside, and halves it until it spans one split. \autoref{fig:binsearch} runs it on
+$12$ inputs with the leak at column~$4$.
+
+\begin{proposition}[Binary search returns a boundary]
+\label{prop:bsearch}
+Binary search makes at most $\lceil\log_2(k+1)\rceil$ runs and returns a boundary. By the argument
+of \autoref{sec:priming-boundary} its pair is a violation.
+\end{proposition}
+\begin{proof}
+The invariant $r(\ell)\neq r(h)$ holds initially and is preserved: if $r(m)\neq r(\ell)$ then
+$[\ell,m]$ has unequal ends, otherwise $r(m)=r(\ell)\neq r(h)$ and $[m,h]$ does. Each step halves
+$h-\ell$, so from $k+1$ it reaches $1$ in at most $\lceil\log_2(k+1)\rceil$ runs, ending with
+$h=\ell+1$ and $r(\ell)\neq r(\ell+1)$.
+\end{proof}
+
+\begin{figure}[p]
+\centering
+\fitwidth{\input{fig/binsearch}}
+\caption{Binary search on $12$ inputs with the leak at column~$4$. The red frame marks the window
+$[\ell,h]$, columns $\ell,\dots,h-1$.}
+\label{fig:binsearch}
+\end{figure}
+
+\begin{table}[t]
+\centering\small
+\setlength{\tabcolsep}{8pt}
+\caption{The two localizers, per direction and per repetition. There are $k+1$ columns, and $\tmax$
+is the highest leaking column.}
+\label{tab:loc-compare}
+\begin{tabular}{@{}lll@{}}
+\toprule
+ & Linear scan & Binary search \\
+\midrule
+Runs (worst case) & $k$ & $\lceil\log_2(k{+}1)\rceil$ \\
+Lower bound & $k$~(\autoref{thm:lb-scan}) & $\lceil\log_2(k{+}1)\rceil$~(\autoref{thm:lb-bsearch}) \\
+Returns & $\tmax$ (all if continued) & one boundary \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Lower bounds}
+\label{app:loc-lower}
+
+Both localizers are optimal for what they return. The arguments use the probe $\textsc{Measure}(t)$
+and a family of \emph{step sequences}. Fix two distinct readings $\rho_a\neq\rho_b$. For each
+$j\in\{0,\dots,k\}$, the step sequence $S_j$ is the reading pattern a single leaking column $j$
+produces:
 \[
-  S_j(t) =
-  \begin{cases}
-    \rho_b & \text{if } t \le j,\\
-    \rho_a & \text{if } t > j.
-  \end{cases}
+  \textsc{Measure}(t)=\begin{cases}\rho_b & t\le j,\\ \rho_a & t>j.\end{cases}
 \]
-which is what a single leaking class $j$ produces: its only boundary is $j$.
+Its only boundary is $j$, so $\tmax=j$. A localizer is deterministic, so the same readings yield the
+same runs and the same output.
 
 \begin{theorem}[Finding $\tmax$ needs $k$ runs]
 \label{thm:lb-scan}
 Every localizer that always returns $\tmax$ runs at least $k$ batches on some reading sequence, so
 the linear scan is optimal.
 \end{theorem}
-
 \begin{proof}
-Fix $j$ and let the hardware behave as $S_j$, whose only boundary is $j$, so a correct localizer
-reports $j$. Suppose it skipped some split $u$ with $j<u\le k$. Consider $S'$, identical to $S_j$
-except that split $u$ reads a third value $\gamma\notin\{\rho_a,\rho_b\}$, that is,
-\[
-  S'(t) =
-  \begin{cases}
-    \rho_b & \text{if } t \le j,\\
-    \gamma & \text{if } t = u,\\
-    \rho_a & \text{if } t > j \text{ and } t \neq u.
-  \end{cases}
-\]
-The localizer never ran
-$u$, so every reading it saw is the same in $S_j$ and $S'$, and it reports $j$ on $S'$ too. But in
-$S'$ the reading changes between $u$ and $u+1$, so $u$ is a boundary of $S'$ larger than $j$, and
-the report is wrong. Hence no split between $j+1$ and $k$ can be skipped. For $j=0$ these are all
-$k$ splits.
+Suppose the hardware behaves as $S_j$ and take any localizer that always returns $\tmax$. Suppose it
+never runs some split $u$ with $j<u\le k$. Build $S'$ identical to $S_j$ except that
+$\textsc{Measure}(u)=\gamma$ for a third value $\gamma\neq\rho_a,\rho_b$. On every split the
+localizer runs, $S'$ and $S_j$ agree, so it makes the identical runs and emits the same output $j$
+on $S'$. But $S'$ has a boundary at $u>j$, so $\tmax\ge u>j$ and the output is wrong. Hence the
+localizer runs every split in $\{j{+}1,\dots,k\}$. Taking $j=0$ forces all $k$ splits, matching the
+linear scan.
 \end{proof}
-
-\section{Binary search}
-\label{app:loc-bsearch}
-
-If any one leaking class suffices, binary search finds one far faster. It keeps a window
-$[\ell,h]$ whose end readings differ, so a boundary lies inside, and halves it: at the midpoint
-$m=\lfloor(\ell+h)/2\rfloor$ it runs $\batch{\spl{m}}$, and sets $h:=m$ if $r(m)\neq r(\ell)$ or
-$\ell:=m$ otherwise, stopping when $h=\ell+1$ and returning $t=\ell$.
-
-\begin{proposition}[Binary search returns a genuine violation]
-\label{prop:bsearch}
-Binary search makes at most $\lceil\log_2(k+1)\rceil$ runs and returns a boundary, whose pair is a
-genuine violation by \autoref{lem:prime-genuine}.
-\end{proposition}
-
-\begin{proof}
-The invariant $r(\ell)\neq r(h)$ holds initially and is preserved: if $r(m)\neq r(\ell)$ the window
-$[\ell,m]$ has unequal ends, and otherwise $r(m)=r(\ell)\neq r(h)$ and $[m,h]$ does. Each run shrinks
-the window $h-\ell$ from $n$ to at most $\lceil n/2\rceil$, so from $k+1$ it reaches $1$ after at
-most $\lceil\log_2(k+1)\rceil$ runs, at which point $h=\ell+1$ and $r(\ell)\neq r(\ell+1)$.
-\end{proof}
-
-\autoref{fig:binsearch} works the search end to end on $12$ inputs with the leak at class~$4$,
-locating the boundary in four runs.
-
-\begin{figure}[p]
-\centering
-\fitwidth{\input{fig/binsearch}}
-\caption{Binary search on $12$ inputs with the leak at class~$4$. Each iteration runs one midpoint
-splice $\batch{\spl{m}}$ and compares its probe reading against a known end. The red frame marks the
-window $[\ell,h]$, i.e.\ columns $\ell,\dots,h-1$. The search converges to $h=\ell+1$, where the two
-remaining splices differ in column~$4$ alone, certifying class~$4$ as the leaking class after four
-runs.}
-\label{fig:binsearch}
-\end{figure}
 
 \begin{theorem}[Finding a boundary needs $\lceil\log_2(k+1)\rceil$ runs]
 \label{thm:lb-bsearch}
 Every localizer that always returns a boundary runs at least $\lceil\log_2(k+1)\rceil$ batches on
 some step sequence, so binary search is optimal.
 \end{theorem}
-
 \begin{proof}
-In $S_j$ split $t$ reads $\rho_a$ if $t\le j$ and $\rho_b$ otherwise. Rather than fix $j$ in
-advance, we answer each query as the localizer makes it and track the \emph{candidates}, the $j$
-whose $S_j$ agrees with every reading so far. Initially all $k+1$ are candidates. A run at split $t$
-splits the candidates into those with $j\ge t$ (which read $\rho_a$ at $t$) and those with $j<t$
-(which read $\rho_b$). We return the reading of the larger group, discarding at most half the
-candidates. The localizer cannot stop with two candidates $j_1\neq j_2$ left, since both $S_{j_1}$
-and $S_{j_2}$ agree with everything seen yet have different boundaries. Reaching one candidate
-therefore takes at least $\lceil\log_2(k+1)\rceil$ runs, and on that candidate's step sequence the
-localizer makes exactly these runs.
+The $k+1$ step sequences $S_0,\dots,S_k$ are the candidates, and the localizer must output the
+correct $j$. A probe at split $t$ returns $\rho_b$ when $j\ge t$ and $\rho_a$ otherwise, so it
+reveals only whether $j\ge t$. An adversary answers the probes without fixing $j$ in advance,
+keeping its answers consistent across probes by retaining, after each probe, the larger of the two
+candidate sets it leaves open. Each probe then removes at most half the candidates. The localizer
+cannot stop while two candidates remain, since both are consistent with every answer so far yet
+have different boundaries. Driving $k+1$ candidates down to one therefore takes at least
+$\lceil\log_2(k+1)\rceil$ probes, which binary search attains.
 \end{proof}
-
-\section{Comparison}
-\label{app:loc-compare}
-
-Both localizers use the same splices, the same probe, and the same soundness argument
-(\autoref{lem:prime-genuine}). They differ only in what they return and in cost.
-\autoref{tab:loc-compare} summarizes them. The run counts are per direction, that is, one pass of
-the batch that starts from the lane~$a$ inputs and finishes at the lane~$b$ inputs. Localizing in
-both directions therefore doubles the count, and each run is further repeated as many times as the
-noise reduction requires. The linear scan is the choice when every leaking class is wanted. Binary
-search when one suffices.

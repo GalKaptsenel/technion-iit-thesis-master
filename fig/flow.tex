@@ -6,18 +6,17 @@
   al/.style={font=\scriptsize, text=black!65, anchor=west},
   pl/.style={font=\scriptsize\itshape, text=black!55, rotate=90},
 ]
-  \def\gy{1.5}
-  \fill[black!4, rounded corners=4pt] (-3.15,0.62) rectangle (2.95,-2*\gy-0.62);
-  \fill[black!8, rounded corners=4pt] (-3.15,-3*\gy+0.62) rectangle (2.95,-4*\gy-0.62);
+  \def\gy{1.3}
+  \def\dg{0.3}
+  \fill[black!4, rounded corners=4pt] (-3.15,0.62) rectangle (2.95,-\gy-0.62);
+  \fill[black!8, rounded corners=4pt] (-3.15,-2*\gy+0.62-\dg) rectangle (2.95,-3*\gy-0.62-\dg);
   \node[stage] (a) at (0,0)       {\textbf{test case} \\ {\scriptsize\color{black!55} randomly generated}};
-  \node[stage] (b) at (0,-\gy)    {\textbf{sealed test case} \\ {\scriptsize\color{black!55} placeholder seals at the precondition sites}};
-  \node[stage] (c) at (0,-2*\gy)  {\textbf{object test case} \\ {\scriptsize\color{black!55} assembled once; shared by all inputs}};
-  \node[stage] (d) at (0,-3*\gy)  {\textbf{genuine + decoy variants} \\ {\scriptsize\color{black!55} seals filled by relocation}};
-  \node[stage] (e) at (0,-4*\gy)  {\textbf{hardware traces} \\ {\scriptsize\color{black!55} a difference is a leak}};
+  \node[stage] (b) at (0,-\gy)    {\textbf{sealed test case} \\ {\scriptsize\color{black!55} a GVT sealing at each fuzzed site, built once}};
+  \node[stage] (d) at (0,-2*\gy-\dg)  {\textbf{genuine + decoy fillings} \\ {\scriptsize\color{black!55} the same program, different GVT}};
+  \node[stage] (e) at (0,-3*\gy-\dg)  {\textbf{hardware traces} \\ {\scriptsize\color{black!55} a difference is a leak}};
   \draw[ar] (a) -- (b) node[al,midway,xshift=2pt]{\textbf{(1)}~seal};
-  \draw[ar] (b) -- (c) node[al,midway,xshift=2pt]{\textbf{(2)}~assemble};
-  \draw[ar] (c) -- (d) node[al,midway,xshift=2pt]{\textbf{(3)}~resolve, fill};
-  \draw[ar] (d) -- (e) node[al,midway,xshift=2pt]{\textbf{(4)}~run};
-  \node[pl] at (-2.85,-\gy)     {once per test case};
-  \node[pl] at (-2.85,-3.5*\gy) {per input};
+  \draw[ar] (b) -- (d) node[al,midway,xshift=2pt]{\textbf{(2)}~site resolution};
+  \draw[ar] (d) -- (e) node[al,midway,xshift=2pt]{\textbf{(3)}~fill GVT, run};
+  \node[pl] at (-2.85,-0.5*\gy)     {once per test case};
+  \node[pl] at (-2.85,-2.5*\gy-\dg) {per input};
 \end{tikzpicture}

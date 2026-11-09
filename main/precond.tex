@@ -1,170 +1,217 @@
-\chapter{Precondition Fuzzing}
+\chapter{Speculative-Exception Fuzzing}
 \label{chap:precond}
 
-The port's generator, like x86 \revizor{}'s, cannot produce the precondition violations behind
-attacks such as PACMAN and TikTag. This chapter closes that gap with a methodology for fuzzing
-instruction preconditions directly. Such preconditions take several forms, for example the
-signature check of an \reg{AUT*} or the tag check of a tagged access. The idea is to reserve a small
-region of code just before each instruction whose precondition we want to fuzz, a region we call a
-\emph{seal}. We then populate each seal for each input so that its precondition is satisfied on the architectural path but may be violated on a speculative path, without causing an architectural fault in the victim
-(\autoref{fig:precond-flow}). \autoref{sec:precond-gap} states the gap,
-\autoref{sec:precond-sealing}
-through \autoref{sec:precond-resolve} build the mechanism, \autoref{sec:precond-contract} fixes
-the contract it tests against, \autoref{sec:precond-primitives} lists the primitives, and
-\autoref{sec:precond-discussion} argues why the construction is sound.
+For a test case to run to completion, every instruction on its architectural path must satisfy
+its operand conditions. For example, each memory access must reach a mapped, canonical address with
+the right permissions, and under MTE or Pointer Authentication a pointer must carry the correct
+metadata to pass validation. A condition that fails architecturally raises an exception and ends
+the run. On a speculative path the same failure never faults architecturally. If the satisfied and
+the violated cases then leave distinguishable microarchitectural traces, an attacker can tell which
+case occurred, and so learn about the protected operand. Extracting this information without ever
+faulting the victim is what gives such leaks practical attack value, and is what
+PACMAN~\cite{pacman} and TikTag~\cite{tiktag} rely on (\autoref{sec:bg-arm-attacks}). Existing
+fuzzers either keep these conditions satisfied by construction, or violate them architecturally and
+fault, so neither produces a condition that fails only speculatively (\autoref{tab:intro-tools}).
 
-\section{The generation gap}
-\label{sec:precond-gap}
-
-A \emph{precondition} is a requirement an instruction places on its inputs for its intended,
-non-exceptional behavior: \reg{AUT*} expects a pointer whose authentication code passes verification, a tagged
-access expects a logical tag that matches the memory's allocation tag, and an ordinary load or store
-expects an address that is in range and correctly aligned.
-A valuable attack would require the architectural flow of a victim program to stay intact, but nothing constrains the speculative
-paths. Attacks such as PACMAN~\cite{pacman} and TikTag~\cite{tiktag} used this to leak security information about the victim program. Random generation cannot target
-this directly: whether an input makes a given instruction retire is an input-reachability
-question, intractable in general. Thus to stay safe for every input, the generator instruments every
-potentially faulting instruction (masking memory addresses into the sandbox, avoiding
-divide-by-zero, and so on) and so excludes the violation everywhere, transient paths included.
-Precondition violations are excluded by construction. 
-
-\section{Overview}
-\label{sec:precond-sealing}
-
-We close the gap by sealing the test case (\autoref{fig:precond-flow}). Before each instruction
-whose precondition we want to fuzz, a static pass reserves a short region of code, a seal, and
-assembles the program once into a shared object test case (steps~1 and~2). Then, per input, the
-seals are resolved and filled into a \emph{genuine} variant, in which every precondition holds, and
-one or more \emph{decoy} variants, in which at least one precondition is violated on a
-speculative-only path (step~3). The two kinds of variants run on the hardware and are compared, and
-any difference between them is a suspected leak (step~4).
+Our goal is a single program that stays architecturally correct for every random input, yet
+violates these conditions on speculative paths alone, so no violation ever retires. The difficulty
+is that whether an instruction is reached, and with which operand, depends on the program's path
+conditions, which are costly to solve even for small programs. Scam-V spends a few seconds
+generating each input pair~\cite{scamv_micro}, and symbolic input generation is about two orders of
+magnitude slower than dependency tracking~\cite{hide_seek}. We sidestep this solving with a layer of
+indirection: each instruction we fuzz reads its operand from a \emph{global value table} (GVT), so
+filling the GVT decides what each reads. Because the correct value can depend on runtime state, such
+as the system state or previously executed instructions, we obtain it with a single run per input
+under a lightweight architectural debugger, the contract executor of \autoref{sec:port-ce}
+(\autoref{fig:precond-flow}).
 
 \begin{figure}[t]
 \centering
 \fitwidth{\input{fig/flow}}
-\caption{The precondition-fuzzing pipeline. A test case is sealed and assembled into an object test
-case once. Then, per input, the seals are resolved and filled by relocation into a genuine
-variant and one or more decoys, which are run and compared on hardware. A difference between the
-variants is a suspected leak.}
+\caption{The speculative-exception-fuzzing pipeline. The program is sealed once and stays
+byte-identical across fillings.}
 \label{fig:precond-flow}
 \end{figure}
 
-\section{Sealing a test case}
-\label{sec:precond-sealdetail}
+\section{The global value table}
+\label{sec:precond-gvt}
 
-We walk a freshly generated test case statically. At each instruction whose operands we want to
-fuzz we reserve a seal: a short, fixed-width area immediately preceding the instruction of interest
-(\autoref{fig:precond-seal}), initialized to \reg{UDF}, the permanently undefined A64 encoding.
-Sealing every site yields the \emph{sealed test case}. Assembled once, it becomes an \emph{object
-test case}, a byte template shared by all inputs. The \reg{UDF} filler guarantees that an unfilled
-seal traps if it is ever reached, so a seal only ever executes once it has been deliberately filled.
+We call each instruction whose operands we fuzz a \emph{site}. The GVT holds the value each site
+reads at run time, and mirrors the global offset table of dynamic linking: the indexes are fixed
+when the program is built, while the values are filled per input, just before execution. Because a
+site reads some of its operands from the GVT, we can inject violating values at a site directly,
+without rewriting the program or searching for an input whose data flow produces them. The GVT
+entries thus decide which sites are violated. The table is part of the input, so two inputs that
+differ only in their GVT are different inputs, and it travels in the input's REIF file
+(\autoref{sec:port-input}). \autoref{fig:precond-gvt} shows the GVT at an MTE site. We keep the GVT in registers rather than in memory, so a lookup is not a
+memory access and adds no long-latency operation that could perturb the microarchitecture we
+measure. Specifically, we use the Advanced SIMD vector registers (\texttt{FEAT\_AdvSIMD}), which
+offer far more capacity than the general-purpose ones.
 
 \begin{figure}[t]
 \centering
-\fitwidth{\input{fig/precondseal}}
-\caption{A single seal, zoomed in. Here a Pointer Authentication site guards a load
-through \reg{x0}. The fixed-width seal is filled per input: the placeholder is the unfilled
-\reg{UDF} seal, the genuine fill installs the correct signature so the committed \reg{AUT*}
-succeeds, and a decoy installs an incorrect signature so the \reg{AUT*} fails, but only on a
-squashed speculative path, never architecturally.}
-\label{fig:precond-seal}
+\fitwidth{\input{fig/gvt}}
+\caption{The GVT at an MTE site. The GVT is one Advanced SIMD register, and each byte lane holds
+the value one site reads. Lane \texttt{b[i]} holds the tag the tag-checked access uses: the
+Allocation Tag of the accessed granule in the genuine filling, and a mismatched tag in the decoy
+filling. Lane \texttt{b[j]} holds the genuine tag in both fillings, and the retag after the access
+restores it, so the decoy value never reaches the contract trace. The two fillings differ only in
+lane \texttt{b[i]}.}
+\label{fig:precond-gvt}
 \end{figure}
 
-\section{The emulation table}
-\label{sec:precond-emul}
-
-Filling the genuine variant (and the architectural seals of a decoy) requires values that
-cannot be known statically, such as a pointer's \reg{PAC} signature or the allocation tag of the
-granule an \reg{MTE} access touches. We give the contract executor (\autoref{sec:port-ce}) an
-optional \emph{emulation table} whose rows bind each seal to an \emph{op-emulator}. Each
-op-emulator, in turn, dynamically patches the test case's instructions to satisfy the precondition
-for the live register state, as if the variant had been genuine from the beginning. Because the CE
-executes natively and models the extensions in software, it can compute these values even on a
-host that does not implement the extension.
-
-\section{Resolving a test case}
-\label{sec:precond-resolve}
-
-A seal resolves differently for each input, because inputs take different paths and carry
-different values. We recover what each seal needs from a single CE trace of the object test
-case, driven by the emulation table. The trace reports, per seal, the minimal speculation depth
-at which it is reached (depth zero means it retires, deeper means it is reached only
-speculatively), and the value it must carry. This sidesteps the static reachability problem: for a
-concrete input, the trace shows exactly which sites retire, so a violating fill can be placed only
-where it is guaranteed to stay on a speculative-only path. Each seal is then filled to enforce its
-precondition in the genuine variant or violate it in the decoy, for example with a correct or
-incorrect \reg{MTE} tag or \reg{PAC} signature. The fills ride a \emph{relocation} section in the
-input's \reg{.reif} file (\autoref{sec:port-driving}), which the loader applies just before the
-input runs.
-
-\section{The contract}
-\label{sec:precond-contract}
-
-The genuine and decoy variants run the \emph{exact same} input (the same data, \reg{PAC} keys,
-and \reg{MTE} tags) and the same code outside the seals. We test against CT-SEQ, which exposes
-only the load and store addresses and the control flow of the in-order, non-speculative run. Every
-violating seal acts behind a speculative-only flow, so CT-SEQ requires it to leave the hardware
-trace unchanged. Any divergence between the two variants is therefore a contract
-violation~\cite{contracts,revizor}.
-
-\section{Sealing primitives}
-\label{sec:precond-primitives}
-
-\autoref{tab:precond-sealings} lists the primitives. Each violates a precondition on a
-speculative-only site, while the architectural path keeps the genuine fills. The Pointer
-Authentication and Memory Tagging primitives install a correct signature or tag in the genuine fill
-and an incorrect one in the decoy, so a transiently executed \reg{AUT*}
-or tagged access fails its check only on a squashed path. The canonicality and alignment primitives make the guarded address in range and correctly aligned
-in the genuine variant and out of range or misaligned in the decoy. The sign-extension primitive
-flips the range-selecting bit, choosing between the \reg{TTBR0} and \reg{TTBR1} ranges
-(\autoref{sec:bg-canon}).
+\paragraph{Genuine and decoy fillings.}
+A run of the program is fixed by how we fill the GVT. The \emph{genuine} filling gives every site
+its correct value, the one the architectural flow expects. A \emph{decoy} filling instead forges
+the value (a wrong PAC, a mismatched tag, or a non-canonical address) at a random subset of the
+sites reached only speculatively, and keeps the correct value everywhere a site retires.
+\autoref{tab:precond-sealings} lists the sealing primitives with their genuine and decoy values.
 
 \begin{table}[t]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{6pt}
-\caption{Sealing primitives. Each violates one precondition on a speculative-only site, while the
-architectural path keeps the genuine fill.}
+\caption{Sealing primitives.}
 \label{tab:precond-sealings}
 \begin{tabular}{@{}l l l@{}}
 \toprule
-Precondition & genuine & decoy (speculative) \\
+Condition & genuine value & decoy value \\
 \midrule
-PAC signature  & correct signature    & incorrect signature \\
-MTE tag        & correct tag          & incorrect tag \\
-Canonicality   & canonical address    & non-canonical address \\
-Sign-extension & correct sign bits     & flipped sign bit \\
-Branch target  & valid target         & non-canonical / misaligned \\
-Page-table     & descriptor unchanged  & permissions flipped \\
+PAC signature          & correct signature & forged signature \\
+MTE tag                & matching tag      & mismatched tag \\
+Canonicality           & canonical address & non-canonical address \\
+Sign-extension         & correct sign bit  & flipped sign bit \\
+Indirect branch target & valid target      & non-canonical / misaligned target \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\paragraph{Page-table preconditions.}
-Unlike the others, this primitive violates a system-configuration precondition rather than an
-instruction operand. The sandbox maintains a pool of pages reachable only via speculative paths.
-When a decoy variant executes, it randomly flips a controlled subset of a leaf page-table entry's
-permission and attribute fields (the valid bit, the access flag, the access permissions, or the
-memory-attribute index) on a subset of pages within the pool, while the genuine variant leaves every
-descriptor unchanged.
+\paragraph{Sealing a site.}
+We call the instrumentation at one fuzzed site a \emph{sealing}. The generator walks the test case
+statically and inserts a sealing before each instruction of interest (\autoref{fig:precond-seal}).
+It consists of a \reg{UMOV}, which copies the site's GVT value from its vector element into a
+general-purpose register, followed by the data-processing instructions that apply it. For example,
+a PAC or an MTE tag is read from the GVT and inserted into the relevant field of the pointer with
+\reg{BFI}.
 
-\section{Discussion}
-\label{sec:precond-discussion}
+\begin{figure}[t]
+\centering
+\footnotesize
+\begin{minipage}[t]{0.48\linewidth}
+\centering\textbf{A \texttt{PAC} sealing}\par\smallskip
+\begin{verbatim}
+UMOV  wT, GVT.h[i]   // read signature
+BFI   x0, xT, PAC    // into PAC field
+AUTDA x0, x1         // authenticate x0
+LDR   x2, [x0]       // guarded access
+\end{verbatim}
+\vspace{\baselineskip}
+\raggedright
+\emph{genuine} fill: the correct signature.\par
+\emph{decoy} fill: a forged signature.
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}
+\centering\textbf{An \texttt{MTE} sealing}\par\smallskip
+\begin{verbatim}
+UMOV  wT, GVT.b[i]   // read tag
+BFI   x0, xT, #56,#4 // into tag field
+LDR   x2, [x0]       // tag-checked access
+UMOV  wT, GVT.b[j]   // read cell tag
+BFI   x0, xT, #56,#4 // retag back
+\end{verbatim}
+\raggedright
+\emph{genuine} fill: the matching cell tag.\par
+\emph{decoy} fill: a mismatched tag.\par
+The second \texttt{BFI} always restores \texttt{x0} to the genuine tag.
+\end{minipage}
+\caption{A \texttt{PAC} sealing and an \texttt{MTE} sealing. The slot is fixed and identical in
+every filling, and only the GVT value differs between the genuine and decoy fillings. The
+\texttt{MTE} sealing restores the genuine tag with a second \texttt{BFI} after the access.}
+\label{fig:precond-seal}
+\end{figure}
 
-Every retiring seal satisfies its precondition by construction, so a violation only ever falls
-on a speculative-only path and never crashes the test case. Each primitive also restores
-architectural state immediately after the sealed access (it strips the forged \reg{PAC} bits,
-retags to the real allocation tag, or undoes a pointer manipulation), so the genuine and decoy
-variants re-converge immediately past the site, and their speculative difference is contained to
-the single sealed instruction. It is important to note that the two variants are therefore not identical code: they differ
-exactly in the patched seals. A hardware-trace difference between the variants is thus
-confined to those seals. Confirming a leak then reduces to checking that the difference comes from
-the precondition being violated speculatively, rather than from the patched instructions
-themselves.
+\section{Site resolution}
+\label{sec:precond-resolve}
 
-Generating inputs that respect an instruction's preconditions is also what a solver-based validator
-such as ScamV~\cite{scamv} must do, discharging each experiment's constraints with symbolic execution
-and an SMT solver. Precondition fuzzing instead fills the sealed sites with a lightweight per-input
-draw rather than a per-experiment solve, and it aims to violate a precondition on a speculative-only
-path rather than to satisfy every constraint, keeping the retiring execution legal. Because ScamV's
-models are non-speculative, that speculative precondition violation lies outside its scope.
+When we build the program, each site's genuine value is often unknown, such as the PAC of a pointer
+the input computes or the Allocation Tag of the granule it reaches, and so is whether the
+architectural flow reaches the site at all. \emph{Site resolution} settles both in one run of the
+contract executor (\autoref{sec:port-ce}) over an initially empty GVT, the \emph{resolution trace}.
+Each time the run reaches a site whose genuine value depends on the live state, a small routine
+computes that value and writes it into the site's GVT entry, much as a dynamic linker fills a
+symbol's entry on first use. At a PAC site, for example, it computes the PAC of the pointer the
+\reg{AUT*} is about to authenticate, and at an MTE site it reads the Allocation Tag of the accessed
+granule. Because the contract executor models both extensions in software
+(\autoref{sec:port-features}), it computes these values even on a host that does not implement the
+extension. Because the resolution run executes the genuine instructions, it doubles as the genuine
+contract trace, and its speculation stack (\autoref{sec:port-ce}) records each site's speculation
+depth, marking those never reached architecturally as decoy-eligible.
+
+\section{Confining a condition violation}
+\label{sec:precond-confine}
+
+We want to compare contract-equivalent inputs under both the genuine and decoy fillings, so the two
+must produce an identical contract trace even though the decoy injects a violating value through
+the GVT (Equation~\eqref{eq:bg-violation}). We therefore confine the decoy value to the sealed
+access and keep it from reaching the contract trace: immediately after the access we overwrite any
+injected value with a consistent value for both fillings. Some instructions, such as \reg{AUT*}, do
+this for free: \reg{AUT*} overwrites the signature by sign-extending from bit~55, which is kept
+identical under both fillings. Others, such as memory accesses and indirect branches, require an
+explicit overwrite. A load, for example, does not overwrite the tag or canonicality bits it checks,
+so the pointer keeps the decoy value past the access, and we restore the genuine value, retagging
+with the correct MTE tag and undoing the mask for canonicality.
+
+\section{Generating same-contract inputs}
+\label{sec:precond-inputs}
+
+To compare an input against contract-equivalent ones, we generate further inputs of its contract
+class in two modes, \emph{contract-driven} and \emph{strict}. Contract-driven uses
+boosting~\cite{hide_seek} (\autoref{sec:bg-mrt}) to draw a new input, varying the GVT entries the
+contract leaves untainted. Strict holds the input byte-identical across the two runs and varies
+only the GVT, targeting speculative exceptions alone.
+
+\section{Widening the speculative window}
+\label{sec:precond-window}
+
+A sealed access leaves a microarchitectural trace only if it executes before the speculative window
+closes, and a random test case does not control that window's length. To give the access enough
+time, we attach a \emph{template} that holds the window open (\autoref{fig:tiktag-tmpl}). Eight
+dependent \reg{SDIV} instructions delay the guarding \reg{CBNZ}, so its not-taken shadow speculates
+for the chain's length, while an \reg{ORR} keeps the branch architecturally taken. The
+\texttt{.macro.random\_instructions} entries are placeholders the fuzzer expands with fresh random
+instructions for each test case, and the sealed sites go in the mispredicted shadow.
+
+\begin{figure}[t]
+\centering
+\begin{minipage}{0.80\linewidth}
+\footnotesize
+\begin{verbatim}
+.function_0:
+.bb_0.0:
+  .macro.random_instructions.8.2.0:
+  SDIV  x9, x1, x2        // 8-deep dependent
+  SDIV  x9, x9, x2        //   chain: x9 resolves
+  SDIV  x9, x9, x2        //   late, so the branch
+  SDIV  x9, x9, x2        //   is predicted
+  SDIV  x9, x9, x2
+  SDIV  x9, x9, x2
+  SDIV  x9, x9, x2
+  SDIV  x9, x9, x2
+  .macro.random_instructions.8.2.1:
+  ORR   x9, x9, #1        // x9 odd => branch taken
+  CBNZ  x9, .bb_0.2       //   (shadow is bb_0.1)
+.bb_0.1:                  // mispredicted shadow:
+  .macro.random_instructions.24.12.2:   // sealed
+.bb_0.2:
+  .macro.random_instructions.8.2.4:
+\end{verbatim}
+\end{minipage}
+\caption{The window-widening template.}
+\label{fig:tiktag-tmpl}
+\end{figure}
+
+A long speculation window proved necessary for TikTag~\cite{tiktag}. Without the template the
+campaign never surfaced the leak, whereas with it TikTag appeared and was verified after $8$ test
+cases, in about $2$ minutes. With the template, speculative-exception fuzzing rediscovers
+TikTag-v1, an MTE tag leak through speculation shrinkage~\cite{tiktag}, on the Cortex-X3 but not
+the Cortex-A715, matching Kim et~al.~\cite{tiktag} (\autoref{sec:eval-violations}).

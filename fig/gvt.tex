@@ -1,0 +1,71 @@
+\begin{tikzpicture}[
+  font=\footnotesize,
+  code/.style={font=\ttfamily\footnotesize, anchor=west, inner sep=1pt},
+  cmt/.style={font=\ttfamily\footnotesize, text=black!55, anchor=west, inner sep=1pt},
+  lane/.style={draw=black!45, minimum width=7mm, minimum height=6mm, inner sep=0pt,
+               font=\ttfamily\scriptsize},
+  other/.style={lane, fill=black!4, text=black!40},
+  gen/.style={lane, fill=green!14, draw=green!45!black, thick, text=green!30!black},
+  dec/.style={lane, fill=red!12, draw=red!60!black, thick, text=red!55!black},
+  lnmark/.style={circle, draw=#1, text=#1, fill=white, thick, inner sep=0.8pt,
+                 font=\scriptsize\bfseries},
+  ar/.style={-{Stealth[length=1.7mm,width=1.5mm]}, semithick},
+  rowlbl/.style={font=\footnotesize, anchor=east, align=right},
+  note/.style={font=\scriptsize, align=center, anchor=north},
+]
+  \def\w{0.75}
+  \def\li{7}    % lane i
+  \def\lj{10}   % lane j
+  \def\yd{0.85} % decoy row
+  \def\yg{0}    % genuine row
+  \colorlet{dcol}{red!55!black}
+  \colorlet{gcol}{green!35!black}
+
+  % ---- the sealing ----
+  \fill[black!3, rounded corners=2pt, draw=black!35] (-0.3,2.25) rectangle (8.1,4.85);
+  \node[code] at (0,4.55) {UMOV wT, GVT.b[i]};
+  \node[code] at (0,4.05) {BFI\ \ x0, xT, \#56, \#4};
+  \node[code] at (0,3.55) {LDR\ \ x2, [x0]};
+  \node[code] at (0,3.05) {UMOV wT, GVT.b[j]};
+  \node[code] at (0,2.55) {BFI\ \ x0, xT, \#56, \#4};
+  \node[cmt] at (3.6,4.55) {// read the site's tag};
+  \node[cmt] at (3.6,4.05) {// set Logical Address Tag};
+  \node[cmt] at (3.6,3.55) {// tag-checked access};
+  \node[cmt] at (3.6,3.05) {// read the genuine tag};
+  \node[cmt] at (3.6,2.55) {// retag: genuine again};
+  \node[lnmark=dcol] at (-0.65,4.55) {1};
+  \node[lnmark=gcol] at (-0.65,3.05) {2};
+
+  % ---- the GVT register, one row per filling ----
+  \foreach \k in {0,...,11}{
+    \pgfmathsetmacro{\x}{\k*\w}
+    \ifnum\k=\li
+      \node[dec] at (\x,\yd) {0x3};
+      \node[gen] at (\x,\yg) {0x7};
+    \else\ifnum\k=\lj
+      \node[gen] at (\x,\yd) {0x7};
+      \node[gen] at (\x,\yg) {0x7};
+    \else\ifnum\k=11
+      \node[other] at (\x,\yd) {$\cdots$};
+      \node[other] at (\x,\yg) {$\cdots$};
+    \else
+      \node[other] at (\x,\yd) {$\cdot$};
+      \node[other] at (\x,\yg) {$\cdot$};
+    \fi\fi\fi}
+  \node[rowlbl] at (-0.5,\yd) {decoy filling};
+  \node[rowlbl] at (-0.5,\yg) {genuine filling};
+  \node[font=\scriptsize, text=black!60, anchor=south west] at (-0.375,{\yd+0.3})
+       {GVT: one Advanced SIMD register};
+
+  % ---- which instruction reads which lane ----
+  \node[lnmark=dcol] (m1) at ({\li*\w},1.85) {1};
+  \node[lnmark=gcol] (m2) at ({\lj*\w},1.85) {2};
+  \draw[ar, draw=dcol] (m1.south) -- ({\li*\w},{\yd+0.32});
+  \draw[ar, draw=gcol] (m2.south) -- ({\lj*\w},{\yd+0.32});
+
+  % ---- notes under the lanes ----
+  \node[note, text=dcol] at ({\li*\w},-0.4)
+       {\texttt{b[i]}: forged tag\\in the decoy\\filling only};
+  \node[note, text=gcol] at ({\lj*\w},-0.4)
+       {\texttt{b[j]}: genuine tag\\in both fillings};
+\end{tikzpicture}

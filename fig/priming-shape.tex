@@ -10,7 +10,7 @@
   lbl/.style={font=\scriptsize, text=black!65, fill=white, inner sep=1.5pt},
 ]
   \node[writer]  (rp) at (0,0)       {an earlier run};
-  \node[carrier] (X)  at (4.1,0)     {resource $X$\\[-1pt]{\scriptsize not the L1D}};
+  \node[carrier] (X)  at (4.1,0)     {transmitting\\[-1pt]structure $X$\\[-1pt]{\scriptsize not the L1D}};
   \node[reader]  (rq) at (8.2,0)     {a later run};
   \node[shows]   (l1) at (8.2,-2.0)  {L1D trace\\[-1pt]{\scriptsize shows it}};
   \draw[ar] (rp) -- node[lbl, above]{writes} (X);

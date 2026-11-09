@@ -45,10 +45,8 @@
     \ttfamily 0x01 & \ttfamily MEMORY\_MAIN   & \textcolor{probe!55!black}{req} & main data region\\[1pt]
     \ttfamily 0x02 & \ttfamily MEMORY\_FAULTY & \textcolor{probe!55!black}{req} & faulty data region\\[1pt]
     \ttfamily 0x03 & \ttfamily GPR           & \textcolor{probe!55!black}{req} & initial registers (\texttt{x0..x5}, flags, \texttt{sp})\\[1pt]
-    \ttfamily 0x04 & \ttfamily SIMD          & \textcolor{black!50}{opt} & vector registers \texttt{v0..v7}\\[1pt]
+    \ttfamily 0x04 & \ttfamily SIMD          & \textcolor{black!50}{opt} & vector registers \texttt{v0..v31}, incl.\ the GVT\\[1pt]
     \ttfamily 0x05 & \ttfamily PAC\_KEYS      & \textcolor{black!50}{opt} & this input's \reg{PAC} keys\\[1pt]
-    \ttfamily 0x06 & \ttfamily MTE\_TAGS      & \textcolor{black!50}{opt} & memory tags, one per 16-byte granule\\[1pt]
-    \ttfamily 0x07 & \ttfamily CODE\_RELOC    & \textcolor{black!50}{opt} & per-input patches to the code\\[1pt]
-    \ttfamily 0x09 & \ttfamily PTE\_SETTINGS  & \textcolor{black!50}{opt} & page-table overrides\\
+    \ttfamily 0x06 & \ttfamily MTE\_TAGS      & \textcolor{black!50}{opt} & memory tags, one per 16-byte granule\\
     \end{tabular}};
 \end{tikzpicture}

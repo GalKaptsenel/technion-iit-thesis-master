@@ -3,16 +3,16 @@
 
 This chapter evaluates the fuzzer and the leak. We ask what throughput the port sustains
 (\autoref{sec:eval-throughput}), which contract violations it finds and how fast
-(\autoref{sec:eval-violations}), how efficiently the generalized priming localizes them
-(\autoref{sec:eval-localize}), and how far the canonicality leak reaches when weaponized against
-real software (\autoref{sec:eval-exploit}).
+(\autoref{sec:eval-violations}), how efficiently the source-agnostic detection localizes them
+(\autoref{sec:eval-localize}), and how far the address-validity leak reaches as a covert channel
+against real software (\autoref{sec:eval-exploit}).
 
 \section{Experimental setup}
 \label{sec:eval-setup}
 
 Our primary target is an Arm Neoverse~N3 (Armv9.2-A), on a bare-metal cloud instance pinned to a
 single isolated core. We reproduce the leaks on a Google Pixel~8 (Tensor~G3), pinning to its
-Cortex-A715 and Cortex-X3 cores in turn. Among the Pixel~8's cores, the BTB-mediated canonicality channel is confined to the
+Cortex-A715 and Cortex-X3 cores in turn. Among the Pixel~8's cores, the BTB channel of the address-validity leak is confined to the
 Cortex-A715 (Armv9.0-A) and does not reproduce on the Cortex-X3 prime core, whereas the
 cache and TLB channels reproduce on both. The N3 controller drives the Pixel~8 remotely, reaching
 the device over \texttt{adb} tunneled through an SSH reverse connection across the network
@@ -52,7 +52,7 @@ Executions / second & $254$     & $34.3$ \\
 \autoref{tab:eval-violations} lists the violations the fuzzer finds, their time to detection on
 the N3, and whether each reproduces on the N3, the Pixel~8 (Cortex-A715 and Cortex-X3), and the
 Alder Lake baseline. Spectre-v1, Spectre-v2, and Spectre-v4 are not a contribution of this work. We
-reproduce them as a sanity check. Our own findings are the canonicality leak (\autoref{chap:canon}), the \texttt{AUT*} sign-bit
+reproduce them as a sanity check. Our own findings are the address-validity leak (\autoref{chap:canon}), the \texttt{AUT*} sign-bit
 leak, and the automatic discovery of the L1D IP-prefetcher leak.
 
 \begin{table}[t]\centering\footnotesize
@@ -66,8 +66,8 @@ Violation & Channel & TTD & N3 & Cortex-A715 & Cortex-X3 & Alder Lake \\
 Spectre-v1 (conditional branch) & L1D       & $53.9$\,s$^{\dagger}$  & \cmark & \cmark & \cmark & \cmark \\
 Spectre-v2 (indirect branch)    & L1D       & $79.9$\,s$^{\dagger}$  & \cmark & \cmark & \cmark & \cmark \\
 Spectre-v4 (store bypass)       & L1D       & $32.3$\,s$^{\dagger}$  & \cmark & \cmark & \cmark & \cmark \\
-Canonicality                    & L1D       & $42.9$\,s$^{\dagger}$  & \cmark & \cmark & \cmark & \cmark \\
-Canonicality                    & BTB       & $84$\,s$^{\dagger}$    & \cmark & \cmark & \xmark & \xmark \\
+Address-validity                & L1D       & $42.9$\,s$^{\dagger}$  & \cmark & \cmark & \cmark & \cmark \\
+Address-validity                & BTB       & $84$\,s$^{\dagger}$    & \cmark & \cmark & \xmark & \xmark \\
 \texttt{AUT*} sign bit          & L1D       & $54.5$\,s$^{\dagger}$  & \cmark & \cmark & \cmark & n/a \\
 L1D IP prefetcher~\cite{afterimage} & HW-prefetcher & $35$\,min$^{\ddagger}$ & \xmark & \xmark & \xmark & \cmark \\
 \bottomrule
@@ -101,16 +101,16 @@ prefetcher, which then runs ahead and pulls a secret-dependent line into the cac
 contract's account of the program's own accesses. The channel is gated entirely by that prefetcher:
 it appears and disappears deterministically as the IP-prefetcher control bit (\reg{MSR~0x1A4}
 bit~3) is toggled. This is a known prefetcher channel~\cite{afterimage}. More broadly, surfacing a genuine
-microarchitectural leak on an Intel core with the same methodology shows that the generalized priming
-approach is not specific to one architecture and is able to identify speculative leakage on non-Arm
+microarchitectural leak on an Intel core with the same methodology shows that the source-agnostic
+detection is not specific to one architecture and is able to identify speculative leakage on non-Arm
 targets.
 
 \section{Localization cost}
 \label{sec:eval-localize}
 
-Once a suspected violation is detected, the generalized priming localizes the responsible class
+Once a suspected violation is detected, the source-agnostic detection localizes the responsible class
 boundary among the $k$ equivalence classes of a priming batch (\autoref{sec:priming-localizers}).
-The linear scan runs at most $k$ hardware executions and returns the largest leaking class, while
+The linear scan runs at most $k$ hardware executions and returns the highest leaking column, while
 the binary search runs only $\lceil\log_2(k+1)\rceil$ and returns one. The saving is exponential,
 and it matters because every execution is a full prime-and-measure cycle on the device. The
 optimality of both is proved in \autoref{appendix:localization}.
@@ -149,7 +149,7 @@ $2048$ & $12$ & $11.00\pm0.03$ & $20.00\pm2.82$ & $1025.00\pm591.50$ \\
 \end{tabular}
 \end{table}
 
-\section{End-to-end exploitation}
+\section{Demonstrating the address-validity leak}
 \label{sec:eval-exploit}
 
 \paragraph{Reach across isolation boundaries.}
@@ -162,11 +162,11 @@ read as a ranking of the boundaries themselves.
 \begin{table}[t]\centering\small
 \setlength{\tabcolsep}{6pt}
 \caption{Reach across isolation boundaries: recovery of a fresh random \texttt{PAC} field over each
-carrier.}
+transmitting structure.}
 \label{tab:eval-reach}
 \begin{tabular}{@{}l l l c c l@{}}
 \toprule
-Attacker EL & Victim EL & Carrier & Rate (bit/s) & Success & Counter \\
+Attacker EL & Victim EL & Transmitting structure & Rate (bit/s) & Success & Counter \\
 \midrule
 EL0         & EL0        & BTB     & $51$   & $100\%$   & PMU \\
 EL0         & EL0        & BTB     & $5$    & $96.4\%$  & \reg{cntvct\_el0} \\
@@ -176,9 +176,9 @@ EL0         & EL2        & dTLB    & $1240$ & $100\%$   & \reg{cntvct\_el0} \\
 \end{tabular}
 \end{table}
 
-\paragraph{Weaponization with return-oriented programming.}
-We weaponize the leak with a return-oriented-programming chain built from OpenSSL (and one for
-\texttt{musl}). It delivers the oracle through a real binary using only a simple memory-copy
+\paragraph{OpenSSL RSA key.}
+We deliver the leak through a return-oriented-programming chain built from OpenSSL (and one for
+\texttt{musl}). The chain delivers the oracle through a real binary using only a simple memory-copy
 buffer overflow and no attacker code in the victim, and achieves arbitrary reads from the
 victim's address space. The target is compiled without Pointer Authentication or stack canaries,
 the two explicit anti-ROP mitigations, and the chain is assembled entirely from gadgets already
@@ -202,7 +202,7 @@ be relied on as a defense.
 \paragraph{Reach of the \texttt{AUT*} sign-bit leak.}
 The same oracle recovers a victim's secret bit~55 across the boundaries of
 \autoref{tab:aut-reach}. Within one process, a victim thread and an attacker thread leak over every
-carrier when they share a core. When they run on different cores only the cache reaches across them,
+transmitting structure when they share a core. When they run on different cores only the cache reaches across them,
 through the shared last-level cache, as the TLBs are per-core. Across the privilege boundary, an EL2 kernel-module victim leaks to an EL0
 attacker, with the authentication running inside the attacker's own system call. The instructions
 that carry it, \reg{RETA*} in function epilogues and \reg{BLRA*} at indirect calls, are already
@@ -211,12 +211,12 @@ authenticates, one bit per authentication and without faulting.
 
 \begin{table}[t]\centering\small
 \setlength{\tabcolsep}{6pt}
-\caption{The \texttt{AUT*} sign-bit leak: recovery of a victim's random bit~55 over each carrier and
+\caption{The \texttt{AUT*} sign-bit leak: recovery of a victim's random bit~55 over each transmitting structure and
 boundary on the Neoverse~N3, as the median success over 21 runs.}
 \label{tab:aut-reach}
 \begin{tabular}{@{}l l l c c l@{}}
 \toprule
-Attacker EL & Victim EL & Carrier & Rate (bit/s) & Success & Counter \\
+Attacker EL & Victim EL & Transmitting structure & Rate (bit/s) & Success & Counter \\
 \midrule
 EL0$^{\dagger}$  & EL0$^{\dagger}$  & L1D cache & $3$   & $100\%$ & PMU \\
 EL0$^{\dagger}$  & EL0$^{\dagger}$  & dTLB      & $484$ & $100\%$ & PMU \\

@@ -12,7 +12,7 @@ return-oriented-programming primitives the demonstrations of \autoref{chap:eval}
 layout of a 64-bit pointer, and the security extensions (Pointer Authentication and Memory
 Tagging) whose conditions this thesis fuzzes, and \autoref{sec:bg-arm-attacks} the
 hand-crafted attacks against them. \autoref{sec:bg-mrt} introduces speculation contracts,
-model-based relational testing, and the \revizor{} fuzzer this work ports and generalizes.
+model-based relational testing, and the \revizor{} fuzzer this work ports and extends.
 
 \section{Out-of-order and speculative execution}
 \label{sec:bg-speculation}
@@ -531,8 +531,8 @@ produce different hardware traces, it reports a \emph{candidate violation}. A di
 by itself evidence of a leak. Equation~\eqref{eq:bg-violation} requires both inputs to run from the
 same context, but on a real CPU the context cannot be set directly. Each candidate must therefore be
 validated, to confirm the difference comes from the inputs and not from their differing contexts.
-This validation is done by \emph{priming}~\cite{revizor}, explained below and developed in full in
-\autoref{chap:priming}.
+This validation is done by \emph{priming}~\cite{revizor}, explained below, whose blind spot
+\autoref{chap:priming} analyzes.
 
 \paragraph{The Revizor pipeline.}
 \revizor{}~\cite{revizor} implements MRT as four components followed by a validation
@@ -557,10 +557,16 @@ traces class by class.}
 Measuring the full hardware trace of Equation~\eqref{eq:bg-htrace} on a black-box CPU is
 infeasible. It would mean reading the state after every instruction, which perturbs that very
 state, and it would require access to every microarchitectural structure, many of which are
-undocumented. \revizor{} therefore measures a single structure, the L1 data cache, at the end of each
-input's execution, through a cache side channel such as Flush+Reload or Prime+Probe. It therefore
-tests the contract with respect to an \emph{L1D observer}: effects in other structures appear in
-the hardware trace only once they propagate into the L1D. Because the context of a black-box CPU
+undocumented. \revizor{} therefore approximates Equation~\eqref{eq:bg-htrace} by measuring only the
+L1 data cache, once the input has finished executing:
+\begin{equation}
+\Al(P,I,\mathit{Ctx}) = O_{\mathrm{L1D}}(\mu_n),
+\label{eq:bg-htrace-l1d}
+\end{equation}
+where $O_{\mathrm{L1D}}$ yields the L1D lines, or sets, that the execution accessed. The
+measurement uses a cache side channel such as Flush+Reload or Prime+Probe and is repeated to filter
+noise. \revizor{} thus tests the contract with respect to $O_{\mathrm{L1D}}$, and an effect in
+another structure enters the hardware trace only once it propagates into the L1D. Because the context of a black-box CPU
 cannot be set directly, \revizor{} sets it indirectly. It runs the inputs of one test case as a
 single back-to-back series, with only a partial reset between consecutive inputs~\cite{revizor,hide_seek},
 so each input's context is the microarchitectural state its predecessors in the series left behind.
@@ -570,14 +576,24 @@ The state is fully reset between one test case and the next, so every test case 
 independently, and an input's context is only ever the inputs that ran before it on the same program.
 
 \paragraph{Priming.}
-A candidate violation is then a pair of contract-equivalent inputs, at
-positions $i<j$, whose L1D traces differ. Since the two traces are measured in different contexts,
-the difference may stem from the contexts rather than the inputs. \emph{Priming} closes this gap with
-two experiments. It reruns the sequence once with input $i$ moved into position $j$, and once with
-input $j$ moved into position $i$, so that the two inputs are compared within each context in turn
-(\autoref{fig:bg-priming}). The candidate is a false positive when the two inputs agree in both contexts,
-and a violation when they differ in either. \autoref{chap:priming} shows that this rule, while sound, is incomplete,
-and replaces it with a provably stronger one.
+Because each input runs in its own context, a candidate violation is a pair of contract-equivalent
+inputs $I_i$ and $I_j$ ($i<j$) whose traces, each in its own context, differ:
+\begin{equation}
+\mathcal{C}(P,I_i) = \mathcal{C}(P,I_j) \;\land\; \Al(P,I_i,\mu_i) \neq \Al(P,I_j,\mu_j).
+\label{eq:bg-candidate}
+\end{equation}
+Unlike in Equation~\eqref{eq:bg-violation}, the difference may therefore stem from the contexts
+rather than the inputs. Priming~\cite{revizor} closes this gap by re-running the sequence twice,
+once with $I_j$ at position $i$ and once with $I_i$ at position~$j$ (\autoref{fig:bg-priming}).
+Because the inputs preceding each position are unchanged, both inputs are tested in both contexts.
+The candidate is classified as a \emph{false positive} if
+\begin{equation}
+\Al(P,I_i,\mu_i) = \Al(P,I_j,\mu_i) \;\land\; \Al(P,I_i,\mu_j) = \Al(P,I_j,\mu_j),
+\label{eq:bg-priming}
+\end{equation}
+and as a violation otherwise. In other words, priming checks whether the trace difference follows
+an input's position in the sequence rather than its content. \autoref{chap:priming} shows that this
+check has a structural blind spot.
 
 \begin{figure}[h]
 \centering
@@ -594,5 +610,5 @@ share a contract trace. Uniformly random inputs are rarely contract-equivalent, 
 almost never yields the equivalent pair a candidate needs. To \emph{boost} an input $I$, \revizor{} generates further inputs of the
 same class (distinct inputs with an identical contract trace~\cite{revizor,hide_seek}) by running
 the contract model on $I$, keeping the input components the trace depends on, and re-randomizing the
-rest. Boosting populates the equivalence classes that both priming and its generalization
-(\autoref{chap:priming}) compare across.
+rest. Boosting populates the equivalence classes that both priming and the detection method of
+\autoref{chap:priming} compare across.

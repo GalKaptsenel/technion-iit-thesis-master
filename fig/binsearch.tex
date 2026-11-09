@@ -20,7 +20,7 @@
   ci/.style={ce,fill=iscol!25,font=\tiny\bfseries},
   pa/.style={ce,line width=1pt,draw=probe,fill=softA},
   pb/.style={ce,line width=1pt,draw=probe,fill=softB}]
-  \node[font=\scriptsize,anchor=east] at (-0.45,0.75) {class};
+  \node[font=\scriptsize,anchor=east] at (-0.45,0.75) {column};
   \foreach \c in {0,...,10}{\node[font=\scriptsize] at ({0.68*(\c+1)},0.75) {\c};}
   \node[probe,font=\scriptsize] at (8.16,0.75) {11};
   \node[probe,font=\scriptsize,anchor=west] at (8.6,0.75) {(probe)};
@@ -74,6 +74,6 @@
   \bsneq{-0.4}{-1.1}
   \draw[decorate,decoration={brace,amplitude=3pt,mirror},laneA] ({0.68*(0+1)-0.33},-1.5) -- ({0.68*(3+1)+0.33},-1.5) node[midway,below=1pt,font=\scriptsize] {prefix: lane $a$};
   \draw[decorate,decoration={brace,amplitude=3pt,mirror},laneB] ({0.68*(5+1)-0.33},-1.5) -- ({0.68*(11+1)+0.33},-1.5) node[midway,below=1pt,font=\scriptsize] {suffix: lane $b$};
-  \node[font=\scriptsize,anchor=west] at (-3.6,-2.35) {the two rows differ only in column $4$, and $r(5)\neq r(4)$: boundary $t=4$, class $4$ leaks; no further run (4 runs in total).};
+  \node[font=\scriptsize,anchor=west] at (-3.6,-2.35) {the two rows differ only in column $4$, and $r(5)\neq r(4)$: boundary $t=4$, column $4$ leaks, four runs in total.};
   \end{scope}
 \end{tikzpicture}

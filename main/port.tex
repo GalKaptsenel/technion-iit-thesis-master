@@ -69,7 +69,7 @@ the instruction set reproducible across fuzzing campaigns.
 Rather than emulate AArch64, the CE runs the test case on the real core and observes it one
 instruction at a time (\autoref{fig:port-trampoline}). It is a user-space process that loads the
 program into an executable
-mapping and single-steps it. The single-stepping exploits the fixed-width A64 encoding: every
+mapping and single-steps it. The single-stepping relies on the fixed-width A64 encoding: every
 instruction is 32 bits wide, and so is a \reg{BL} (branch-with-link). Before the test case runs,
 the CE overwrites every instruction word with a \reg{BL} to a trampoline. A \reg{BL} leaves the
 condition flags untouched, so the \reg{NZCV} state carries across the interposed branch into the
@@ -164,8 +164,7 @@ offset, so new per-input state can be added without breaking the layout, and an 
 type is skipped. The required sections hold the sandbox memory contents and the initial register
 values.
 Optional sections carry further initial state, such as custom PAC keys, an initial MTE tag memory,
-per-page page-table overrides, and the global value table used by speculative-exception fuzzing
-(\autoref{chap:precond}). The kernel module and the CE consume the same file, so the model and the
+and the global value table used by speculative-exception fuzzing (\autoref{chap:precond}). The kernel module and the CE consume the same file, so the model and the
 hardware start from an identical initial state.
 
 \begin{figure}[t]

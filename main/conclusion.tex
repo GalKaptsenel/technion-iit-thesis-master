@@ -4,24 +4,24 @@
 \section{Summary}
 \label{sec:concl-summary}
 
-This thesis brought automated, contract-based leak discovery to AArch64 and used it to find and
-weaponize new Arm leaks. We ported \revizor{}'s model-based relational testing to AArch64 with a
+This thesis brought automated, contract-based leak discovery to AArch64 and used it to find new
+speculative covert channels on Arm CPUs. We ported \revizor{}'s model-based relational testing to AArch64 with a
 native-execution contract executor, added headless fuzzing of remote cores, and modeled the Pointer
-Authentication and Memory Tagging extensions (\autoref{chap:port}). We showed that \revizor{}'s
-priming step is incomplete (it cannot report a leak whose only effect on its own run lies outside
-the L1 data cache) and replaced it with a generalized rule. The rule strictly generalizes the
-contract-violation definition and provably detects a superset of the violations the original one can
-report, and the two leakage localizers it provides are optimal (\autoref{chap:priming}). We then
-introduced precondition fuzzing, which reaches the valuable real-world leaks that surface when
-execution is allowed to diverge from the preconditions an instruction expects. It seals the
-precondition sites of a test case and fills them per input, either to satisfy a precondition or,
-only on a speculative-only path, to violate one, so that the architectural execution always
-satisfies the precondition and the attack never faults the victim (\autoref{chap:precond}). Together
-these uncovered a leak rooted in the CPU's canonicality and alignment checks on loads, stores, and
-indirect branches (\autoref{chap:canon}), which reproduces across server-class and mobile Arm cores
-and crosses the process, virtualization, and privilege boundaries, and which we weaponized end to
-end to recover a complete RSA-2048 private key through OpenSSL (\autoref{chap:eval}). The same fuzzing also surfaced a second Arm leak, in the sign extension of the Pointer Authentication instructions, which leaks bit~55 of the pointer regardless of whether the signature is correct (\autoref{chap:eval}). Finally, the
-generalized priming is not confined to Arm. Applied to an x86-64 core, it automatically identifies a
+Authentication and Memory Tagging extensions (\autoref{chap:port}). We proved that \revizor{}'s
+priming step discards leaks whose signal reaches the L1 data cache only in a later run, delayed in
+another structure, and gave a source-agnostic detection method that recovers a subset of them while
+observing only the L1D. Every violation it reports is an extended contract violation, and each of
+its two localizers is optimal for what it returns (\autoref{chap:priming}). We then introduced
+speculative-exception fuzzing, which reaches the leaks that surface when execution is allowed to
+diverge from the conditions an instruction expects. Each fuzzed site reads its operand from a
+global value table filled per input, either to satisfy the site's condition or, only where the site
+is reached speculatively, to violate it, so that the architectural execution always satisfies the
+condition and the test case never faults (\autoref{chap:precond}). Together these uncovered the address-validity leak, rooted in the
+CPU's canonicality and alignment checks on loads, stores, and indirect branches
+(\autoref{chap:canon}). It reproduces across server-class and mobile Arm cores and crosses the
+process, virtualization, and privilege boundaries, and used as a covert channel it recovers a
+complete RSA-2048 private key through OpenSSL (\autoref{chap:eval}). The same fuzzing also surfaced a second Arm leak, in the sign extension of the Pointer Authentication instructions, which leaks bit~55 of the pointer regardless of whether the signature is correct (\autoref{chap:eval}). Finally, the
+source-agnostic detection is not confined to Arm. Applied to an x86-64 core, it automatically identifies a
 known prefetcher-mediated leak that the original priming does not surface, which shows that both the
 detection method and the leakage mechanism it targets are not specific to one architecture. The proof-of-concept artifacts behind these results are
 described in \autoref{appendix:pocs}.
@@ -37,7 +37,7 @@ observing program $Q$, while keeping efficient fuzzing cost, would widen the cla
 cascaded leaks the method can reach. How to do so efficiently remains open.
 
 \paragraph{The secure / non-secure boundary.}
-A necessary precondition for crossing the secure boundary holds on our hardware: an EL3 world
+A necessary condition for crossing the secure boundary holds on our hardware: an EL3 world
 switch does not by itself flush the normal-world branch-target buffer, so the BTB eviction channel
 survives it (\autoref{app:poc-smc}). Whether the channel actually crosses to a secure-world victim, which requires a
 trusted-execution vehicle we did not have, remains open.
