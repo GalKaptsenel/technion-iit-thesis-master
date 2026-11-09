@@ -20,7 +20,7 @@ executor's hardware trace (\autoref{sec:bg-mrt}). This structure is independent 
 instruction set, so we keep it and rebuild the three ISA-specific backends for AArch64, the
 64-bit execution state introduced in Armv8-A. We additionally model the Pointer
 Authentication and Memory Tagging extensions, which x86 \revizor{} has no analogue for and
-which are the subject of the precondition primitives of \autoref{chap:precond}. The port is
+which are the subject of the speculative-exception primitives of \autoref{chap:precond}. The port is
 evaluated on Armv9 cores in \autoref{chap:eval}.
 
 \section{Contract model via native execution}
@@ -56,9 +56,9 @@ sit on the silicon under test, so it may run on a remote target device.}
 The generator needs a precise model of every instruction it may emit: its encoding,
 operands, the registers and memory it reads and writes, and the legal domains of its
 immediates. Mainline \revizor{} reads this table from a prebuilt file. We instead derive it
-directly from Arm's machine-readable specification, taking each instruction's encoding,
-operand roles, register and memory access roles, and immediate domains from its Architecture
-Specification Language (ASL) definition. Encodings we cannot fully recover from the
+directly from Arm's machine-readable A64 specification, taking each instruction's encoding,
+operand roles, register and memory access roles, and immediate domains from its description
+there. Encodings we cannot fully recover from the
 specification are reported and excluded, so the generator emits only
 instructions that have a complete, validated model. Pinning the specification release keeps
 the instruction set reproducible across fuzzing campaigns.
@@ -85,9 +85,8 @@ emulators such as Unicorn~\cite{unicorn}. It also strikes a middle ground betwee
 emulation and purely local execution. A complete emulator can model a feature the host lacks,
 but risks fidelity gaps. Purely native execution is faithful, but needs the feature present on
 the local machine. The CE takes the middle path: it runs base instructions natively and
-models, on request, the extensions in software. For example, we fuzzed MTE on a Google
-Pixel~8, which implements the extension, while generating and modeling on a host that does
-not.
+models, on request, the extensions in software. For example, we fuzz MTE on a Cortex-X3, which
+implements the extension, while generating and modeling on a host that does not.
 
 \begin{figure}[t]
 \centering
@@ -122,13 +121,13 @@ a last-in-first-out stack.}
 \section{Modeling the Arm security extensions}
 \label{sec:port-features}
 
-The precondition primitives of \autoref{chap:precond} need the model to reproduce the operand
+The speculative-exception primitives of \autoref{chap:precond} need the model to reproduce the operand
 checks of Pointer Authentication and Memory Tagging faithfully, even on a host that does not
 implement them. Pointer Authentication is modeled in software, so the CE can compute and verify a PAC the way
 the target core would. The model signs and authenticates under the keys supplied with each
 input, and applies the QARMA variant and PAC field layout it is configured to match. Memory Tagging is modeled over a simulated tag memory that the speculation-stack
 checkpoints snapshot and restore alongside the data memory, so a simulation of transiently
-executed tagged access sees, and can violate, the correct allocation tag. Both extensions are supplied with
+executed tagged access sees, and can violate, the correct Allocation Tag. Both extensions are supplied with
 per-input state (custom PAC keys and an initial tag memory) through the input file described
 next, which lets a single test case be exercised under many keys and tag layouts.
 
@@ -144,15 +143,14 @@ reports, per input, the L1 data-cache sets the execution touched (the hardware t
 \autoref{sec:bg-mrt}), read through a cache side channel.
 
 A separate group of controls is exposed through \reg{sysfs}. Among these knobs are the measurement
-method (Prime+Probe or Flush+Reload), the core the run is pinned to, and the number of warmup
-rounds.
+method (Prime+Probe or Flush+Reload), the core the run is pinned to, the number of warm-up rounds,
+and whether speculative store bypass is enabled.
 
 \begin{figure}[t]
 \centering
 \fitwidth{\input{fig/execfsm}}
 \caption{The kernel module's \reg{ioctl} state machine. A test case and inputs load
-independently. A run is possible only in \textsc{Ready}. And \textsc{Traced} holds the per-input
-measurements, which a re-run reproduces.}
+independently. A run is possible only in \textsc{Ready}, and \textsc{Traced} holds the per-input measurements, which a re-run reproduces.}
 \label{fig:port-execfsm}
 \end{figure}
 
@@ -166,9 +164,9 @@ offset, so new per-input state can be added without breaking the layout, and an 
 type is skipped. The required sections hold the sandbox memory contents and the initial register
 values.
 Optional sections carry further initial state, such as custom PAC keys, an initial MTE tag memory,
-and per-page page-table overrides. This extensibility is what later lets precondition
-fuzzing attach a \emph{relocation} (code-sealing) section to an input (\autoref{chap:precond})
-without changing the file format.
+per-page page-table overrides, and the global value table used by speculative-exception fuzzing
+(\autoref{chap:precond}). The kernel module and the CE consume the same file, so the model and the
+hardware start from an identical initial state.
 
 \begin{figure}[t]
 \centering
@@ -203,7 +201,8 @@ every hardware trace in one response.}
 
 \medskip
 The port reproduces x86 \revizor{}'s methodology on AArch64 and extends it to the Arm security
-extensions, but it inherits two limitations of that methodology. Its validation step can
-discard genuine leakage that reaches the L1 data cache only indirectly, and its generator
-cannot produce the precondition violations behind attacks such as PACMAN and TikTag. The next
+extensions, but it inherits two limitations of that methodology. Its validation step discards
+leaks whose signal reaches the L1D only in a later run, delayed in another structure, and its
+generator cannot produce test cases that violate a condition only speculatively, as PACMAN and
+TikTag do. The next
 two chapters remove these limitations in turn.
