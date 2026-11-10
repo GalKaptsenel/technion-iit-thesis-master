@@ -4,7 +4,7 @@
 Speculative-exception fuzzing, armed with the source-agnostic detection of \autoref{chap:priming},
 uncovers a previously unknown leak, the address-validity leak, that arises from a basic property
 of address translation: the CPU's canonicality and alignment checks on loads, stores, and
-indirect branches. This chapter explains the mechanism. Its reach across isolation boundaries and
+indirect branches. This chapter explains the mechanism, together with a second leak the same oracle exposes in Pointer Authentication's sign extension (\autoref{sec:canon-aut}). Its reach across isolation boundaries and
 the covert-channel demonstrations are in \autoref{chap:eval}.
 
 \section{The oracle}
@@ -128,7 +128,9 @@ mitigate PACMAN-style attacks~\cite{pacman,arm_pacman}, Arm makes speculative au
 as if the signature were correct and sign-extends bit~55 across the bits the \reg{PAC} field
 occupied, yielding a canonical pointer. A cleared bit~55 leaves the pointer in the user half, where
 the speculative access allocates microarchitectural state, while a set bit~55 moves it to the kernel
-half, which is fast-rejected before it allocates and leaves no footprint. The oracle of
+half, which is fast-rejected before it allocates and leaves no footprint. The two halves swap roles
+when the victim runs in kernel space, where a kernel-half target is the one that allocates and a
+user-half target is rejected. The oracle of
 \autoref{sec:canon-oracle} therefore reads bit~55 for any value passed to an authentication
 instruction, regardless of the signature's correctness, and the same holds for the combined
 authenticate-and-branch instructions.
@@ -136,5 +138,5 @@ authenticate-and-branch instructions.
 \section{Portability}
 \label{sec:canon-portability}
 
-The three channels do not all port across microarchitectures. \autoref{sec:eval-violations} reports
+The cache, TLB, and BTB channels do not all port across microarchitectures. \autoref{sec:eval-violations} reports
 where each reproduces (\autoref{tab:eval-violations}).
