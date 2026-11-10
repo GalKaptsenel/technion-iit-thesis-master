@@ -3,14 +3,14 @@
   box/.style={draw=black!65, rounded corners=2.5pt, thick, align=center,
               minimum width=21mm, minimum height=11mm, inner sep=2pt},
   writer/.style={box, fill=laneA!16, draw=laneA!65!black},
-  carrier/.style={box, fill=black!5},
+  xfer/.style={box, fill=black!5},
   reader/.style={box, fill=probe!14, draw=probe!60!black},
   shows/.style={box, fill=probe!20, draw=probe!60!black},
   ar/.style={-{Stealth[length=1.9mm]}, thick, draw=black!70},
   lbl/.style={font=\scriptsize, text=black!65, fill=white, inner sep=1.5pt},
 ]
   \node[writer]  (rp) at (0,0)       {an earlier run};
-  \node[carrier] (X)  at (4.1,0)     {transmitting\\[-1pt]structure $X$\\[-1pt]{\scriptsize not the L1D}};
+  \node[xfer] (X)  at (4.1,0)     {transmitting\\[-1pt]structure $X$\\[-1pt]{\scriptsize not the L1D}};
   \node[reader]  (rq) at (8.2,0)     {a later run};
   \node[shows]   (l1) at (8.2,-2.0)  {L1D trace\\[-1pt]{\scriptsize shows it}};
   \draw[ar] (rp) -- node[lbl, above]{writes} (X);

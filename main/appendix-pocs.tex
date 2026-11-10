@@ -44,6 +44,7 @@ fires a Spectre-v4 window, and transmits over the BTB channel read with \reg{cnt
 \label{app:poc-smc}
 
 \reg{smc\_bench} tests a condition for crossing the secure boundary. It primes one EL0 BTB entry,
-performs an EL3 round trip between prime and probe, and reports that the entry survives, so an EL3
-world switch does not by itself destroy the prediction state the BTB channel relies on. This
-indicates the address-validity leak's BTB channel is feasible across secure-world switches.
+performs an EL3 round trip through a Secure Monitor Call (SMC) between prime and probe, and reports
+that the entry survives, so an EL3 world switch does not by itself destroy the prediction state the
+BTB channel relies on. This indicates the address-validity leak's BTB channel is feasible across
+secure-world switches.
