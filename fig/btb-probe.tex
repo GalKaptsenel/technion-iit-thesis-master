@@ -1,0 +1,57 @@
+\begin{tikzpicture}[
+  font=\footnotesize,
+  way/.style={draw=black!45, minimum width=20mm, minimum height=5.2mm, inner sep=1pt,
+              font=\ttfamily\scriptsize, anchor=center},
+  atk/.style={way, fill=laneA!15, draw=laneA!55!black, text=laneA!30!black},
+  vic/.style={way, fill=culprit!14, draw=culprit!70!black, text=culprit!55!black},
+  empty/.style={way, fill=black!3, text=black!40},
+  ttl/.style={font=\scriptsize\bfseries, align=center},
+  note/.style={font=\scriptsize, text=black!60, align=center},
+  ar/.style={-{Stealth[length=1.8mm,width=1.6mm]}, semithick, draw=black!65},
+  barfast/.style={draw=probe!65!black, fill=probe!30, minimum width=3.2mm},
+  barslow/.style={draw=culprit!70!black, fill=culprit!30, minimum width=3.2mm},
+]
+% ---- Stage 1: primed set ----
+\def\yw{{0.78,0.26,-0.26,-0.78}}
+\foreach \i/\y in {0/0.78,1/0.26,2/-0.26,3/-0.78}{
+  \node[atk] (p\i) at (0,\y) {A\i $\to$ t\i};
+}
+\node[ttl] at (0,1.45) {primed set};
+\node[note, anchor=north] at (0,-1.15) {4 ways, the attacker's\\own branches};
+
+% ---- Scenario (i): in-range victim target ----
+\def\xi{4.3}
+\foreach \i/\y in {0/0.78,1/0.26,2/-0.26}{\node[atk] (i\i) at (\xi,\y) {A\i $\to$ t\i};}
+\node[vic] (iv) at (\xi,-0.78) {V $\to$ t$_V$};
+\node[ttl, align=center] at (\xi,1.45) {(i) validity check passes};
+\node[note, anchor=north] at (\xi,-1.15) {branch allocates,\\evicts A3};
+
+% ---- Scenario (ii): out-of-range victim target ----
+\def\xii{4.3}
+\def\yii{-3.5}
+\foreach \i/\y in {0/0.78,1/0.26,2/-0.26,3/-0.78}{\node[atk] (j\i) at (\xii,{\y+\yii}) {A\i $\to$ t\i};}
+\node[ttl] at (\xii,{1.45+\yii}) {(ii) validity check fails};
+\node[note, anchor=north] at (\xii,{-1.15+\yii}) {fast-rejected,\\no allocation};
+
+\draw[ar] (p0.east) ++(0.1,0) -- ++(1.15,0) |- (i0.west);
+\draw[ar] (p3.east) ++(0.1,0) -- ++(1.15,0) |- (j0.west);
+\node[note, text=black!70] at (2.1,0.05) {victim\\branch};
+\node[note, text=black!70] at (2.1,{0.05+\yii}) {victim\\branch};
+
+% ---- Probe timing per scenario ----
+\def\xt{8.6}
+% scenario (i): A3 slow, rest fast
+\foreach \i/\h in {0/0.35,1/0.33,2/0.36}{\node[barfast, minimum height={\h*18mm}, anchor=south] at ({\xt+\i*0.5},-0.55) {};}
+\node[barslow, minimum height={0.95*18mm}, anchor=south] at ({\xt+3*0.5},-0.55) {};
+\node[ttl] at ({\xt+0.75},1.45) {probe times};
+\foreach \i in {0,1,2,3}{\node[font=\ttfamily\tiny, text=black!55] at ({\xt+\i*0.5},-0.72) {A\i};}
+\node[note, text=culprit!55!black, anchor=north] at ({\xt+0.75},-1.15) {A3 misses $\Rightarrow$ slow};
+% scenario (ii): all fast
+\foreach \i/\h in {0/0.35,1/0.33,2/0.36,3/0.34}{\node[barfast, minimum height={\h*18mm}, anchor=south] at ({\xt+\i*0.5},{-0.55+\yii}) {};}
+\node[ttl] at ({\xt+0.75},{1.45+\yii}) {probe times};
+\foreach \i in {0,1,2,3}{\node[font=\ttfamily\tiny, text=black!55] at ({\xt+\i*0.5},{-0.72+\yii}) {A\i};}
+\node[note, text=probe!35!black, anchor=north] at ({\xt+0.75},{-1.15+\yii}) {all hit $\Rightarrow$ fast};
+
+\draw[ar] (iv.east) ++(0.1,0) -- ({\xt-0.9},-0.15) node[note,midway,above,text=black!70]{re-run,\\time};
+\draw[ar] (j3.east) ++(0.1,0) -- ({\xt-0.9},{-0.15+\yii}) node[note,midway,above,text=black!70]{re-run,\\time};
+\end{tikzpicture}

@@ -115,6 +115,35 @@ To fuzz the speculative MTE tag-check condition, we use the window-widening temp
 through speculation shrinkage~\cite{tiktag}, which we detect on the Cortex-X3 but not the
 Cortex-A715, matching Kim et~al.~\cite{tiktag}.
 
+\subsection{Coverage and negative results}
+\label{sec:eval-coverage}
+
+The generator emits the general-purpose integer subset of AArch64: integer arithmetic including
+multiply and divide, logical and shift operations, bitfield and byte-reversal operations,
+conditional selects and compares, conditional and compare-and-branch control flow, plain loads and
+stores, flag-setting operations, bit-count, and the CRC32 family, $44$ instruction forms in all. The
+Pointer Authentication campaign additionally emits the sign, authenticate, and strip instructions.
+Operands are drawn from \reg{x0} through \reg{x5}. The vector and floating-point families (NEON,
+SVE, SVE2, SME) and the system and floating-point categories, the remaining $6{,}900$ of the
+$7{,}085$ encodings in our instruction specification, lie outside the modeled subset and are not
+emitted.
+
+We ran campaigns of up to $48$ hours under different speculation contracts, among them
+\textsc{CT-SEQ}, \textsc{CT-COND}, and \textsc{CT-BPAS}. For speculative-exception fuzzing we did
+not add contract clauses to filter out the violations we had already characterized, so a campaign
+kept surfacing many of them, most recognizable as variations of the same speculatively violated
+property.
+
+\paragraph{Negative results.}
+An \emph{n/a} entry marks a platform without the feature: the \texttt{AUT*} leak on Alder Lake,
+which has no Pointer Authentication, and TikTag-v1 on the Neoverse~N3, which lacks the
+\texttt{FEAT\_MTE2} tag checking it targets. A \xmark\ marks a platform with the feature where the
+campaign did not observe the leak. TikTag-v1 reproduces on the Cortex-X3 but not the Cortex-A715,
+matching Kim et~al.~\cite{tiktag}. The address-validity BTB channel reproduces on the N3 and the
+Cortex-A715 but not the Cortex-X3, nor across the exception-level boundary, where the BTB is split so
+an EL0 attacker cannot evict a victim's EL2 entries. AfterImage appears only on Alder Lake. A
+\xmark\ means not observed under our budget, not a proof of absence.
+
 \section{Reach across isolation boundaries}
 \label{sec:eval-reach}
 
@@ -159,7 +188,7 @@ We localize the boundary among the columns of a batch (\autoref{sec:priming-loca
 boundary a localizer returns. It bounds the localization work and shows how far leakage propagates.
 Both localizers localize each suspected pair, each returning a boundary we verify, so both can
 report a false positive. The linear scan stops early, at the nearest boundary. We fuzz canonicality
-sealings as speculative exceptions, $16$ inputs per test case, and run until $128$ violations
+as a speculative exception, $16$ inputs per test case, and run until $128$ violations
 verify.
 
 Both localizers report a median gap of one position, so the leak usually sits in the input just
@@ -203,6 +232,15 @@ We build two independent demonstrations of the address-validity leak used as a c
 OpenSSL demonstration is dynamically linked and built with Pointer Authentication and stack canaries
 disabled, and a single planted vulnerable \texttt{memcpy}. The canary demonstration keeps both
 enabled. \autoref{appendix:pocs} describes the proof-of-concept programs.
+
+\paragraph{Threat model.}
+Across these demonstrations the attacker runs unprivileged code at EL0 on a core it shares with the
+victim, knows the victim binary, and times its own microarchitectural state. The address-validity
+leak turns a speculative, never-retired access in the victim into a one-bit read of a
+secret-dependent pointer, which the attacker recovers by probing the shared structure. The reach
+measurements (\autoref{sec:eval-reach}) assume only this co-location. The OpenSSL demonstration
+additionally assumes an available control-flow hijack, provided by the planted overflow and disabled
+mitigations above, so it demonstrates a data-exfiltration channel.
 
 \paragraph{OpenSSL RSA key.}
 A plain stack-buffer overflow drives a ROP chain built \emph{entirely from gadgets inside the

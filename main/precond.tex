@@ -28,7 +28,7 @@ under a lightweight architectural debugger, the contract executor of \autoref{se
 \begin{figure}[t]
 \centering
 \fitwidth{\input{fig/flow}}
-\caption{The speculative-exception-fuzzing pipeline. The program is sealed once and stays
+\caption{The speculative-exception-fuzzing pipeline. The program is instrumented once and stays
 byte-identical across fillings.}
 \label{fig:precond-flow}
 \end{figure}
@@ -36,7 +36,7 @@ byte-identical across fillings.}
 \section{The global value table}
 \label{sec:precond-gvt}
 
-We call each instruction whose operands we fuzz a \emph{site}. The GVT holds the value each site
+We call each instruction whose operands we fuzz a \emph{GVT access site}, or \emph{site} for short. The GVT holds the value each site
 reads at run time, and mirrors the global offset table of dynamic linking: the indexes are fixed
 when the program is built, while the values are filled per input, just before execution. Because a
 site reads some of its operands from the GVT, we can inject violating values at a site directly,
@@ -51,12 +51,10 @@ offer far more capacity than the general-purpose ones.
 \begin{figure}[t]
 \centering
 \fitwidth{\input{fig/gvt}}
-\caption{The GVT at an MTE site. The GVT is one Advanced SIMD register, and each byte lane holds
-the value one site reads. Lane \texttt{b[i]} holds the tag the tag-checked access uses: the
-Allocation Tag of the accessed granule in the genuine filling, and a mismatched tag in the decoy
-filling. Lane \texttt{b[j]} holds the genuine tag in both fillings, and the retag after the access
-restores it, so the decoy value never reaches the contract trace. The two fillings differ only in
-lane \texttt{b[i]}.}
+\caption{The GVT at an MTE site. Each byte lane of one Advanced SIMD register holds a site's value.
+Lane \texttt{b[i]} carries the tag the access checks, mismatched in the decoy filling and the genuine
+Allocation Tag otherwise. Lane \texttt{b[j]} restores the genuine tag after the access, so the decoy
+never reaches the contract trace.}
 \label{fig:precond-gvt}
 \end{figure}
 
@@ -65,14 +63,14 @@ A run of the program is fixed by how we fill the GVT. The \emph{genuine} filling
 its correct value, the one the architectural flow expects. A \emph{decoy} filling instead forges
 the value (a wrong PAC, a mismatched tag, or a non-canonical address) at a random subset of the
 sites reached only speculatively, and keeps the correct value everywhere a site retires.
-\autoref{tab:precond-sealings} lists the sealing primitives with their genuine and decoy values.
+\autoref{tab:precond-primitives} lists the GVT access primitives with their genuine and decoy values.
 
 \begin{table}[t]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{6pt}
-\caption{Sealing primitives.}
-\label{tab:precond-sealings}
+\caption{GVT access primitives.}
+\label{tab:precond-primitives}
 \begin{tabular}{@{}l l l@{}}
 \toprule
 Condition & genuine value & decoy value \\
@@ -86,9 +84,9 @@ Indirect branch target & valid target      & non-canonical / misaligned target \
 \end{tabular}
 \end{table}
 
-\paragraph{Sealing a site.}
-We call the instrumentation at one fuzzed site a \emph{sealing}. The generator walks the test case
-statically and inserts a sealing before each instruction of interest (\autoref{fig:precond-seal}).
+\paragraph{The access sequence.}
+The instrumentation at one site is its \emph{access sequence}. The generator walks the test case
+statically and inserts an access sequence before each instruction of interest (\autoref{fig:precond-access}).
 It consists of a \reg{UMOV}, which copies the site's GVT value from its vector element into a
 general-purpose register, followed by the data-processing instructions that apply it. For example,
 a PAC or an MTE tag is read from the GVT and inserted into the relevant field of the pointer with
@@ -98,7 +96,7 @@ a PAC or an MTE tag is read from the GVT and inserted into the relevant field of
 \centering
 \footnotesize
 \begin{minipage}[t]{0.48\linewidth}
-\centering\textbf{A \texttt{PAC} sealing}\par\smallskip
+\centering\textbf{A \texttt{PAC} access sequence}\par\smallskip
 \begin{verbatim}
 UMOV  wT, GVT.h[i]   // read signature
 BFI   x0, xT, PAC    // into PAC field
@@ -111,7 +109,7 @@ LDR   x2, [x0]       // guarded access
 \emph{decoy} fill: a forged signature.
 \end{minipage}\hfill
 \begin{minipage}[t]{0.48\linewidth}
-\centering\textbf{An \texttt{MTE} sealing}\par\smallskip
+\centering\textbf{An \texttt{MTE} access sequence}\par\smallskip
 \begin{verbatim}
 UMOV  wT, GVT.b[i]   // read tag
 BFI   x0, xT, #56,#4 // into tag field
@@ -124,10 +122,10 @@ BFI   x0, xT, #56,#4 // retag back
 \emph{decoy} fill: a mismatched tag.\par
 The second \texttt{BFI} always restores \texttt{x0} to the genuine tag.
 \end{minipage}
-\caption{A \texttt{PAC} sealing and an \texttt{MTE} sealing. The slot is fixed and identical in
+\caption{A \texttt{PAC} access sequence and an \texttt{MTE} access sequence. The slot is fixed and identical in
 every filling, and only the GVT value differs between the genuine and decoy fillings. The
-\texttt{MTE} sealing restores the genuine tag with a second \texttt{BFI} after the access.}
-\label{fig:precond-seal}
+\texttt{MTE} access sequence restores the genuine tag with a second \texttt{BFI} after the access.}
+\label{fig:precond-access}
 \end{figure}
 
 \section{Site resolution}
@@ -152,7 +150,7 @@ depth, marking those never reached architecturally as decoy-eligible.
 
 We want to compare contract-equivalent inputs under both the genuine and decoy fillings, so the two
 must produce an identical contract trace even though the decoy injects a violating value through
-the GVT (Equation~\eqref{eq:bg-violation}). We therefore confine the decoy value to the sealed
+the GVT (Equation~\eqref{eq:bg-violation}). We therefore confine the decoy value to the instrumented
 access and keep it from reaching the contract trace: immediately after the access we overwrite any
 injected value with a consistent value for both fillings. Some instructions, such as \reg{AUT*}, do
 this for free: \reg{AUT*} overwrites the signature by sign-extending from bit~55, which is kept
@@ -173,13 +171,13 @@ only the GVT, targeting speculative exceptions alone.
 \section{Widening the speculative window}
 \label{sec:precond-window}
 
-A sealed access leaves a microarchitectural trace only if it executes before the speculative window
+A site's access leaves a microarchitectural trace only if it executes before the speculative window
 closes, and a random test case does not control that window's length. To give the access enough
 time, we attach a \emph{template} that holds the window open (\autoref{fig:tiktag-tmpl}). Eight
 dependent \reg{SDIV} instructions delay the guarding \reg{CBNZ}, so its not-taken shadow speculates
 for the chain's length, while an \reg{ORR} keeps the branch architecturally taken. The
 \texttt{.macro.random\_instructions} entries are placeholders the fuzzer expands with fresh random
-instructions for each test case, and the sealed sites go in the mispredicted shadow.
+instructions for each test case, and the GVT access sites go in the mispredicted shadow.
 
 \begin{figure}[t]
 \centering
@@ -201,7 +199,7 @@ instructions for each test case, and the sealed sites go in the mispredicted sha
   ORR   x9, x9, #1        // x9 odd => branch taken
   CBNZ  x9, .bb_0.2       //   (shadow is bb_0.1)
 .bb_0.1:                  // mispredicted shadow:
-  .macro.random_instructions.24.12.2:   // sealed
+  .macro.random_instructions.24.12.2:   // access sites
 .bb_0.2:
   .macro.random_instructions.8.2.4:
 \end{verbatim}

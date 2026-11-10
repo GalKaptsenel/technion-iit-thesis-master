@@ -170,7 +170,9 @@ after first perturbing a structure other than the L1D, and that a source-agnosti
 recovers them. The third is that we can fuzz the conditions instructions impose on their
 operands by violating them only on speculative paths. The fourth is that fuzzing these
 conditions uncovers two new speculative covert-channel leaks on production Arm cores, which
-exfiltrate information across privilege and virtualization boundaries. The contributions below
+exfiltrate information across privilege and virtualization boundaries. Throughout, we build on
+\revizor{}'s model-based relational testing, its speculation contracts, its priming validation step,
+and its boosting of inputs into contract classes~\cite{revizor,hide_seek}. The contributions below
 follow the order in which the thesis develops these claims.
 
 \begin{itemize}
@@ -192,7 +194,8 @@ follow the order in which the thesis develops these claims.
   \autoref{chap:eval})}, one in the pointer canonicality and alignment checks, the address-validity
   leak, the other in the sign extension of Pointer Authentication instructions, characterized
   across isolation boundaries. Using the address-validity leak as a covert channel, we recover a
-  victim's stack canary and leak a complete RSA-2048 private key from a victim process.
+  victim's stack canary and, given an assumed control-flow hijack, leak a complete RSA-2048 private
+  key from a victim process.
 \end{itemize}
 
 With this framework we also rediscover the known TikTag~\cite{tiktag} and
@@ -212,8 +215,7 @@ contracts~\cite{revizor,contracts}, finding Spectre-v1, Spectre-v4, MDS, and LVI
 x86-64~\cite{revizor,revizor_micro}, and later work scaled the search and modeled
 exception-driven, isolation-boundary, and pre-silicon
 leakage~\cite{hide_seek,speculation_fault,isolation,amulet}. \revizor{}'s experimental AArch64
-branch~\cite{revizor_arm} emulates test cases in Unicorn, where we found inconsistencies, while
-we execute them natively. Its 220-variant instruction table was generated for the Cortex-A72,
+branch~\cite{revizor_arm} emulates test cases in Unicorn, while we execute them natively. Its 220-variant instruction table was generated for the Cortex-A72,
 while we derive ours from Arm's specification. It does not support fuzzing \gls{pauth} or
 \gls{mte} instructions, and its executor supports only a specific cache configuration. None of
 these tools violates a condition only on a speculative path. ScamV validates supplied

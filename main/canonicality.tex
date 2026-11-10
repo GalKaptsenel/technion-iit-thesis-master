@@ -22,10 +22,9 @@ one-bit oracle on the canonicality of the accessed pointer (\autoref{fig:canon-o
 \centering
 \fitwidth{\input{fig/canonoracle}}
 \caption{The canonicality oracle. A speculative access to an in-range pointer allocates
-microarchitectural state (a line, a TLB entry, a BTB way). An out-of-range access is fast-rejected
-before it allocates anything. Making a target's legality depend on a secret bit turns the presence
-or absence of that footprint into a one-bit read of the secret, and the illegal access only ever
-happens on a squashed path, so the procedure never faults.}
+microarchitectural state (a line, a TLB entry, or a BTB way), while an out-of-range access is
+fast-rejected and allocates nothing. Tying a target's legality to a secret bit turns that footprint
+into a one-bit read, taken only on a squashed path.}
 \label{fig:canon-oracle}
 \end{figure}
 
@@ -71,21 +70,55 @@ speculation primitives: a mistrained bounds check (Spectre-v1), a store-bypassed
 (Spectre-v4), and a return shadow (Spectre-RSB). The stack-canary demonstration of
 \autoref{sec:eval-exploit} drives a single gadget each of these three ways.
 
-\section{The branch-target channel evades priming}
+\section{The branch-target channel}
 \label{sec:canon-l1d}
 
-When the transmitter is an indirect branch, the leak rides the BTB, and we effectively read the
-canonicality of an indirect-branch target. The BTB allocation itself is the leakage. There is no
-separate footprint to probe within the same run, and in particular the L1D cache cannot capture it
-within the run that caused it. To learn whether the speculative branch allocated an entry, one must
-execute an indirect branch with the \emph{same} program counter again and observe the BTB
-prediction. \revizor{} generates loop-free test cases, so that second execution cannot happen inside
-a single input's run. The leak therefore leaves no mark on its own run's L1D trace, survives only in
-the carried-over BTB state, and surfaces in a later run, which is the class of leaks priming
-discards (\autoref{prop:priming-blind}). \revizor{}'s priming~\cite{revizor} therefore discards it,
-while the source-agnostic detection of \autoref{chap:priming} reports it. Priming missed this leak
-throughout a 48-hour campaign, whereas the source-agnostic detection finds it in $84$\,s on average
-(\autoref{tab:eval-violations}).
+When the transmitter is an indirect branch, the leak rides the BTB. A canonical branch target
+allocates a BTB entry, while an out-of-range target is fast-rejected and allocates nothing, so the
+presence of a BTB entry reports the validity of the target.
+
+\paragraph{Reading the channel.}
+A separate attacker recovers the bit by prime and probe on the shared BTB
+(\autoref{fig:btb-probe}). Beforehand it fills the BTB set that the victim's branch maps into,
+placing one of its own branches in each way, each with a distinct target it can later take and time.
+The victim then runs its gadget. A target that passes the validity check allocates a way and evicts
+one of the attacker's branches, while a target that fails is fast-rejected and leaves the set
+untouched. Afterwards the attacker re-executes its own branches and times them, and an evicted
+branch mispredicts and resolves slowly, so a single slow branch reveals that the victim's target was
+valid. Empirically, two branches whose addresses differ in bit~12 of the program counter fall in different
+BTB sets, so the attacker spaces its primed branches by $2^{13}$ bytes to populate the victim's set.
+The attacker therefore needs only the gadget's branch address, known from the binary, and
+co-location on the core.
+
+\begin{figure}[t]
+\centering
+\fitwidth{\input{fig/btb-probe}}
+\caption{Reading the branch-target channel by prime and probe. A victim target that passes the
+validity check evicts one primed branch, whose slow misprediction the attacker times afterwards. A
+target that fails leaves the set intact.}
+\label{fig:btb-probe}
+\end{figure}
+
+\paragraph{Why priming misses it.}
+The BTB allocation is itself the leakage, and the L1D cannot capture it within the run that caused
+it. To observe whether the speculative branch allocated an entry, an indirect branch with the
+\emph{same} program counter must run again, and \revizor{} generates loop-free test cases, so that
+second execution falls in a later run (\autoref{fig:btb-fuzzer}). The leaking pair therefore leaves
+an identical L1D trace on its own run and differs only in the carried BTB state, which surfaces in a
+later input's L1D. This is the class of leaks priming discards (\autoref{prop:priming-blind}):
+priming reruns the pair in matched slots, where the difference follows the slot, so it is dropped,
+while the source-agnostic detection of \autoref{chap:priming} reads the later run across lanes and
+reports it. On the Neoverse~N3 it finds the leak in $84$\,s on average, a violation priming missed
+over a 48-hour campaign (\autoref{tab:eval-violations}).
+
+\begin{figure}[t]
+\centering
+\fitwidth{\input{fig/btb-fuzzer}}
+\caption{How the fuzzer detects the branch-target leak. The leaking pair's own-run L1D is identical
+and differs only in the BTB. A later input re-executes the branch, and the carried target surfaces
+in its L1D.}
+\label{fig:btb-fuzzer}
+\end{figure}
 
 \section{Portability}
 \label{sec:canon-portability}

@@ -80,8 +80,8 @@ trampoline and a hook records the architectural state. The CE then re-arms the i
 ran, restores the next, and repeats, so exactly one original instruction is ever in place until the
 test case completes.
 
-Running on the CPU under test avoids the emulation inconsistencies we observed in common
-emulators such as Unicorn~\cite{unicorn}. It also strikes a middle ground between full
+Running on the CPU under test avoids the fidelity gaps of emulating a modern Arm core in software,
+as mainline \revizor{} does with Unicorn~\cite{unicorn}. It also strikes a middle ground between full
 emulation and purely local execution. A complete emulator can model a feature the host lacks,
 but risks fidelity gaps. Purely native execution is faithful, but needs the feature present on
 the local machine. The CE takes the middle path: it runs base instructions natively and

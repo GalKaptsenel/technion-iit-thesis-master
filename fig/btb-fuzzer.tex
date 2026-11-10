@@ -1,0 +1,57 @@
+\begin{tikzpicture}[
+  font=\footnotesize,
+  btb/.style={draw=black!50, rounded corners=1.5pt, minimum width=24mm, minimum height=6mm,
+              inner sep=1pt, font=\ttfamily\scriptsize, align=center},
+  btbE/.style={btb, fill=black!3, text=black!45},
+  btbT/.style={btb, fill=laneA!15, draw=laneA!55!black, text=laneA!30!black},
+  l1/.style={draw=black!45, rounded corners=1.5pt, minimum width=24mm, minimum height=5.5mm,
+             inner sep=1pt, font=\ttfamily\scriptsize, align=center},
+  l1hot/.style={l1, fill=culprit!13, draw=culprit!65!black, text=culprit!55!black},
+  l1cold/.style={l1, fill=black!3, text=black!45},
+  colh/.style={font=\scriptsize\bfseries, align=center},
+  rowh/.style={font=\scriptsize, align=right, anchor=east},
+  note/.style={font=\scriptsize, text=black!60, align=center},
+  ar/.style={-{Stealth[length=1.7mm,width=1.5mm]}, semithick, draw=black!60},
+]
+  \def\xA{0}\def\xB{4.4}\def\xC{8.8}
+  \def\yT{0}\def\yB{-3.0}
+
+  % column headers
+  \node[colh] at (\xA,1.35) {after reset $\IS$};
+  \node[colh] at (\xB,1.35) {the leaking pair runs};
+  \node[colh] at (\xC,1.35) {a later input probes};
+
+  % row labels
+  \node[rowh, text=laneA!30!black] at (-1.95,\yT) {secret bit $0$\\target canonical};
+  \node[rowh, text=culprit!55!black] at (-1.95,\yB) {secret bit $1$\\target out-of-range};
+
+  % ===== Row A (bit 0) =====
+  \node[btbE] (a0) at (\xA,\yT) {BTB[g]: empty};
+  \node[btbT] (a1) at (\xB,{\yT+0.28}) {BTB[g] $\to$ T};
+  \node[l1cold] (a1l) at (\xB,{\yT-0.5}) {own L1D: $\emptyset$};
+  \node[l1hot] (a2) at (\xC,\yT) {probe L1D: $\{0\}$};
+  \draw[ar] (a0.east) -- (a1.west);
+  \draw[ar] (a1.east) -- (a2.west);
+
+  % ===== Row B (bit 1) =====
+  \node[btbE] (b0) at (\xA,\yB) {BTB[g]: empty};
+  \node[btbE] (b1) at (\xB,{\yB+0.28}) {BTB[g]: empty};
+  \node[l1cold] (b1l) at (\xB,{\yB-0.5}) {own L1D: $\emptyset$};
+  \node[l1cold] (b2) at (\xC,\yB) {probe L1D: $\emptyset$};
+  \draw[ar] (b0.east) -- (b1.west);
+  \draw[ar] (b1.east) -- (b2.west);
+
+  % per-column captions
+  \node[note, anchor=north] at (\xB,{\yT-0.95}) {canonical target\\trains the entry};
+  \node[note, anchor=north] at (\xB,{\yB-0.95}) {fast-rejected,\\no entry};
+  \node[note, anchor=north, text=culprit!50!black] at (\xC,{\yT-0.45}) {carried T called,\\loads line $0$};
+  \node[note, anchor=north] at (\xC,{\yB-0.45}) {no carried target,\\no footprint};
+
+  % bottom takeaway
+  \node[draw=black!30, fill=black!2, rounded corners=2pt, inner sep=5pt,
+        text width=0.92\linewidth, align=center, font=\footnotesize] at (3.4,-5.95)
+    {The pair's own-run L1D is identical ($\emptyset$ in both), so no single run violates the
+     contract. The difference lives in the BTB and surfaces only in the probe's L1D ($\{0\}$ versus
+     $\emptyset$). Priming reruns the pair in matched slots, where the difference follows the slot,
+     and discards it. Source-agnostic detection reads the probe across lanes and reports it.};
+\end{tikzpicture}

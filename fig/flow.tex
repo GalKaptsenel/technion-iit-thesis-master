@@ -11,10 +11,10 @@
   \fill[black!4, rounded corners=4pt] (-3.15,0.62) rectangle (2.95,-\gy-0.62);
   \fill[black!8, rounded corners=4pt] (-3.15,-2*\gy+0.62-\dg) rectangle (2.95,-3*\gy-0.62-\dg);
   \node[stage] (a) at (0,0)       {\textbf{test case} \\ {\scriptsize\color{black!55} randomly generated}};
-  \node[stage] (b) at (0,-\gy)    {\textbf{sealed test case} \\ {\scriptsize\color{black!55} a GVT sealing at each fuzzed site, built once}};
+  \node[stage] (b) at (0,-\gy)    {\textbf{instrumented test case} \\ {\scriptsize\color{black!55} a GVT access sequence at each fuzzed site, built once}};
   \node[stage] (d) at (0,-2*\gy-\dg)  {\textbf{genuine + decoy fillings} \\ {\scriptsize\color{black!55} the same program, different GVT}};
   \node[stage] (e) at (0,-3*\gy-\dg)  {\textbf{hardware traces} \\ {\scriptsize\color{black!55} a difference is a leak}};
-  \draw[ar] (a) -- (b) node[al,midway,xshift=2pt]{\textbf{(1)}~seal};
+  \draw[ar] (a) -- (b) node[al,midway,xshift=2pt]{\textbf{(1)}~instrument};
   \draw[ar] (b) -- (d) node[al,midway,xshift=2pt]{\textbf{(2)}~site resolution};
   \draw[ar] (d) -- (e) node[al,midway,xshift=2pt]{\textbf{(3)}~fill GVT, run};
   \node[pl] at (-2.85,-0.5*\gy)     {once per test case};
