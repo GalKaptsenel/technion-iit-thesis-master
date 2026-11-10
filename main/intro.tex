@@ -228,7 +228,7 @@ hand-crafted gadgets, whereas our \texttt{AUT*} and address-validity leaks fall 
 automatically, which also rediscovers TikTag-v1. The \texttt{AUT*} leak is orthogonal to Arm's
 FEAT\_FPACC\_SPEC mitigation~\cite{arm_fpacc_spec}, leaking bit~55 independently of the key.
 AMD's CVE-2020-12965~\cite{noncanonical_amd,amd_sb1010} lets a core transiently execute a
-non-canonical load. Ours exfiltrates information through the address-validity checks themselves.
+non-canonical load. Ours exfiltrates information through the canonicality and alignment checks themselves.
 
 \paragraph{Prefetcher and predictor channels.}
 AfterImage leaks control flow through Intel's IP-stride L1D prefetcher~\cite{afterimage}, and

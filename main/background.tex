@@ -274,7 +274,7 @@ The family is distinguished by the speculation primitive it abuses.
     along a stale predicted target.
 \end{itemize}
 \autoref{chap:canon} uses Spectre-v1, Spectre-v4, and Spectre-RSB interchangeably as windows that
-reach the same address-validity check transiently, so the leak does not depend on the particular
+reach the same canonicality and alignment check transiently, so the leak does not depend on the particular
 speculative primitive a target exposes.
 
 \section{Stack canaries and return-oriented programming}

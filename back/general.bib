@@ -21,7 +21,8 @@
 @misc{arm64pagetables,
   author       = {{Kernel Internals}},
   title        = {{ARM64} Page Tables},
-  howpublished = {\url{https://kernel-internals.org/arch/arm64/page-tables/}}
+  howpublished = {\url{https://kernel-internals.org/arch/arm64/page-tables/}},
+  note         = {Accessed 2026-11-10}
 }
 
 @misc{arm_exception_levels,
@@ -32,7 +33,7 @@
 }
 
 @misc{arm_mte,
-  author       = {{Arm Limited}},
+  author       = {{Arm Ltd.}},
   title        = {Arm Architecture Reference Manual for {A}-profile architecture: Memory Tagging Extension ({FEAT\_MTE})},
   howpublished = {Arm DDI 0487},
   year      = {2025},
@@ -41,14 +42,14 @@
 @misc{arm_pac,
   author       = {{Arm Ltd.}},
   title        = {Arm Architecture Reference Manual for A-profile Architecture: Pointer Authentication ({FEAT\_PAuth}, {FEAT\_PAuth2}, {FEAT\_FPAC})},
-  howpublished = {Arm DDI 0487, Arm Architecture Reference Manual for A-profile architecture},
-  year      = {2025},
+  howpublished = {Arm DDI 0487, Issue L.b},
+  year         = {2025},
 }
 
 @misc{arm_spectre_bhb,
   author       = {{Arm Ltd.}},
   title        = {{Spectre-BHB}: Speculative Target Reuse Attacks},
-  howpublished = {Arm white paper, version 1.7},
+  howpublished = {Arm white paper, version 1.7, \url{https://documentation-service.arm.com/static/623c60d13b9f553dde8fd8e6}},
   year         = {2022}
 }
 
@@ -174,6 +175,7 @@
   author    = {Li, Luyi and Yavarzadeh, Hosein and Tullsen, Dean},
   title     = {{Indirector}: High-Precision Branch Target Injection Attacks Exploiting the Indirect Branch Predictor},
   booktitle = {33rd USENIX Security Symposium (USENIX Security 24)},
+  pages     = {2137--2154},
   year      = {2024},
   publisher = {USENIX Association}
 }
@@ -209,7 +211,7 @@
 @misc{mte_whitepaper,
   author       = {{Arm Ltd.}},
   title        = {{Armv8.5-A} Memory Tagging Extension},
-  howpublished = {Arm white paper},
+  howpublished = {Arm white paper, \url{https://documentation-service.arm.com/static/624ea580caabfd7b3c13e23f}},
   year         = {2019}
 }
 
@@ -387,10 +389,10 @@
   publisher = {USENIX Association}
 }
 
-@inproceedings{unicorn,
+@misc{unicorn,
   author    = {Nguyen Anh Quynh and Dang Hoang Vu},
   title     = {{Unicorn}: Next Generation {CPU} Emulator Framework},
-  booktitle = {Black Hat USA},
+  howpublished = {Black Hat USA},
   year      = {2015}
 }
 
@@ -411,9 +413,9 @@
 
 @misc{arm_fpacc_spec,
   author       = {{Arm Ltd.}},
-  title        = {Pointer Authentication Code and speculative execution ({FEAT\_FPACC\_SPEC})},
-  howpublished = {Arm Developer, \url{https://support.arm.com/documentation/110389/1-2/}},
-  year         = {2024}
+  title        = {Arm Architecture Reference Manual for A-profile architecture: Speculative behaviour of combined pointer authentication instructions ({FEAT\_FPACC\_SPEC})},
+  howpublished = {Arm DDI 0487, Issue L.b},
+  year         = {2025}
 }
 
 @misc{noncanonical_amd,
@@ -480,10 +482,10 @@
 
 @article{lee1984branch,
   title={Branch prediction strategies and branch target buffer design},
-  author={Lee, Johnny K. E. and Smith, Alan Jay},
+  author={Lee, Johnny K. F. and Smith, Alan Jay},
   journal={Computer},
-  volume={21},
-  number={7},
+  volume={17},
+  number={1},
   pages={6--22},
   year={1984},
   publisher={IEEE}

@@ -112,7 +112,7 @@ LDR   x2, [x0]       // guarded access
 \centering\textbf{An \texttt{MTE} access sequence}\par\smallskip
 \begin{verbatim}
 UMOV  wT, GVT.b[i]   // read tag
-BFI   x0, xT, #56,#4 // into tag field
+BFI   x0, xT, #56,#4 // set Logical Address Tag
 LDR   x2, [x0]       // tag-checked access
 UMOV  wT, GVT.b[j]   // read cell tag
 BFI   x0, xT, #56,#4 // retag back

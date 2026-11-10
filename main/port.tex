@@ -2,7 +2,7 @@
 \label{chap:port}
 
 This chapter describes the first contribution: bringing model-based relational testing to
-AArch64. \revizor{}'s pipeline is ISA-independent, so the structure is kept and the
+AArch64.\footnote{The AArch64 port is publicly available at \url{https://github.com/GalKaptsenel/sca-fuzzer}.} \revizor{}'s pipeline is ISA-independent, so the structure is kept and the
 ISA-specific backends are rebuilt for AArch64, with new support for the Arm security
 extensions and for fuzzing physically remote cores. \autoref{sec:port-overview} gives the
 overall shape, \autoref{sec:port-components} the native-execution architecture,
@@ -20,7 +20,7 @@ executor's hardware trace (\autoref{sec:bg-mrt}). This structure is independent 
 instruction set, so we keep it and rebuild the three ISA-specific backends for AArch64, the
 64-bit execution state introduced in Armv8-A. We additionally model the Pointer
 Authentication and Memory Tagging extensions, which x86 \revizor{} has no analogue for and
-which are the subject of the speculative-exception primitives of \autoref{chap:precond}. The port is
+which are the subject of speculative-exception fuzzing (\autoref{chap:precond}). The port is
 evaluated on Armv9 cores in \autoref{chap:eval}.
 
 \section{Contract model via native execution}
@@ -121,7 +121,7 @@ a last-in-first-out stack.}
 \section{Modeling the Arm security extensions}
 \label{sec:port-features}
 
-The speculative-exception primitives of \autoref{chap:precond} need the model to reproduce the operand
+Speculative-exception fuzzing (\autoref{chap:precond}) needs the model to reproduce the operand
 checks of Pointer Authentication and Memory Tagging faithfully, even on a host that does not
 implement them. Pointer Authentication is modeled in software, so the CE can compute and verify a PAC the way
 the target core would. The model signs and authenticates under the keys supplied with each
@@ -163,8 +163,9 @@ reader locates each section by its type through the descriptor table rather than
 offset, so new per-input state can be added without breaking the layout, and an unknown section
 type is skipped. The required sections hold the sandbox memory contents and the initial register
 values.
-Optional sections carry further initial state, such as custom PAC keys, an initial MTE tag memory,
-and the global value table used by speculative-exception fuzzing (\autoref{chap:precond}). The kernel module and the CE consume the same file, so the model and the
+Optional sections carry further initial state, such as custom PAC keys and an initial MTE tag memory.
+The global value table used by speculative-exception fuzzing (\autoref{chap:precond}) rides in the
+vector-register section. The kernel module and the CE consume the same file, so the model and the
 hardware start from an identical initial state.
 
 \begin{figure}[t]

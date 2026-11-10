@@ -20,8 +20,8 @@ leakage (\autoref{chap:precond}).
 Together these uncover two new speculative covert-channel leaks on production Arm cores, one in the
 address-validity checks of a pointer (\autoref{chap:canon}) and one in Pointer Authentication's sign
 extension, which exfiltrate information across privilege and virtualization boundaries
-(\autoref{chap:eval}). Used as a covert channel, the address-validity leak recovers a complete
-RSA-2048 private key through OpenSSL. Speculative-exception fuzzing also rediscovers TikTag on the
+(\autoref{chap:eval}). Used as a covert channel, and given an assumed control-flow hijack, the address-validity leak
+recovers a complete RSA-2048 private key through OpenSSL (\autoref{app:poc-openssl}). Speculative-exception fuzzing also rediscovers TikTag on the
 Cortex-X3, and on an Intel Alder Lake core the source-agnostic detection surfaces the known
 AfterImage prefetcher leak, which shows the method is not Arm-specific. The proof-of-concept
 artifacts behind these results are described in \autoref{appendix:pocs}.

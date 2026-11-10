@@ -135,14 +135,10 @@ kept surfacing many of them, most recognizable as variations of the same specula
 property.
 
 \paragraph{Negative results.}
-An \emph{n/a} entry marks a platform without the feature: the \texttt{AUT*} leak on Alder Lake,
-which has no Pointer Authentication, and TikTag-v1 on the Neoverse~N3, which lacks the
-\texttt{FEAT\_MTE2} tag checking it targets. A \xmark\ marks a platform with the feature where the
-campaign did not observe the leak. TikTag-v1 reproduces on the Cortex-X3 but not the Cortex-A715,
-matching Kim et~al.~\cite{tiktag}. The address-validity BTB channel reproduces on the N3 and the
+A \xmark\ marks a platform that has the feature but on which the campaign did not observe the leak,
+which is not a proof of its absence. The address-validity BTB channel reproduces on the N3 and the
 Cortex-A715 but not the Cortex-X3, nor across the exception-level boundary, where the BTB is split so
-an EL0 attacker cannot evict a victim's EL2 entries. AfterImage appears only on Alder Lake. A
-\xmark\ means not observed under our budget, not a proof of absence.
+an EL0 attacker cannot evict a victim's EL2 entries. AfterImage appears only on Alder Lake.
 
 \section{Reach across isolation boundaries}
 \label{sec:eval-reach}
