@@ -5,8 +5,8 @@
 \label{sec:concl-summary}
 
 This thesis brought model-based relational testing to AArch64, including fuzzing of Arm-specific
-features. We ported \revizor{} to AArch64 with a native-execution contract executor, added headless
-fuzzing of remote cores, and modeled the Pointer Authentication and Memory Tagging extensions
+features. We ported \revizor{} to AArch64 with a native-execution contract executor, added the infrastructure to
+fuzz remote cores, and modeled the Pointer Authentication and Memory Tagging extensions
 (\autoref{chap:port}). We identified a limitation of the priming validation step, present in
 \revizor{} since its inception, proved that it discards a class of real leaks, and gave a
 source-agnostic detector in the black-box spirit of \revizor{}. It reports leaks originating in
