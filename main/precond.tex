@@ -210,6 +210,5 @@ instructions for each test case, and the GVT access sites go in the mispredicted
 
 A long speculation window proved necessary for TikTag~\cite{tiktag}. Without the template the
 campaign never surfaced the leak, whereas with it TikTag appeared and was verified after $8$ test
-cases, in about $2$ minutes. With the template, speculative-exception fuzzing rediscovers
-TikTag-v1, an MTE tag leak through speculation shrinkage~\cite{tiktag}, on the Cortex-X3 but not
-the Cortex-A715, matching Kim et~al.~\cite{tiktag} (\autoref{sec:eval-violations}).
+cases, in about $2$ minutes. With this template, speculative-exception fuzzing rediscovers
+TikTag-v1 on the Cortex-X3 (\autoref{sec:eval-violations}).

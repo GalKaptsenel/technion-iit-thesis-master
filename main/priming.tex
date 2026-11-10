@@ -395,9 +395,8 @@ occupy the same column of two lanes. Priming's two comparisons (Equation~\eqref{
 coincide with the first step of the linear scan in each direction. The first compares
 $\spl{k{+}1}=\lane{a}$ with $\spl{k}$, which swaps in only $\inp{k}{b}$, and the second compares
 $\sigma_{b\to a}(k{+}1)=\lane{b}$ with $\sigma_{b\to a}(k)$. Priming stops there and discards the
-candidate if both pairs agree, whereas the scan continues and reports the boundaries priming misses.
-On the Neoverse~N3, the scan finds the BTB-carried address-validity leak in $84$\,s on average
-(\autoref{tab:eval-violations}), while priming misses it throughout a 48-hour campaign.
+candidate if both pairs agree, whereas the scan continues and reports the boundaries priming misses
+(\autoref{sec:eval-violations}).
 
 A drawback is that lanes compare inputs only within a column, whereas the flat sequence lets priming
 compare any two positions. Our generalization therefore misses violations between two inputs of the

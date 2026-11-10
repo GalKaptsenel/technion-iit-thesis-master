@@ -18,7 +18,7 @@ violations behind PACMAN and TikTag without faulting the test case, aiming for a
 leakage (\autoref{chap:precond}).
 
 Together these uncover two new speculative covert-channel leaks on production Arm cores, one in the
-address-validity checks of a pointer (\autoref{chap:canon}) and one in Pointer Authentication's sign
+canonicality and alignment checks of a pointer (\autoref{chap:canon}) and one in Pointer Authentication's sign
 extension, which exfiltrate information across privilege and virtualization boundaries
 (\autoref{chap:eval}). Used as a covert channel, and given an assumed control-flow hijack, the address-validity leak
 recovers a complete RSA-2048 private key through OpenSSL (\autoref{app:poc-openssl}). Speculative-exception fuzzing also rediscovers TikTag on the

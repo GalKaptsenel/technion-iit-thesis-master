@@ -29,14 +29,14 @@ counter or the low-privilege \reg{cntvct\_el0} virtual counter (\reg{--timer}).
 \reg{canary\_leak\_blind -w \{v1|v4|rsb\}} recovers a process's own stack canary from a
 two-dimensional-array gadget driven by Spectre-v1, Spectre-v4, or Spectre-RSB, reading the
 canonicality oracle through Flush+Reload~\cite{flushreload} over a pre-mapped array of probe pages
-(\autoref{sec:eval-exploit}). It combines an additive sweep for the top bits with a top-down carry
+(\autoref{sec:eval-demo}). It combines an additive sweep for the top bits with a top-down carry
 propagation for the lower bits, and recovers the full \reg{[55:0]} value.
 
 \section{RSA-2048 key recovery through OpenSSL}
 \label{app:poc-openssl}
 
 \reg{rsa\_leak} recovers the bytes of an in-use RSA-2048 private key from OpenSSL built with its ROP
-mitigations disabled and a single planted vulnerable \texttt{memcpy} (\autoref{sec:eval-exploit}). A
+mitigations disabled and a single planted vulnerable \texttt{memcpy} (\autoref{sec:eval-demo}). A
 stack-buffer overflow drives a return-oriented chain built entirely from OpenSSL's own gadgets,
 fires a Spectre-v4 window, and transmits over the BTB channel read with \reg{cntvct\_el0}.
 

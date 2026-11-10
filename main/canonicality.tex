@@ -10,9 +10,8 @@ the covert-channel demonstrations are in \autoref{chap:eval}.
 \section{The oracle}
 \label{sec:canon-oracle}
 
-On AArch64, address translation accepts a virtual address only when the bits above the configured
-virtual-address size are all zero (the TTBR0 range) or all one (the TTBR1 range). Any other value
-is out of range and faults~\cite{arm_vmsa}. On the Neoverse~N3 and the Cortex-A715, a speculative
+Recall (\autoref{sec:bg-canon}) that address translation accepts a virtual address only when it is
+canonical, lying in the \reg{TTBR0} or \reg{TTBR1} range, and faults otherwise~\cite{arm_vmsa}. On the Neoverse~N3 and the Cortex-A715, a speculative
 access to a canonical target allocates microarchitectural state as usual (an L1D line, a data or
 instruction TLB entry, a BTB way), whereas an \emph{out-of-range} target is fast-rejected before it
 allocates anything and leaves no footprint. The presence or absence of that footprint is thus a
@@ -68,10 +67,10 @@ Prefetch        & \reg{PRFM}                                  & none            
 The out-of-range access must happen only on a transient path, and we reach it with three distinct
 speculation primitives: a mistrained bounds check (Spectre-v1), a store-bypassed bound
 (Spectre-v4), and a return shadow (Spectre-RSB). The stack-canary demonstration of
-\autoref{sec:eval-exploit} drives a single gadget each of these three ways.
+\autoref{sec:eval-demo} drives a single gadget each of these three ways.
 
 \section{The branch-target channel}
-\label{sec:canon-l1d}
+\label{sec:canon-btb}
 
 When the transmitter is an indirect branch, the leak rides the BTB. A canonical branch target
 allocates a BTB entry, while an out-of-range target is fast-rejected and allocates nothing, so the
@@ -120,9 +119,22 @@ in its L1D.}
 \label{fig:btb-fuzzer}
 \end{figure}
 
+\section{The sign-extension leak}
+\label{sec:canon-aut}
+
+A second leak reuses this chapter's oracle, now against Pointer Authentication. The \reg{AUT*}
+authentication instructions leak bit~55 of the pointer, which is not part of the signature. To
+mitigate PACMAN-style attacks~\cite{pacman,arm_pacman}, Arm makes speculative authentication proceed
+as if the signature were correct and sign-extends bit~55 across the bits the \reg{PAC} field
+occupied, yielding a canonical pointer. A cleared bit~55 leaves the pointer in the user half, where
+the speculative access allocates microarchitectural state, while a set bit~55 moves it to the kernel
+half, which is fast-rejected before it allocates and leaves no footprint. The oracle of
+\autoref{sec:canon-oracle} therefore reads bit~55 for any value passed to an authentication
+instruction, regardless of the signature's correctness, and the same holds for the combined
+authenticate-and-branch instructions.
+
 \section{Portability}
 \label{sec:canon-portability}
 
-The cache and TLB channels are not exclusive to Arm, and they reproduce on our Intel Alder Lake
-baseline as well. The BTB channel is microarchitecture-specific. It reproduces on the Neoverse~N3
-and the Cortex-A715, but not on the Cortex-X3 or on Alder Lake (\autoref{tab:eval-violations}).
+The three channels do not all port across microarchitectures. \autoref{sec:eval-violations} reports
+where each reproduces (\autoref{tab:eval-violations}).

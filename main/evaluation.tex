@@ -86,19 +86,11 @@ $^{\P}$Single campaign, Alder Lake.
 The address-validity leak (\autoref{chap:canon}) surfaces on the N3. The cache and TLB channels are
 not exclusive to Arm. They have been reproduced on our Alder Lake baseline. The BTB channel is
 microarchitecture-specific, as it reproduces on the N3 and Cortex-A715 but not on the Cortex-X3, and
-only the source-agnostic detection reports it (\autoref{sec:canon-l1d}).
+only the source-agnostic detection reports it (\autoref{sec:canon-btb}).
 
 \paragraph{\texttt{AUT*} sign bit.}
-The \texttt{AUT*} instruction family leaks the pointer's \emph{sign bit}, which is not part of the
-signature. To mitigate PACMAN-style attacks~\cite{pacman,arm_pacman}, Arm makes speculative
-authentication proceed as if the PAC were correct regardless of its value. The architecture then
-sign-extends bit~55 into the bits the \texttt{PAC} field occupied, resulting in a canonical pointer
-of one of two kinds. If bit~55 is cleared the address stays in the user half, so the access
-allocates microarchitectural structures. If bit~55 is set the address moves to the kernel half,
-which is rejected before it allocates, leaving no footprint in the L1D, dTLB, or iTLB. This holds
-for both \texttt{AUT*} and the combined authenticate-and-branch instructions, so any value passed to
-an authentication instruction leaks its bit~55, with no regard to the correctness of the signature.
-\reg{AUTIASP} appears throughout PAC-enabled kernels and binaries.
+The sign-extension leak (\autoref{sec:canon-aut}) surfaces on the N3. \reg{AUTIASP} appears
+throughout PAC-enabled kernels and binaries, so the leaking instruction is ubiquitous.
 
 \paragraph{An IP-prefetcher leak on Alder Lake.}
 On the Intel Alder Lake baseline we also surface a leak no contract models, carried by the L1
@@ -222,7 +214,7 @@ neither localizer's boundary verifies.
 \end{figure}
 
 \section{Demonstrating the address-validity leak}
-\label{sec:eval-exploit}
+\label{sec:eval-demo}
 
 We build two independent demonstrations of the address-validity leak used as a covert channel. The
 OpenSSL demonstration is dynamically linked and built with Pointer Authentication and stack canaries
