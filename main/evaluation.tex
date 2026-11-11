@@ -107,18 +107,15 @@ To fuzz the speculative MTE tag-check condition, we use the window-widening temp
 through speculation shrinkage~\cite{tiktag}, which we detect on the Cortex-X3 but not the
 Cortex-A715, matching Kim et~al.~\cite{tiktag}.
 
-\subsection{Coverage and negative results}
+\subsection{Coverage}
 \label{sec:eval-coverage}
 
-The generator emits the general-purpose integer subset of AArch64: integer arithmetic including
-multiply and divide, logical and shift operations, bitfield and byte-reversal operations,
-conditional selects and compares, conditional and compare-and-branch control flow, plain loads and
-stores, flag-setting operations, bit-count, and the CRC32 family, $44$ instruction forms in all. The
-Pointer Authentication campaign additionally emits the sign, authenticate, and strip instructions.
-Operands are drawn from \reg{x0} through \reg{x5}. The vector and floating-point families (NEON,
-SVE, SVE2, SME) and the system and floating-point categories, the remaining $6{,}900$ of the
-$7{,}085$ encodings in our instruction specification, lie outside the modeled subset and are not
-emitted.
+The generator emits a general-purpose integer subset of AArch64, $44$ instruction forms over
+operands \reg{x0} through \reg{x5}, spanning arithmetic, logic and shifts, bitfield and byte-reversal,
+compares and conditional selects, branches, loads and stores, flag-setting, bit-count, and CRC32. The
+Pointer Authentication campaign adds the sign, authenticate, and strip instructions. The remaining
+$6{,}900$ of the $7{,}085$ encodings in our specification, the vector, floating-point, and system
+families, lie outside the modeled subset.
 
 We ran campaigns of up to $48$ hours under different speculation contracts, among them
 \textsc{CT-SEQ}, \textsc{CT-COND}, and \textsc{CT-BPAS}. For speculative-exception fuzzing we did
@@ -126,7 +123,8 @@ not add contract clauses to filter out the violations we had already characteriz
 kept surfacing many of them, most recognizable as variations of the same speculatively violated
 property.
 
-\paragraph{Negative results.}
+\subsection{Negative results}
+\label{sec:eval-negatives}
 A \xmark\ marks a platform that has the feature but on which the campaign did not observe the leak,
 which is not a proof of its absence. The address-validity BTB channel reproduces on the N3 and the
 Cortex-A715 but not the Cortex-X3, nor across the exception-level boundary, where the BTB is split so
@@ -216,10 +214,13 @@ neither localizer's boundary verifies.
 \section{Demonstrating the address-validity leak}
 \label{sec:eval-demo}
 
-We build two independent demonstrations of the address-validity leak used as a covert channel. The
+We build two independent demonstrations of the address-validity leak used as a covert channel. Each
+builds a complete secret out of the one-bit speculative read, assuming one pre-existing capability
+that we state with it. The
 OpenSSL demonstration is dynamically linked and built with Pointer Authentication and stack canaries
 disabled, and a single planted vulnerable \texttt{memcpy}. The canary demonstration keeps both
-enabled. \autoref{appendix:pocs} describes the proof-of-concept programs.
+enabled and assumes a pre-existing out-of-bounds write in the victim. \autoref{appendix:pocs}
+describes the proof-of-concept programs.
 
 \paragraph{Threat model.}
 Across these demonstrations the attacker runs unprivileged code at EL0 on a core it shares with the
@@ -231,11 +232,11 @@ additionally assumes an available control-flow hijack, provided by the planted o
 mitigations above, so it demonstrates a data-exfiltration channel.
 
 \paragraph{OpenSSL RSA key.}
-A plain stack-buffer overflow drives a ROP chain built \emph{entirely from gadgets inside the
-OpenSSL library itself}~\cite{riscyrop}, opening a Spectre-v4 window and transmitting over the BTB
-channel, which we read with the low-privilege \reg{cntvct\_el0} counter. Because the read primitive
-walks OpenSSL's own heap, it recovers a complete, in-use RSA-2048 private key at
-\reg{--samples 1500}, in about $3$~h.
+Because the read primitive walks OpenSSL's own heap, the address-validity leak recovers a complete,
+in-use RSA-2048 private key at \reg{--samples 1500}, in about $3$~h. We open the speculation window
+with a plain stack-buffer overflow driving a ROP chain built \emph{entirely from gadgets inside the
+OpenSSL library itself}~\cite{riscyrop}, which reaches a Spectre-v4 window and transmits over the BTB
+channel we read with the low-privilege \reg{cntvct\_el0} counter.
 
 \paragraph{Blind stack-canary recovery.}
 A single two-dimensional-array gadget, driven by three distinct speculation primitives
