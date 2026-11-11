@@ -247,7 +247,10 @@ reports is an extended contract violation.
 \label{sec:priming-lanes}
 
 To realize this follow-up, we change how \revizor{} arranges its inputs. Instead of one flat
-sequence, we build \emph{lanes}.
+sequence, we build \emph{lanes}. A lane is a single run of the test case over a batch of inputs.
+Boosting each input yields a second lane that matches the first, class for class, so the contract
+expects the two lanes to leave identical hardware traces after each input. A difference between those
+traces signals behavior the contract does not model, a suspected leak.
 
 \begin{definition}[Lane and lane boosting]
 \label{def:lane}
@@ -260,9 +263,9 @@ column $m$ is one contract class (\autoref{fig:priming-lanes}).
 
 Because each column is one class, the detector flags a candidate
 (Equation~\eqref{eq:bg-candidate}) when two lanes, say $\lane{a}$ and $\lane{b}$, differ in their
-L1D trace at the same column. Without loss of generality, this is the last column, $k$. A candidate
-violation at an earlier column $\dprobe<k$ cannot depend on later columns, whose inputs run only
-after it, so dropping them makes $\dprobe$ last. We call column $k$ the \emph{probe}.
+L1D trace at the same column. Throughout this section we take that column, without loss of
+generality, to be the last, column $k$, since a flagged column can be made last by dropping
+everything after it, which runs later and so cannot affect it. We call column $k$ the \emph{probe}.
 
 \begin{figure}[t]
 \centering
