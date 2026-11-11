@@ -140,3 +140,10 @@ authenticate-and-branch instructions.
 
 The cache, TLB, and BTB channels do not all port across microarchitectures. \autoref{sec:eval-violations} reports
 where each reproduces (\autoref{tab:eval-violations}).
+
+\section{Responsible disclosure}
+\label{sec:canon-disclosure}
+
+We reported the address-validity leak to the Arm PSIRT, with proof-of-concept code. Arm acknowledged
+it as a novel covert channel. Arm does not classify covert channels as security vulnerabilities and
+therefore plans no changes.
