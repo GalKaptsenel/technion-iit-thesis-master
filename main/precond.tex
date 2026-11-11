@@ -36,33 +36,39 @@ byte-identical across fillings.}
 \section{The global value table}
 \label{sec:precond-gvt}
 
-We call each instruction whose operands we fuzz a \emph{GVT access site}, or \emph{site} for short. The GVT holds the value each site
-reads at run time, and mirrors the global offset table of dynamic linking: the indexes are fixed
-when the program is built, while the values are filled per input, just before execution. Because a
-site reads some of its operands from the GVT, we can inject violating values at a site directly,
-without rewriting the program or searching for an input whose data flow produces them. The GVT
-entries thus decide which sites are violated. The table is part of the input, so two inputs that
-differ only in their GVT are different inputs, and it travels in the input's REIF file
-(\autoref{sec:port-input}). \autoref{fig:precond-gvt} shows the GVT at an MTE site. We keep the GVT in registers rather than in memory, so a lookup is not a
-memory access and adds no long-latency operation that could perturb the microarchitecture we
-measure. Specifically, we use the Advanced SIMD vector registers (\texttt{FEAT\_AdvSIMD}), which
-offer far more capacity than the general-purpose ones.
+We call an instruction whose operands we fuzz a \emph{guarded instruction}. Before each one we
+insert a short \emph{GVT access sequence} that reads the operand values from the GVT and writes them
+into the instruction's operand registers. The GVT is part of the input, traveling within the REIF
+file (\autoref{sec:port-input}), so two inputs that differ only in it are considered distinct. It is
+filled just before each run by the input loader. As with the global offset table (GOT) of dynamic
+linking, the GVT indexes each access uses are fixed at build time, while the content of each entry
+can be decided later and applied only at run time.
+
+Because the access sequence supplies the operand through the GVT, we can inject a violating value at a guarded
+instruction directly, without rewriting the program or searching for an input whose data flow
+produces them. Thus the GVT entries decide which guarded instructions are violated.
+\autoref{fig:precond-gvt} shows the GVT for a guarded MTE instruction. We keep the GVT in registers
+rather than in memory, so a lookup is not a memory access and adds no long-latency operation that
+could perturb the microarchitecture we measure. Specifically, we use the Advanced SIMD vector
+registers (\texttt{FEAT\_AdvSIMD}), which offer far more capacity than the general-purpose ones.
 
 \begin{figure}[t]
 \centering
 \fitwidth{\input{fig/gvt}}
-\caption{The GVT at an MTE site. Each byte lane of one Advanced SIMD register holds a site's value.
-Lane \texttt{b[i]} carries the tag the access checks, mismatched in the decoy filling and the genuine
-Allocation Tag otherwise. Lane \texttt{b[j]} restores the genuine tag after the access, so the decoy
-never reaches the contract trace.}
+\caption{The GVT for a guarded MTE instruction. Each byte lane of one Advanced SIMD register holds a
+value the access sequence reads, and a single instruction may use several. Lane \texttt{b[i]} carries
+the tag the access checks, mismatched in the decoy filling and the genuine Allocation Tag otherwise.
+Lane \texttt{b[j]} restores the genuine tag after the access, so the decoy never reaches the contract
+trace.}
 \label{fig:precond-gvt}
 \end{figure}
 
 \paragraph{Genuine and decoy fillings.}
-A run of the program is fixed by how we fill the GVT. The \emph{genuine} filling gives every site
+A run of the program is fixed by how we fill the GVT. The \emph{genuine} filling gives every entry
 its correct value, the one the architectural flow expects. A \emph{decoy} filling instead forges
-the value (a wrong PAC, a mismatched tag, or a non-canonical address) at a random subset of the
-sites reached only speculatively, and keeps the correct value everywhere a site retires.
+the value (a wrong PAC, a mismatched tag, or a non-canonical address) for a random subset of the
+guarded instructions reached only speculatively, and keeps the correct value wherever a guarded
+instruction retires.
 \autoref{tab:precond-primitives} lists the GVT access primitives with their genuine and decoy values.
 
 \begin{table}[t]
@@ -85,9 +91,9 @@ Indirect branch target & valid target      & non-canonical / misaligned target \
 \end{table}
 
 \paragraph{The access sequence.}
-The instrumentation at one site is its \emph{access sequence}. The generator walks the test case
-statically and inserts an access sequence before each instruction of interest (\autoref{fig:precond-access}).
-It consists of a \reg{UMOV}, which copies the site's GVT value from its vector element into a
+The generator walks the test case
+statically and inserts a GVT access sequence before each guarded instruction (\autoref{fig:precond-access}).
+It consists of a \reg{UMOV}, which copies a value from its GVT entry into a
 general-purpose register, followed by the data-processing instructions that apply it. For example,
 a PAC or an MTE tag is read from the GVT and inserted into the relevant field of the pointer with
 \reg{BFI}.
@@ -128,22 +134,22 @@ every filling, and only the GVT value differs between the genuine and decoy fill
 \label{fig:precond-access}
 \end{figure}
 
-\section{Site resolution}
+\section{Resolving the genuine values}
 \label{sec:precond-resolve}
 
-When we build the program, each site's genuine value is often unknown, such as the PAC of a pointer
-the input computes or the Allocation Tag of the granule it reaches, and so is whether the
-architectural flow reaches the site at all. \emph{Site resolution} settles both in one run of the
-contract executor (\autoref{sec:port-ce}) over an initially empty GVT, the \emph{resolution trace}.
-Each time the run reaches a site whose genuine value depends on the live state, a small routine
-computes that value and writes it into the site's GVT entry, much as a dynamic linker fills a
-symbol's entry on first use. At a PAC site, for example, it computes the PAC of the pointer the
-\reg{AUT*} is about to authenticate, and at an MTE site it reads the Allocation Tag of the accessed
-granule. Because the contract executor models both extensions in software
-(\autoref{sec:port-features}), it computes these values even on a host that does not implement the
-extension. Because the resolution run executes the genuine instructions, it doubles as the genuine
-contract trace, and its speculation stack (\autoref{sec:port-ce}) records each site's speculation
-depth, marking those never reached architecturally as decoy-eligible.
+When we build the program, we often know neither the genuine values a guarded instruction requires,
+such as the PAC of a pointer the input computes or the Allocation Tag of the granule it reaches, nor
+whether the architectural flow reaches the instruction at all. A single run of the contract executor
+(\autoref{sec:port-ce}) over an initially empty GVT, the \emph{resolution trace}, settles both. Each
+time it reaches a guarded instruction whose genuine values depend on the live state, a small routine, implemented by the
+contract executor, computes them and fills the instruction's GVT entries, much as a dynamic linker
+resolves a symbol on
+first use. At a PAC instruction it computes the PAC the \reg{AUT*} is about to check, and at an MTE
+instruction it reads the Allocation Tag of the accessed granule. The contract executor models both
+extensions in software (\autoref{sec:port-features}), so it can compute these values even on a host
+that lacks the extension. The resolution run executes the genuine instructions, so it doubles as the
+genuine contract trace, and its speculation stack (\autoref{sec:port-ce}) records each guarded
+instruction's speculation depth, marking those never reached architecturally as decoy-eligible.
 
 \section{Confining a condition violation}
 \label{sec:precond-confine}
@@ -171,13 +177,13 @@ only the GVT, targeting speculative exceptions alone.
 \section{Widening the speculative window}
 \label{sec:precond-window}
 
-A site's access leaves a microarchitectural trace only if it executes before the speculative window
+A GVT access leaves a microarchitectural trace only if it executes before the speculative window
 closes, and a random test case does not control that window's length. To give the access enough
 time, we attach a \emph{template} that holds the window open (\autoref{fig:tiktag-tmpl}). Eight
 dependent \reg{SDIV} instructions delay the guarding \reg{CBNZ}, so its not-taken shadow speculates
 for the chain's length, while an \reg{ORR} keeps the branch architecturally taken. The
 \texttt{.macro.random\_instructions} entries are placeholders the fuzzer expands with fresh random
-instructions for each test case, and the GVT access sites go in the mispredicted shadow.
+instructions for each test case, and the guarded instructions go in the mispredicted shadow.
 
 \begin{figure}[t]
 \centering
@@ -199,7 +205,7 @@ instructions for each test case, and the GVT access sites go in the mispredicted
   ORR   x9, x9, #1        // x9 odd => branch taken
   CBNZ  x9, .bb_0.2       //   (shadow is bb_0.1)
 .bb_0.1:                  // mispredicted shadow:
-  .macro.random_instructions.24.12.2:   // access sites
+  .macro.random_instructions.24.12.2:   // guarded instructions
 .bb_0.2:
   .macro.random_instructions.8.2.4:
 \end{verbatim}
